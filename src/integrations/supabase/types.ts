@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      order_files: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_type: string
+          file_url: string
+          id: string
+          order_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_type: string
+          file_url: string
+          id?: string
+          order_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_files_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string

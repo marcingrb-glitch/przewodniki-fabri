@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,32 +7,30 @@ import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Tooltip, TooltipContent, TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Eye, FileText, Tag, Package } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
 import { getOrderById } from "@/utils/supabaseQueries";
 import { SEATS_PUFA } from "@/data/mappings";
-
-const DisabledButton = ({ children, tooltip }: { children: React.ReactNode; tooltip: string }) => (
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <span tabIndex={0}>
-        <Button variant="outline" size="sm" disabled className="gap-1.5">
-          {children}
-        </Button>
-      </span>
-    </TooltipTrigger>
-    <TooltipContent>{tooltip}</TooltipContent>
-  </Tooltip>
-);
+import { downloadBlob } from "@/utils/pdfHelpers";
+import { generateSofaGuidePDF } from "@/utils/pdfGenerators/sofaGuide";
+import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
+import { generateFotelGuidePDF } from "@/utils/pdfGenerators/fotelGuide";
+import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
+import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
+import { uploadPDF, saveOrderFile } from "@/utils/storage";
+import PDFPreview from "@/components/PDFPreview";
 
 const OrderDetailsPage = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewTitle, setPreviewTitle] = useState("");
+  const [previewFileName, setPreviewFileName] = useState("");
+  const [loading, setLoading] = useState<string | null>(null);
 
   const stateDecoded = (location.state as { decoded?: DecodedSKU })?.decoded;
 
@@ -42,6 +41,30 @@ const OrderDetailsPage = () => {
   });
 
   const decoded: DecodedSKU | undefined = stateDecoded || (order?.decoded_data as unknown as DecodedSKU);
+  const orderId = id || "";
+  const orderNumber = decoded?.orderNumber || order?.order_number || "";
+
+  const withLoading = async (key: string, fn: () => Promise<void>) => {
+    setLoading(key);
+    try { await fn(); } catch (err: unknown) {
+      toast.error(`❌ ${err instanceof Error ? err.message : "Blad"}`);
+    } finally { setLoading(null); }
+  };
+
+  const preview = (blob: Blob, title: string, fileName: string) => {
+    setPreviewBlob(blob);
+    setPreviewTitle(title);
+    setPreviewFileName(fileName);
+  };
+
+  const downloadAndSave = async (blob: Blob, fileName: string, fileType: string) => {
+    downloadBlob(blob, fileName);
+    try {
+      const url = await uploadPDF(orderNumber, fileName, blob);
+      await saveOrderFile(orderId, fileType, url, fileName);
+    } catch { /* storage upload is optional */ }
+    toast.success(`✅ Pobrano: ${fileName}`);
+  };
 
   if (isLoading && !stateDecoded) {
     return (
@@ -56,32 +79,38 @@ const OrderDetailsPage = () => {
     return (
       <Card className="shadow-md">
         <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground">Nie znaleziono danych zamówienia.</p>
-          <Button variant="link" onClick={() => navigate("/")}>Wróć do strony głównej</Button>
+          <p className="text-muted-foreground">Nie znaleziono danych zamowienia.</p>
+          <Button variant="link" onClick={() => navigate("/")}>Wroc do strony glownej</Button>
         </CardContent>
       </Card>
     );
   }
 
-  const seatKey = decoded.seat.code;
-  const pufaSeat = SEATS_PUFA[seatKey];
+  const hasPufa = !!decoded.pufaSKU;
+  const hasFotel = !!decoded.fotelSKU;
+  const pufaSeat = SEATS_PUFA[decoded.seat.code];
+
+  const ActionBtn = ({ icon: Icon, label, loadKey, onClick }: { icon: typeof Eye; label: string; loadKey: string; onClick: () => Promise<void> | void }) => (
+    <Button variant="outline" size="sm" className="gap-1.5" disabled={loading === loadKey} onClick={() => withLoading(loadKey, async () => { await onClick(); })}>
+      {loading === loadKey ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+      {label}
+    </Button>
+  );
 
   return (
     <div className="space-y-6">
+      <PDFPreview pdfBlob={previewBlob} title={previewTitle} fileName={previewFileName} onClose={() => setPreviewBlob(null)} />
+
       {/* Header */}
       <Card className="shadow-md">
         <CardHeader>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-2xl">
-                ZAMÓWIENIE: {decoded.orderNumber || order?.order_number}
-              </CardTitle>
+              <CardTitle className="text-2xl">ZAMOWIENIE: {orderNumber}</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
               </p>
-              <p className="text-sm text-muted-foreground">
-                Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}
-              </p>
+              <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
             </div>
             <Badge variant="secondary" className="self-start text-sm">
               {decoded.series.code} - {decoded.series.name} [{decoded.series.collection}]
@@ -103,52 +132,39 @@ const OrderDetailsPage = () => {
                 <div className="space-y-2 text-sm">
                   <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`} />
                   <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, kolor ${decoded.fabric.colorName}`} />
-                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
-                  <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykończenie ${decoded.side.finishName}`} />
-                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm, wykończenie ${decoded.backrest.finishName}`} />
+                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}, wykonczenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
+                  <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykonczenie ${decoded.side.finishName}`} />
+                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm, wykonczenie ${decoded.backrest.finishName}`} />
                   <InfoRow label="Skrzynia" value={decoded.chest.code} />
                   <InfoRow label="Automat" value={`${decoded.automat.code} - ${decoded.automat.name}`} />
-                  {decoded.legs && (
-                    <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />
-                  )}
-                  {decoded.pillow && (
-                    <InfoRow label="Poduszka oparciowa" value={`${decoded.pillow.code} - ${decoded.pillow.name}`} />
-                  )}
-                  {decoded.jaski && (
-                    <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />
-                  )}
-                  {decoded.walek && (
-                    <InfoRow label="Wałek" value={decoded.walek.code} />
-                  )}
+                  {decoded.legs && <InfoRow label="Nozki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
+                  {decoded.pillow && <InfoRow label="Poduszka" value={`${decoded.pillow.code} - ${decoded.pillow.name}`} />}
+                  {decoded.jaski && <InfoRow label="Jaski" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
+                  {decoded.walek && <InfoRow label="Walek" value={decoded.walek.code} />}
                   <div className="mt-3 border-t pt-3">
-                    <p className="font-semibold mb-1">Nóżki sofy:</p>
-                    {decoded.legHeights.sofa_chest ? (
-                      <InfoRow label="Pod skrzynią" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
-                    ) : (
-                      <InfoRow label="Pod skrzynią" value="BRAK" />
-                    )}
-                    {decoded.legHeights.sofa_seat ? (
-                      <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
-                    ) : (
-                      <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />
-                    )}
+                    <p className="font-semibold mb-1">Nozki sofy:</p>
+                    {decoded.legHeights.sofa_chest
+                      ? <InfoRow label="Pod skrzynia" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
+                      : <InfoRow label="Pod skrzynia" value="BRAK" />}
+                    {decoded.legHeights.sofa_seat
+                      ? <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
+                      : <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />}
                   </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-
           <div className="mt-4 flex flex-wrap gap-2">
-            <DisabledButton tooltip="Dostępne w Etapie 3"><Eye className="h-4 w-4" /> Podgląd przewodnika</DisabledButton>
-            <DisabledButton tooltip="Dostępne w Etapie 3"><Download className="h-4 w-4" /> Pobierz przewodnik</DisabledButton>
-            <DisabledButton tooltip="Dostępne w Etapie 3"><Eye className="h-4 w-4" /> Podgląd etykiet</DisabledButton>
-            <DisabledButton tooltip="Dostępne w Etapie 3"><Tag className="h-4 w-4" /> Pobierz etykiety</DisabledButton>
+            <ActionBtn icon={Eye} label="Podglad przewodnika" loadKey="sofa-preview" onClick={async () => preview(generateSofaGuidePDF(decoded), "Przewodnik Sofy", `sofa_przewodnik_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="sofa-dl" onClick={async () => downloadAndSave(generateSofaGuidePDF(decoded), `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide")} />
+            <ActionBtn icon={Eye} label="Podglad etykiet" loadKey="sofa-labels-preview" onClick={async () => preview(generateSofaLabelsPDF(decoded), "Etykiety Sofy", `sofa_etykiety_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
           </div>
         </CardContent>
       </Card>
 
       {/* PUFA */}
-      {decoded.pufaSKU && (
+      {hasPufa && (
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="text-xl">🪑 PUFA - {decoded.pufaSKU}</CardTitle>
@@ -162,31 +178,29 @@ const OrderDetailsPage = () => {
                     <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name}`} />
                     <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`} />
                     <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}`} />
-                    {pufaSeat && (
-                      <>
-                        <InfoRow label="Front/Tył" value={pufaSeat.frontBack} />
-                        <InfoRow label="Boki" value={pufaSeat.sides} />
-                        <InfoRow label="Pianka bazowa" value={pufaSeat.foam} />
-                        <InfoRow label="Skrzynka" value={pufaSeat.box} />
-                      </>
-                    )}
-                    {decoded.legs && (
-                      <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />
-                    )}
+                    {pufaSeat && <>
+                      <InfoRow label="Front/Tyl" value={pufaSeat.frontBack} />
+                      <InfoRow label="Boki" value={pufaSeat.sides} />
+                      <InfoRow label="Pianka bazowa" value={pufaSeat.foam} />
+                      <InfoRow label="Skrzynka" value={pufaSeat.box} />
+                    </>}
+                    {decoded.legs && <InfoRow label="Nozki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
-              <DisabledButton tooltip="Dostępne w Etapie 3"><Eye className="h-4 w-4" /> Podgląd przewodnika</DisabledButton>
-              <DisabledButton tooltip="Dostępne w Etapie 3"><Download className="h-4 w-4" /> Pobierz przewodnik</DisabledButton>
+              <ActionBtn icon={Eye} label="Podglad przewodnika" loadKey="pufa-preview" onClick={async () => preview(generatePufaGuidePDF(decoded), "Przewodnik Pufy", `pufa_przewodnik_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="pufa-dl" onClick={async () => downloadAndSave(generatePufaGuidePDF(decoded), `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide")} />
+              <ActionBtn icon={Eye} label="Podglad etykiet" loadKey="pufa-labels-preview" onClick={async () => preview(generatePufaLabelsPDF(decoded), "Etykiety Pufy", `pufa_etykiety_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* FOTEL */}
-      {decoded.fotelSKU && (
+      {hasFotel && (
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="text-xl">💺 FOTEL - {decoded.fotelSKU}</CardTitle>
@@ -201,33 +215,85 @@ const OrderDetailsPage = () => {
                     <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`} />
                     <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}`} />
                     <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}`} />
-                    {decoded.jaski && (
-                      <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />
-                    )}
-                    {decoded.legs && (
-                      <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />
-                    )}
+                    {decoded.jaski && <InfoRow label="Jaski" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
+                    {decoded.legs && <InfoRow label="Nozki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
-              <DisabledButton tooltip="Dostępne w Etapie 3"><Eye className="h-4 w-4" /> Podgląd przewodnika</DisabledButton>
-              <DisabledButton tooltip="Dostępne w Etapie 3"><Download className="h-4 w-4" /> Pobierz przewodnik</DisabledButton>
+              <ActionBtn icon={Eye} label="Podglad przewodnika" loadKey="fotel-preview" onClick={async () => preview(generateFotelGuidePDF(decoded), "Przewodnik Fotela", `fotel_przewodnik_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="fotel-dl" onClick={async () => downloadAndSave(generateFotelGuidePDF(decoded), `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")} />
+              <ActionBtn icon={Eye} label="Podglad etykiet" loadKey="fotel-labels-preview" onClick={async () => preview(generateFotelLabelsPDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Summary actions */}
+      {/* Decoding PDF */}
       <Card className="shadow-md">
-        <CardContent className="flex flex-wrap items-center gap-3 pt-6">
-          <DisabledButton tooltip="Dostępne w Etapie 3"><FileText className="h-4 w-4" /> Pobierz wszystkie przewodniki</DisabledButton>
-          <DisabledButton tooltip="Dostępne w Etapie 3"><Tag className="h-4 w-4" /> Pobierz wszystkie etykiety</DisabledButton>
-          <DisabledButton tooltip="Dostępne w Etapie 3"><Package className="h-4 w-4" /> Pobierz wszystko (ZIP)</DisabledButton>
+        <CardHeader>
+          <CardTitle className="text-lg">📊 Dekodowanie SKU</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <ActionBtn icon={Eye} label="Podglad dekodowania" loadKey="decode-preview" onClick={async () => preview(generateDecodingPDF(decoded), "Dekodowanie SKU", `dekodowanie_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="decode-dl" onClick={async () => downloadAndSave(generateDecodingPDF(decoded), `dekodowanie_${orderNumber}.pdf`, "decoding")} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bulk actions */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg">📦 Akcje zbiorcze</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <ActionBtn icon={FileText} label="Pobierz wszystkie przewodniki" loadKey="all-guides" onClick={async () => {
+            // Merge all guide pages into one PDF by downloading separately
+            const blobs: { name: string; blob: Blob }[] = [];
+            blobs.push({ name: "sofa_przewodnik.pdf", blob: generateSofaGuidePDF(decoded) });
+            if (hasPufa) blobs.push({ name: "pufa_przewodnik.pdf", blob: generatePufaGuidePDF(decoded) });
+            if (hasFotel) blobs.push({ name: "fotel_przewodnik.pdf", blob: generateFotelGuidePDF(decoded) });
+            // For simplicity, zip all guides
+            const zip = new JSZip();
+            blobs.forEach(b => zip.file(b.name, b.blob));
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            downloadBlob(zipBlob, `przewodniki_${orderNumber}.zip`);
+            toast.success("✅ Pobrano wszystkie przewodniki");
+          }} />
+          <ActionBtn icon={Tag} label="Pobierz wszystkie etykiety" loadKey="all-labels" onClick={async () => {
+            const blobs: { name: string; blob: Blob }[] = [];
+            blobs.push({ name: "sofa_etykiety.pdf", blob: generateSofaLabelsPDF(decoded) });
+            if (hasPufa) blobs.push({ name: "pufa_etykiety.pdf", blob: generatePufaLabelsPDF(decoded) });
+            if (hasFotel) blobs.push({ name: "fotel_etykiety.pdf", blob: generateFotelLabelsPDF(decoded) });
+            const zip = new JSZip();
+            blobs.forEach(b => zip.file(b.name, b.blob));
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            downloadBlob(zipBlob, `etykiety_${orderNumber}.zip`);
+            toast.success("✅ Pobrano wszystkie etykiety");
+          }} />
+          <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
+            const zip = new JSZip();
+            zip.file("sofa_przewodnik.pdf", generateSofaGuidePDF(decoded));
+            zip.file("sofa_etykiety.pdf", generateSofaLabelsPDF(decoded));
+            if (hasPufa) {
+              zip.file("pufa_przewodnik.pdf", generatePufaGuidePDF(decoded));
+              zip.file("pufa_etykiety.pdf", generatePufaLabelsPDF(decoded));
+            }
+            if (hasFotel) {
+              zip.file("fotel_przewodnik.pdf", generateFotelGuidePDF(decoded));
+              zip.file("fotel_etykiety.pdf", generateFotelLabelsPDF(decoded));
+            }
+            zip.file("dekodowanie.pdf", generateDecodingPDF(decoded));
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            downloadBlob(zipBlob, `zamowienie_${orderNumber}.zip`);
+            toast.success("✅ Pobrano kompletny pakiet");
+          }} />
           <div className="flex-1" />
           <Button variant="outline" onClick={() => navigate("/")} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Nowe zamówienie
+            <ArrowLeft className="h-4 w-4" /> Nowe zamowienie
           </Button>
         </CardContent>
       </Card>
