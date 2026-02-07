@@ -131,6 +131,11 @@ export function addLabel(
   });
 }
 
+export function toBlob(doc: jsPDF): Blob {
+  const arrayBuffer = doc.output("arraybuffer");
+  return new Blob([arrayBuffer], { type: "application/pdf" });
+}
+
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

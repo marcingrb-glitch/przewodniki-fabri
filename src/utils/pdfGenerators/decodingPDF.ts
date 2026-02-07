@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addHeader } from "@/utils/pdfHelpers";
+import { createDoc, addHeader, toBlob } from "@/utils/pdfHelpers";
 
 export function generateDecodingPDF(decoded: DecodedSKU): Blob {
   const doc = createDoc("portrait", "a4");
@@ -138,5 +138,5 @@ export function generateDecodingPDF(decoded: DecodedSKU): Blob {
     }
   }
 
-  return doc.output("blob");
+  return toBlob(doc);
 }

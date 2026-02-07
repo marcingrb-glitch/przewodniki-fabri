@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { downloadBlob } from "@/utils/pdfHelpers";
 
 interface PDFPreviewProps {
@@ -14,21 +15,26 @@ interface PDFPreviewProps {
 }
 
 const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
-  const dataUrl = useMemo(() => {
-    if (!pdfBlob) return "";
-    // Read blob as data URL synchronously isn't possible, 
-    // so we use createObjectURL which is synchronous
-    return URL.createObjectURL(pdfBlob);
+  const [dataUri, setDataUri] = useState<string>("");
+
+  useEffect(() => {
+    if (!pdfBlob) {
+      setDataUri("");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDataUri(reader.result as string);
+    };
+    reader.readAsDataURL(pdfBlob);
   }, [pdfBlob]);
 
-  if (!pdfBlob || !dataUrl) return null;
+  if (!pdfBlob) return null;
 
   return (
     <Dialog open onOpenChange={(open) => {
-      if (!open) {
-        URL.revokeObjectURL(dataUrl);
-        onClose();
-      }
+      if (!open) onClose();
     }}>
       <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
         <DialogHeader>
@@ -36,24 +42,18 @@ const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
           <DialogDescription>Podgląd wygenerowanego dokumentu PDF</DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <object
-            data={dataUrl}
-            type="application/pdf"
-            className="w-full h-full rounded border"
-          >
-            <p className="p-4 text-center text-muted-foreground">
-              Twoja przeglądarka nie obsługuje podglądu PDF.{" "}
-              <button className="underline text-primary" onClick={() => downloadBlob(pdfBlob, fileName)}>
-                Pobierz plik
-              </button>
-            </p>
-          </object>
+          {dataUri ? (
+            <embed
+              src={dataUri}
+              type="application/pdf"
+              className="w-full h-full rounded border"
+            />
+          ) : (
+            <Skeleton className="w-full h-full rounded" />
+          )}
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => {
-            URL.revokeObjectURL(dataUrl);
-            onClose();
-          }}>
+          <Button variant="outline" onClick={onClose}>
             <X className="mr-1.5 h-4 w-4" /> Zamknij
           </Button>
           <Button onClick={() => downloadBlob(pdfBlob, fileName)}>
