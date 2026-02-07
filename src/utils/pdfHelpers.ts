@@ -112,7 +112,6 @@ export function addTable(
       fontSize: 10,
       cellPadding: 2.5,
       overflow: "linebreak",
-      cellWidth: "wrap",
       minCellHeight: 8,
       valign: "middle",
       halign: "left",
