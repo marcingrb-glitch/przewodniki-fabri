@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addHeader, addSectionTitle, addTable, addInfoBox } from "@/utils/pdfHelpers";
+import { createDoc, addHeader, addSectionTitle, addTable, addInfoBox, toBlob } from "@/utils/pdfHelpers";
 
 export function generateSofaGuidePDF(decoded: DecodedSKU): Blob {
   const doc = createDoc("portrait", "a4");
@@ -108,5 +108,5 @@ export function generateSofaGuidePDF(decoded: DecodedSKU): Blob {
     }
   }
 
-  return doc.output("blob");
+  return toBlob(doc);
 }

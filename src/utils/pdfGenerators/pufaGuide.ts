@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addHeader, addSectionTitle, addTable } from "@/utils/pdfHelpers";
+import { createDoc, addHeader, addSectionTitle, addTable, toBlob } from "@/utils/pdfHelpers";
 import { SEATS_PUFA } from "@/data/mappings";
 
 export function generatePufaGuidePDF(decoded: DecodedSKU): Blob {
@@ -45,5 +45,5 @@ export function generatePufaGuidePDF(decoded: DecodedSKU): Blob {
     );
   }
 
-  return doc.output("blob");
+  return toBlob(doc);
 }

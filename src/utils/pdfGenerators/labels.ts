@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addLabel } from "@/utils/pdfHelpers";
+import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
 import { SEATS_PUFA } from "@/data/mappings";
 
 function seriesLine(decoded: DecodedSKU): string {
@@ -37,7 +37,7 @@ export function generateSofaLabelsPDF(decoded: DecodedSKU): Blob {
     addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga siedzisko: ${seatLeg.leg} H=${seatLeg.height}cm`, `Ilosc: ${seatLeg.count} szt`], false);
   }
 
-  return doc.output("blob");
+  return toBlob(doc);
 }
 
 export function generatePufaLabelsPDF(decoded: DecodedSKU): Blob {
@@ -57,7 +57,7 @@ export function generatePufaLabelsPDF(decoded: DecodedSKU): Blob {
     addLabel(doc, [s, `PUFA | Numer zam: ${orderNum}`, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilosc: 4 szt`], false);
   }
 
-  return doc.output("blob");
+  return toBlob(doc);
 }
 
 export function generateFotelLabelsPDF(decoded: DecodedSKU): Blob {
@@ -76,5 +76,5 @@ export function generateFotelLabelsPDF(decoded: DecodedSKU): Blob {
     addLabel(doc, [s, `FOTEL | Numer zam: ${orderNum}`, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilosc: 4 szt`], false);
   }
 
-  return doc.output("blob");
+  return toBlob(doc);
 }
