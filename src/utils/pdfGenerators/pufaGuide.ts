@@ -2,8 +2,8 @@ import { DecodedSKU } from "@/types";
 import { createDoc, addHeader, addSectionTitle, addTable, toBlob } from "@/utils/pdfHelpers";
 import { SEATS_PUFA } from "@/data/mappings";
 
-export function generatePufaGuidePDF(decoded: DecodedSKU): Blob {
-  const doc = createDoc("portrait", "a4");
+export async function generatePufaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
+  const doc = await createDoc("portrait", "a4");
   const seriesInfo = `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`;
   const orderNumber = decoded.orderNumber || "";
   const date = decoded.orderDate || "";
@@ -12,7 +12,7 @@ export function generatePufaGuidePDF(decoded: DecodedSKU): Blob {
 
   // SKU pufy
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Roboto", "normal");
   doc.text(`SKU: ${decoded.pufaSKU || ""}`, 15, y);
   y += 7;
 
@@ -20,7 +20,7 @@ export function generatePufaGuidePDF(decoded: DecodedSKU): Blob {
   const pufaSeat = SEATS_PUFA[decoded.seat.code];
   y = addSectionTitle(doc, "SIEDZISKO", y);
   y = addTable(doc, y,
-    ["Siedzisko", "Front/Tyl", "Boki", "Pianka bazowa"],
+    ["Siedzisko", "Front/Tył", "Boki", "Pianka bazowa"],
     [[
       `${decoded.seat.code} (${decoded.seat.finishName})`,
       pufaSeat?.frontBack || "-",
@@ -32,15 +32,15 @@ export function generatePufaGuidePDF(decoded: DecodedSKU): Blob {
   // Skrzynka
   y = addSectionTitle(doc, "SKRZYNKA", y);
   y = addTable(doc, y,
-    ["Skrzynka", "Wysokosc"],
+    ["Skrzynka", "Wysokość"],
     [[pufaSeat?.box || "-", pufaSeat?.box || "-"]]
   );
 
   // Nóżki
   if (decoded.legs) {
-    y = addSectionTitle(doc, "NOZKI", y);
+    y = addSectionTitle(doc, "NÓŻKI", y);
     y = addTable(doc, y,
-      ["Nozka", "Ilosc", "Wysokosc"],
+      ["Nóżka", "Ilość", "Wysokość"],
       [[`${decoded.legs.code}${decoded.legs.color || ""}`, "4 szt", "H 16cm"]]
     );
   }
