@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addHeader, addSectionTitle, addTable, toBlob } from "@/utils/pdfHelpers";
+import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
 
 export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const doc = await createDoc("portrait", "a4");
@@ -16,7 +16,6 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
   y += 7;
 
   // Siedzisko
-  y = addSectionTitle(doc, "SIEDZISKO", y);
   y = addTable(doc, y,
     ["Siedzisko", "Stelaż", "Pianka", "Front"],
     [[
@@ -28,7 +27,6 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
   );
 
   // Boczki
-  y = addSectionTitle(doc, "BOCZKI", y);
   y = addTable(doc, y,
     ["Boczek", "Stelaż", "Pianka"],
     [[
@@ -40,7 +38,6 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
 
   // Nóżki
   if (decoded.legs) {
-    y = addSectionTitle(doc, "NÓŻKI", y);
     y = addTable(doc, y,
       ["Nóżka", "Ilość", "Wysokość"],
       [[`${decoded.legs.code}${decoded.legs.color || ""}`, "4 szt", "H 16cm"]]
@@ -49,7 +46,6 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
 
   // Jaśki
   if (decoded.jaski) {
-    y = addSectionTitle(doc, "JAŚKI", y);
     y = addTable(doc, y,
       ["Jaśki", "Typ", "Wykończenie"],
       [[decoded.jaski.code, decoded.jaski.name, `${decoded.jaski.finish} (${decoded.jaski.finishName})`]]

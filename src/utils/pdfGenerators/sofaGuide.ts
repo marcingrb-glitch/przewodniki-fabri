@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addHeader, addSectionTitle, addTable, addInfoBox, toBlob } from "@/utils/pdfHelpers";
+import { createDoc, addHeader, addTable, addInfoBox, toBlob } from "@/utils/pdfHelpers";
 
 export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const doc = await createDoc("portrait", "a4");
@@ -10,7 +10,6 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   let y = addHeader(doc, orderNumber, seriesInfo, date);
 
   // Siedzisko
-  y = addSectionTitle(doc, "SIEDZISKO", y);
   y = addTable(doc, y,
     ["Siedzisko", "Stelaż", "Pianka", "Front", "Pasek środek"],
     [[
@@ -19,12 +18,10 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       decoded.seat.foam,
       decoded.seat.front,
       decoded.seat.midStrip ? "TAK" : "NIE",
-    ]],
-    { 0: { cellWidth: 35 }, 1: { cellWidth: 40 }, 2: { cellWidth: 50 }, 3: { cellWidth: 45 }, 4: { cellWidth: 20 } }
+    ]]
   );
 
   // Oparcie
-  y = addSectionTitle(doc, "OPARCIE", y);
   y = addTable(doc, y,
     ["Oparcie", "Stelaż", "Pianka", "Góra"],
     [[
@@ -32,36 +29,30 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       decoded.backrest.frame,
       decoded.backrest.foam,
       decoded.backrest.top,
-    ]],
-    { 0: { cellWidth: 40 }, 1: { cellWidth: 45 }, 2: { cellWidth: 55 }, 3: { cellWidth: 50 } }
+    ]]
   );
 
   // Boczek
-  y = addSectionTitle(doc, "BOCZEK", y);
   y = addTable(doc, y,
     ["Boczek", "Stelaż", "Pianka"],
     [[
       `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`,
       decoded.side.frame,
       "-",
-    ]],
-    { 0: { cellWidth: 50 }, 1: { cellWidth: 70 }, 2: { cellWidth: 70 } }
+    ]]
   );
 
   // Skrzynia + Automat
-  y = addSectionTitle(doc, "SKRZYNIA + AUTOMAT", y);
   y = addTable(doc, y,
     ["Skrzynia + Automat", "Skrzynia", "Automat"],
     [[
       `${decoded.chest.code} + ${decoded.automat.code}`,
       decoded.chest.name,
       `${decoded.automat.code} - ${decoded.automat.name}`,
-    ]],
-    { 0: { cellWidth: 60 }, 1: { cellWidth: 65 }, 2: { cellWidth: 65 } }
+    ]]
   );
 
   // Nóżka
-  y = addSectionTitle(doc, "NÓŻKA", y);
   const chestLeg = decoded.legHeights.sofa_chest;
   const seatLeg = decoded.legHeights.sofa_seat;
   y = addTable(doc, y,
@@ -70,13 +61,11 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : "-",
       chestLeg ? `${chestLeg.leg} H ${chestLeg.height}cm (${chestLeg.count} szt)` : "-",
       seatLeg ? `${seatLeg.leg} H ${seatLeg.height}cm (${seatLeg.count} szt)` : "BRAK",
-    ]],
-    { 0: { cellWidth: 40 }, 1: { cellWidth: 75 }, 2: { cellWidth: 75 } }
+    ]]
   );
 
   // Optional: Poduszki
   if (decoded.pillow) {
-    y = addSectionTitle(doc, "PODUSZKI OPARCIOWE", y);
     y = addTable(doc, y,
       ["Poduszka", "Typ", "Wykończenie"],
       [[decoded.pillow.code, decoded.pillow.name, `${decoded.pillow.finish} (${decoded.pillow.finishName})`]]
@@ -85,7 +74,6 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
   // Optional: Jaśki
   if (decoded.jaski) {
-    y = addSectionTitle(doc, "JAŚKI", y);
     y = addTable(doc, y,
       ["Jaśki", "Typ", "Wykończenie"],
       [[decoded.jaski.code, decoded.jaski.name, `${decoded.jaski.finish} (${decoded.jaski.finishName})`]]
@@ -94,7 +82,6 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
   // Optional: Wałek
   if (decoded.walek) {
-    y = addSectionTitle(doc, "WAŁKI", y);
     y = addTable(doc, y,
       ["Wałek", "Typ", "Wykończenie"],
       [[decoded.walek.code, decoded.walek.name, `${decoded.walek.finish} (${decoded.walek.finishName})`]]

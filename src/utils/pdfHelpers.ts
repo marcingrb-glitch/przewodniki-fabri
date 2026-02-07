@@ -59,41 +59,30 @@ export function addHeader(
   prefix?: string
 ) {
   const pageWidth = doc.internal.pageSize.getWidth();
-  const left = 20;
-  const right = pageWidth - 20;
+  const left = 15;
+  const right = pageWidth - 15;
 
   doc.setFontSize(12);
   doc.setFont("Roboto", "bold");
   doc.setTextColor(0, 0, 0);
   const title = prefix ? `${prefix} | NUMER ZAMÓWIENIA: ${orderNumber}` : `NUMER ZAMÓWIENIA: ${orderNumber}`;
-  doc.text(title, left, 20);
+  doc.text(title, left, 15);
 
   doc.setFontSize(11);
   doc.setFont("Roboto", "normal");
-  doc.text(`[${seriesInfo}]`, right, 20, { align: "right" });
+  doc.text(`[${seriesInfo}]`, right, 15, { align: "right" });
 
-  // Date - larger font, bold
+  // Date
   doc.setFontSize(12);
   doc.setFont("Roboto", "bold");
-  doc.text(`Data złożenia zamówienia: ${date}`, left, 32);
+  doc.text(`Data złożenia zamówienia: ${date}`, left, 23);
 
   doc.setFont("Roboto", "normal");
   doc.setTextColor(0, 0, 0);
-  return 45;
+  return 28;
 }
 
-export function addSectionTitle(doc: jsPDF, title: string, y: number): number {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  doc.setFontSize(11);
-  doc.setFont("Roboto", "bold");
-  doc.setTextColor(0, 0, 0);
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.7);
-  doc.rect(15, y, pageWidth - 30, 7);
-  doc.text(title, 18, y + 5);
-  doc.setFont("Roboto", "normal");
-  return y + 9;
-}
+// addSectionTitle removed - section names are in table headers
 
 export interface ColumnStyles {
   [key: string]: { cellWidth: number };
@@ -106,19 +95,25 @@ export function addTable(
   rows: string[][],
   columnStyles?: ColumnStyles,
 ): number {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const tableWidth = pageWidth - 2 * margin;
+
   autoTable(doc, {
     startY: y,
     head: [headers],
     body: rows,
     theme: "grid",
+    tableWidth: tableWidth,
+    margin: { left: margin, right: margin },
     columnStyles: columnStyles || {},
     styles: {
       font: "Roboto",
       fontSize: 9,
-      cellPadding: 3,
+      cellPadding: 2,
       overflow: "linebreak",
       cellWidth: "wrap",
-      minCellHeight: 10,
+      minCellHeight: 8,
       valign: "middle",
       halign: "left",
       textColor: [0, 0, 0],
@@ -141,7 +136,7 @@ export function addTable(
     },
   });
 
-  return (doc as any).lastAutoTable.finalY + 6;
+  return (doc as any).lastAutoTable.finalY + 4;
 }
 
 export function addInfoBox(doc: jsPDF, y: number, text: string): number {
