@@ -30,11 +30,11 @@ export async function generateSofaLabelsPDF(decoded: DecodedSKU): Promise<Blob> 
 
   // 6. Nóżki pod skrzynią
   const chestLegStr = chestLeg ? `${chestLeg.leg} H=${chestLeg.height}cm` : "N4 H=2.5cm";
-  addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga skrzynia: ${chestLegStr}`, `Ilość: ${chestLeg?.count || 4} szt`], false);
+  addLabel(doc, [s, `SOFA | Numer zam: ${orderNum}`, `Noga skrzynia: ${chestLegStr}`, `Ilość: ${chestLeg?.count || 4} szt`], false);
 
   // 7. Nóżki pod siedziskiem (only AT1)
   if (seatLeg) {
-    addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga siedzisko: ${seatLeg.leg} H=${seatLeg.height}cm`, `Ilość: ${seatLeg.count} szt`], false);
+    addLabel(doc, [s, `SOFA | Numer zam: ${orderNum}`, `Noga siedzisko: ${seatLeg.leg} H=${seatLeg.height}cm`, `Ilość: ${seatLeg.count} szt`], false);
   }
 
   return toBlob(doc);
