@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 let fontLoaded = false;
 let regularFontBase64: string | null = null;
@@ -96,7 +96,7 @@ export function addSectionTitle(doc: jsPDF, title: string, y: number): number {
 }
 
 export interface ColumnStyles {
-  [key: number]: { cellWidth: number };
+  [key: string]: { cellWidth: number };
 }
 
 export function addTable(
@@ -106,7 +106,7 @@ export function addTable(
   rows: string[][],
   columnStyles?: ColumnStyles,
 ): number {
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: y,
     head: [headers],
     body: rows,
@@ -116,11 +116,11 @@ export function addTable(
       font: "Roboto",
       fontSize: 9,
       cellPadding: 3,
-      overflow: "linebreak" as const,
-      cellWidth: "wrap" as const,
+      overflow: "linebreak",
+      cellWidth: "wrap",
       minCellHeight: 10,
-      valign: "middle" as const,
-      halign: "left" as const,
+      valign: "middle",
+      halign: "left",
       textColor: [0, 0, 0],
     },
     headStyles: {
