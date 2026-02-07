@@ -11,6 +11,7 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
 
   doc.setFontSize(9);
   doc.setFont("Roboto", "normal");
+  doc.setTextColor(0, 0, 0);
   doc.text(`SKU: ${decoded.fotelSKU || ""}`, 15, y);
   y += 7;
 

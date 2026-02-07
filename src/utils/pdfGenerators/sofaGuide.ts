@@ -19,7 +19,8 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       decoded.seat.foam,
       decoded.seat.front,
       decoded.seat.midStrip ? "TAK" : "NIE",
-    ]]
+    ]],
+    { 0: { cellWidth: 35 }, 1: { cellWidth: 40 }, 2: { cellWidth: 50 }, 3: { cellWidth: 45 }, 4: { cellWidth: 20 } }
   );
 
   // Oparcie
@@ -31,7 +32,8 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       decoded.backrest.frame,
       decoded.backrest.foam,
       decoded.backrest.top,
-    ]]
+    ]],
+    { 0: { cellWidth: 40 }, 1: { cellWidth: 45 }, 2: { cellWidth: 55 }, 3: { cellWidth: 50 } }
   );
 
   // Boczek
@@ -42,7 +44,8 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`,
       decoded.side.frame,
       "-",
-    ]]
+    ]],
+    { 0: { cellWidth: 50 }, 1: { cellWidth: 70 }, 2: { cellWidth: 70 } }
   );
 
   // Skrzynia + Automat
@@ -53,7 +56,8 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       `${decoded.chest.code} + ${decoded.automat.code}`,
       decoded.chest.name,
       `${decoded.automat.code} - ${decoded.automat.name}`,
-    ]]
+    ]],
+    { 0: { cellWidth: 60 }, 1: { cellWidth: 65 }, 2: { cellWidth: 65 } }
   );
 
   // Nóżka
@@ -66,7 +70,8 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : "-",
       chestLeg ? `${chestLeg.leg} H ${chestLeg.height}cm (${chestLeg.count} szt)` : "-",
       seatLeg ? `${seatLeg.leg} H ${seatLeg.height}cm (${seatLeg.count} szt)` : "BRAK",
-    ]]
+    ]],
+    { 0: { cellWidth: 40 }, 1: { cellWidth: 75 }, 2: { cellWidth: 75 } }
   );
 
   // Optional: Poduszki

@@ -13,6 +13,7 @@ export async function generatePufaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   // SKU pufy
   doc.setFontSize(9);
   doc.setFont("Roboto", "normal");
+  doc.setTextColor(0, 0, 0);
   doc.text(`SKU: ${decoded.pufaSKU || ""}`, 15, y);
   y += 7;
 
