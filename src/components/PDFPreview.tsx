@@ -41,12 +41,13 @@ const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>Podgląd wygenerowanego dokumentu PDF</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {dataUri ? (
-            <embed
+            <iframe
               src={dataUri}
-              type="application/pdf"
+              title={title}
               className="w-full h-full rounded border"
+              style={{ minHeight: 0 }}
             />
           ) : (
             <Skeleton className="w-full h-full rounded" />
