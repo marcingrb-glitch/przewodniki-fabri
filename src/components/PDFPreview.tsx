@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
@@ -14,33 +14,46 @@ interface PDFPreviewProps {
 }
 
 const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
-  const [blobUrl, setBlobUrl] = useState<string>("");
-
-  useEffect(() => {
-    if (pdfBlob) {
-      const url = URL.createObjectURL(pdfBlob);
-      setBlobUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
+  const dataUrl = useMemo(() => {
+    if (!pdfBlob) return "";
+    // Read blob as data URL synchronously isn't possible, 
+    // so we use createObjectURL which is synchronous
+    return URL.createObjectURL(pdfBlob);
   }, [pdfBlob]);
 
-  if (!pdfBlob) return null;
+  if (!pdfBlob || !dataUrl) return null;
 
   return (
-    <Dialog open={!!pdfBlob} onOpenChange={() => onClose()}>
+    <Dialog open onOpenChange={(open) => {
+      if (!open) {
+        URL.revokeObjectURL(dataUrl);
+        onClose();
+      }
+    }}>
       <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>Podgląd wygenerowanego dokumentu PDF</DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <iframe
-            src={blobUrl}
+          <object
+            data={dataUrl}
+            type="application/pdf"
             className="w-full h-full rounded border"
-            title={title}
-          />
+          >
+            <p className="p-4 text-center text-muted-foreground">
+              Twoja przeglądarka nie obsługuje podglądu PDF.{" "}
+              <button className="underline text-primary" onClick={() => downloadBlob(pdfBlob, fileName)}>
+                Pobierz plik
+              </button>
+            </p>
+          </object>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => {
+            URL.revokeObjectURL(dataUrl);
+            onClose();
+          }}>
             <X className="mr-1.5 h-4 w-4" /> Zamknij
           </Button>
           <Button onClick={() => downloadBlob(pdfBlob, fileName)}>
