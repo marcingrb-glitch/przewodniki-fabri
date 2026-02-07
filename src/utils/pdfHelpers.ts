@@ -169,17 +169,25 @@ export function addLabel(
   const contentWidth = 100 - (2 * margin);
   const contentHeight = 30 - (2 * margin);
 
-  // Black border
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.5);
-  doc.rect(margin, margin, contentWidth, contentHeight);
-
-  // Black text
+  // Black text, no border
   doc.setTextColor(0, 0, 0);
   doc.setFont("Roboto", "bold");
-  doc.setFontSize(8);
 
-  const lineHeight = 5;
+  // Calculate optimal font size based on available space
+  const maxLineHeight = contentHeight / lines.length;
+  // Start with a larger size and scale down if needed
+  let fontSize = Math.min(12, maxLineHeight * 1.8);
+
+  // Check if all lines fit width-wise, reduce font if needed
+  let fits = false;
+  while (!fits && fontSize > 6) {
+    doc.setFontSize(fontSize);
+    fits = lines.every(line => doc.getTextWidth(line) <= contentWidth);
+    if (!fits) fontSize -= 0.5;
+  }
+
+  doc.setFontSize(fontSize);
+  const lineHeight = fontSize * 0.5;
   const totalTextHeight = lines.length * lineHeight;
   let startY = margin + (contentHeight - totalTextHeight) / 2 + lineHeight * 0.7;
   if (startY < margin + lineHeight * 0.7) startY = margin + lineHeight * 0.7;
