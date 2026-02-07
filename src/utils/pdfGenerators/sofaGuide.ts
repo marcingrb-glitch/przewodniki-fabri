@@ -9,6 +9,13 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
   let y = addHeader(doc, orderNumber, seriesInfo, date);
 
+  // SKU zamówienia
+  doc.setFontSize(9);
+  doc.setFont("Roboto", "normal");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`SKU: ${decoded.rawSKU || ""}`, 15, y);
+  y += 7;
+
   // Siedzisko
   y = addTable(doc, y,
     ["Siedzisko", "Stelaż", "Pianka", "Front", "Pasek środek"],
