@@ -88,16 +88,21 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     );
   }
 
-  // Extras info
+  // Extras table: "Do zamówienia jest" | PUFA | FOTEL
   const hasPufa = decoded.extras.some(e => e.type === "pufa");
   const hasFotel = decoded.extras.some(e => e.type === "fotel");
   if (hasPufa || hasFotel) {
+    const extrasHeaders = ["Do zamówienia jest"];
+    const extrasRow: string[] = [""];
     if (hasPufa) {
-      y = addInfoBox(doc, y, "Do zamówienia jest PUFA");
+      extrasHeaders.push("PUFA");
+      extrasRow.push(decoded.pufaSKU || "-");
     }
     if (hasFotel) {
-      y = addInfoBox(doc, y, "Do zamówienia jest FOTEL");
+      extrasHeaders.push("FOTEL");
+      extrasRow.push(decoded.fotelSKU || "-");
     }
+    y = addTable(doc, y, extrasHeaders, [extrasRow]);
   }
 
   return toBlob(doc);

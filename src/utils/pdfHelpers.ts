@@ -109,8 +109,8 @@ export function addTable(
     columnStyles: columnStyles || {},
     styles: {
       font: "Roboto",
-      fontSize: 9,
-      cellPadding: 2,
+      fontSize: 10,
+      cellPadding: 2.5,
       overflow: "linebreak",
       cellWidth: "wrap",
       minCellHeight: 8,
@@ -122,13 +122,13 @@ export function addTable(
       fillColor: [255, 255, 255],
       textColor: [0, 0, 0],
       fontStyle: "bold",
-      lineWidth: 0.7,
+      lineWidth: 0.3,
       lineColor: [0, 0, 0],
     },
     bodyStyles: {
       fillColor: [255, 255, 255],
       textColor: [0, 0, 0],
-      lineWidth: 0.5,
+      lineWidth: 0.3,
       lineColor: [0, 0, 0],
     },
     alternateRowStyles: {
@@ -136,7 +136,7 @@ export function addTable(
     },
   });
 
-  return (doc as any).lastAutoTable.finalY + 4;
+  return (doc as any).lastAutoTable.finalY + 8;
 }
 
 export function addInfoBox(doc: jsPDF, y: number, text: string): number {
