@@ -47,7 +47,7 @@ const OrderDetailsPage = () => {
   const withLoading = async (key: string, fn: () => Promise<void>) => {
     setLoading(key);
     try { await fn(); } catch (err: unknown) {
-      toast.error(`❌ ${err instanceof Error ? err.message : "Blad"}`);
+      toast.error(`❌ ${err instanceof Error ? err.message : "Błąd"}`);
     } finally { setLoading(null); }
   };
 
@@ -79,8 +79,8 @@ const OrderDetailsPage = () => {
     return (
       <Card className="shadow-md">
         <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground">Nie znaleziono danych zamowienia.</p>
-          <Button variant="link" onClick={() => navigate("/")}>Wroc do strony glownej</Button>
+          <p className="text-muted-foreground">Nie znaleziono danych zamówienia.</p>
+          <Button variant="link" onClick={() => navigate("/")}>Wróć do strony głównej</Button>
         </CardContent>
       </Card>
     );
@@ -106,7 +106,7 @@ const OrderDetailsPage = () => {
         <CardHeader>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-2xl">ZAMOWIENIE: {orderNumber}</CardTitle>
+              <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
               </p>
@@ -132,20 +132,20 @@ const OrderDetailsPage = () => {
                 <div className="space-y-2 text-sm">
                   <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`} />
                   <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, kolor ${decoded.fabric.colorName}`} />
-                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}, wykonczenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
-                  <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykonczenie ${decoded.side.finishName}`} />
-                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm, wykonczenie ${decoded.backrest.finishName}`} />
+                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
+                  <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykończenie ${decoded.side.finishName}`} />
+                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm, wykończenie ${decoded.backrest.finishName}`} />
                   <InfoRow label="Skrzynia" value={decoded.chest.code} />
                   <InfoRow label="Automat" value={`${decoded.automat.code} - ${decoded.automat.name}`} />
-                  {decoded.legs && <InfoRow label="Nozki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
+                  {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
                   {decoded.pillow && <InfoRow label="Poduszka" value={`${decoded.pillow.code} - ${decoded.pillow.name}`} />}
-                  {decoded.jaski && <InfoRow label="Jaski" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
-                  {decoded.walek && <InfoRow label="Walek" value={decoded.walek.code} />}
+                  {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
+                  {decoded.walek && <InfoRow label="Wałek" value={decoded.walek.code} />}
                   <div className="mt-3 border-t pt-3">
-                    <p className="font-semibold mb-1">Nozki sofy:</p>
+                    <p className="font-semibold mb-1">Nóżki sofy:</p>
                     {decoded.legHeights.sofa_chest
-                      ? <InfoRow label="Pod skrzynia" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
-                      : <InfoRow label="Pod skrzynia" value="BRAK" />}
+                      ? <InfoRow label="Pod skrzynią" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
+                      : <InfoRow label="Pod skrzynią" value="BRAK" />}
                     {decoded.legHeights.sofa_seat
                       ? <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
                       : <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />}
@@ -155,10 +155,10 @@ const OrderDetailsPage = () => {
             </AccordionItem>
           </Accordion>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ActionBtn icon={Eye} label="Podglad przewodnika" loadKey="sofa-preview" onClick={async () => preview(generateSofaGuidePDF(decoded), "Przewodnik Sofy", `sofa_przewodnik_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="sofa-dl" onClick={async () => downloadAndSave(generateSofaGuidePDF(decoded), `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide")} />
-            <ActionBtn icon={Eye} label="Podglad etykiet" loadKey="sofa-labels-preview" onClick={async () => preview(generateSofaLabelsPDF(decoded), "Etykiety Sofy", `sofa_etykiety_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
+            <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="sofa-preview" onClick={async () => preview(await generateSofaGuidePDF(decoded), "Przewodnik Sofy", `sofa_przewodnik_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="sofa-dl" onClick={async () => downloadAndSave(await generateSofaGuidePDF(decoded), `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide")} />
+            <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="sofa-labels-preview" onClick={async () => preview(await generateSofaLabelsPDF(decoded), "Etykiety Sofy", `sofa_etykiety_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
           </div>
         </CardContent>
       </Card>
@@ -179,21 +179,21 @@ const OrderDetailsPage = () => {
                     <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`} />
                     <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}`} />
                     {pufaSeat && <>
-                      <InfoRow label="Front/Tyl" value={pufaSeat.frontBack} />
+                      <InfoRow label="Front/Tył" value={pufaSeat.frontBack} />
                       <InfoRow label="Boki" value={pufaSeat.sides} />
                       <InfoRow label="Pianka bazowa" value={pufaSeat.foam} />
                       <InfoRow label="Skrzynka" value={pufaSeat.box} />
                     </>}
-                    {decoded.legs && <InfoRow label="Nozki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
+                    {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
-              <ActionBtn icon={Eye} label="Podglad przewodnika" loadKey="pufa-preview" onClick={async () => preview(generatePufaGuidePDF(decoded), "Przewodnik Pufy", `pufa_przewodnik_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="pufa-dl" onClick={async () => downloadAndSave(generatePufaGuidePDF(decoded), `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide")} />
-              <ActionBtn icon={Eye} label="Podglad etykiet" loadKey="pufa-labels-preview" onClick={async () => preview(generatePufaLabelsPDF(decoded), "Etykiety Pufy", `pufa_etykiety_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
+              <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="pufa-preview" onClick={async () => preview(await generatePufaGuidePDF(decoded), "Przewodnik Pufy", `pufa_przewodnik_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="pufa-dl" onClick={async () => downloadAndSave(await generatePufaGuidePDF(decoded), `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide")} />
+              <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="pufa-labels-preview" onClick={async () => preview(await generatePufaLabelsPDF(decoded), "Etykiety Pufy", `pufa_etykiety_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(await generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
             </div>
           </CardContent>
         </Card>
@@ -215,17 +215,17 @@ const OrderDetailsPage = () => {
                     <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`} />
                     <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}`} />
                     <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}`} />
-                    {decoded.jaski && <InfoRow label="Jaski" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
-                    {decoded.legs && <InfoRow label="Nozki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
+                    {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
+                    {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
-              <ActionBtn icon={Eye} label="Podglad przewodnika" loadKey="fotel-preview" onClick={async () => preview(generateFotelGuidePDF(decoded), "Przewodnik Fotela", `fotel_przewodnik_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="fotel-dl" onClick={async () => downloadAndSave(generateFotelGuidePDF(decoded), `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")} />
-              <ActionBtn icon={Eye} label="Podglad etykiet" loadKey="fotel-labels-preview" onClick={async () => preview(generateFotelLabelsPDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
+              <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="fotel-preview" onClick={async () => preview(await generateFotelGuidePDF(decoded), "Przewodnik Fotela", `fotel_przewodnik_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="fotel-dl" onClick={async () => downloadAndSave(await generateFotelGuidePDF(decoded), `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")} />
+              <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="fotel-labels-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
             </div>
           </CardContent>
         </Card>
@@ -238,8 +238,8 @@ const OrderDetailsPage = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <ActionBtn icon={Eye} label="Podglad dekodowania" loadKey="decode-preview" onClick={async () => preview(generateDecodingPDF(decoded), "Dekodowanie SKU", `dekodowanie_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="decode-dl" onClick={async () => downloadAndSave(generateDecodingPDF(decoded), `dekodowanie_${orderNumber}.pdf`, "decoding")} />
+            <ActionBtn icon={Eye} label="Podgląd dekodowania" loadKey="decode-preview" onClick={async () => preview(await generateDecodingPDF(decoded), "Dekodowanie SKU", `dekodowanie_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="decode-dl" onClick={async () => downloadAndSave(await generateDecodingPDF(decoded), `dekodowanie_${orderNumber}.pdf`, "decoding")} />
           </div>
         </CardContent>
       </Card>
@@ -251,12 +251,10 @@ const OrderDetailsPage = () => {
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
           <ActionBtn icon={FileText} label="Pobierz wszystkie przewodniki" loadKey="all-guides" onClick={async () => {
-            // Merge all guide pages into one PDF by downloading separately
             const blobs: { name: string; blob: Blob }[] = [];
-            blobs.push({ name: "sofa_przewodnik.pdf", blob: generateSofaGuidePDF(decoded) });
-            if (hasPufa) blobs.push({ name: "pufa_przewodnik.pdf", blob: generatePufaGuidePDF(decoded) });
-            if (hasFotel) blobs.push({ name: "fotel_przewodnik.pdf", blob: generateFotelGuidePDF(decoded) });
-            // For simplicity, zip all guides
+            blobs.push({ name: "sofa_przewodnik.pdf", blob: await generateSofaGuidePDF(decoded) });
+            if (hasPufa) blobs.push({ name: "pufa_przewodnik.pdf", blob: await generatePufaGuidePDF(decoded) });
+            if (hasFotel) blobs.push({ name: "fotel_przewodnik.pdf", blob: await generateFotelGuidePDF(decoded) });
             const zip = new JSZip();
             blobs.forEach(b => zip.file(b.name, b.blob));
             const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -265,9 +263,9 @@ const OrderDetailsPage = () => {
           }} />
           <ActionBtn icon={Tag} label="Pobierz wszystkie etykiety" loadKey="all-labels" onClick={async () => {
             const blobs: { name: string; blob: Blob }[] = [];
-            blobs.push({ name: "sofa_etykiety.pdf", blob: generateSofaLabelsPDF(decoded) });
-            if (hasPufa) blobs.push({ name: "pufa_etykiety.pdf", blob: generatePufaLabelsPDF(decoded) });
-            if (hasFotel) blobs.push({ name: "fotel_etykiety.pdf", blob: generateFotelLabelsPDF(decoded) });
+            blobs.push({ name: "sofa_etykiety.pdf", blob: await generateSofaLabelsPDF(decoded) });
+            if (hasPufa) blobs.push({ name: "pufa_etykiety.pdf", blob: await generatePufaLabelsPDF(decoded) });
+            if (hasFotel) blobs.push({ name: "fotel_etykiety.pdf", blob: await generateFotelLabelsPDF(decoded) });
             const zip = new JSZip();
             blobs.forEach(b => zip.file(b.name, b.blob));
             const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -276,24 +274,24 @@ const OrderDetailsPage = () => {
           }} />
           <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
             const zip = new JSZip();
-            zip.file("sofa_przewodnik.pdf", generateSofaGuidePDF(decoded));
-            zip.file("sofa_etykiety.pdf", generateSofaLabelsPDF(decoded));
+            zip.file("sofa_przewodnik.pdf", await generateSofaGuidePDF(decoded));
+            zip.file("sofa_etykiety.pdf", await generateSofaLabelsPDF(decoded));
             if (hasPufa) {
-              zip.file("pufa_przewodnik.pdf", generatePufaGuidePDF(decoded));
-              zip.file("pufa_etykiety.pdf", generatePufaLabelsPDF(decoded));
+              zip.file("pufa_przewodnik.pdf", await generatePufaGuidePDF(decoded));
+              zip.file("pufa_etykiety.pdf", await generatePufaLabelsPDF(decoded));
             }
             if (hasFotel) {
-              zip.file("fotel_przewodnik.pdf", generateFotelGuidePDF(decoded));
-              zip.file("fotel_etykiety.pdf", generateFotelLabelsPDF(decoded));
+              zip.file("fotel_przewodnik.pdf", await generateFotelGuidePDF(decoded));
+              zip.file("fotel_etykiety.pdf", await generateFotelLabelsPDF(decoded));
             }
-            zip.file("dekodowanie.pdf", generateDecodingPDF(decoded));
+            zip.file("dekodowanie.pdf", await generateDecodingPDF(decoded));
             const zipBlob = await zip.generateAsync({ type: "blob" });
             downloadBlob(zipBlob, `zamowienie_${orderNumber}.zip`);
             toast.success("✅ Pobrano kompletny pakiet");
           }} />
           <div className="flex-1" />
           <Button variant="outline" onClick={() => navigate("/")} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Nowe zamowienie
+            <ArrowLeft className="h-4 w-4" /> Nowe zamówienie
           </Button>
         </CardContent>
       </Card>

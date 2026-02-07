@@ -1,8 +1,8 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addHeader, addSectionTitle, addTable, toBlob } from "@/utils/pdfHelpers";
 
-export function generateFotelGuidePDF(decoded: DecodedSKU): Blob {
-  const doc = createDoc("portrait", "a4");
+export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> {
+  const doc = await createDoc("portrait", "a4");
   const seriesInfo = `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`;
   const orderNumber = decoded.orderNumber || "";
   const date = decoded.orderDate || "";
@@ -10,14 +10,14 @@ export function generateFotelGuidePDF(decoded: DecodedSKU): Blob {
   let y = addHeader(doc, orderNumber, seriesInfo, date, "FOTEL");
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Roboto", "normal");
   doc.text(`SKU: ${decoded.fotelSKU || ""}`, 15, y);
   y += 7;
 
-  // Siedzisko (same as sofa)
+  // Siedzisko
   y = addSectionTitle(doc, "SIEDZISKO", y);
   y = addTable(doc, y,
-    ["Siedzisko", "Stelaz", "Pianka", "Front"],
+    ["Siedzisko", "Stelaż", "Pianka", "Front"],
     [[
       `${decoded.seat.code} (${decoded.seat.finishName})`,
       decoded.seat.frame,
@@ -29,7 +29,7 @@ export function generateFotelGuidePDF(decoded: DecodedSKU): Blob {
   // Boczki
   y = addSectionTitle(doc, "BOCZKI", y);
   y = addTable(doc, y,
-    ["Boczek", "Stelaz", "Pianka"],
+    ["Boczek", "Stelaż", "Pianka"],
     [[
       `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`,
       decoded.side.frame,
@@ -39,18 +39,18 @@ export function generateFotelGuidePDF(decoded: DecodedSKU): Blob {
 
   // Nóżki
   if (decoded.legs) {
-    y = addSectionTitle(doc, "NOZKI", y);
+    y = addSectionTitle(doc, "NÓŻKI", y);
     y = addTable(doc, y,
-      ["Nozka", "Ilosc", "Wysokosc"],
+      ["Nóżka", "Ilość", "Wysokość"],
       [[`${decoded.legs.code}${decoded.legs.color || ""}`, "4 szt", "H 16cm"]]
     );
   }
 
   // Jaśki
   if (decoded.jaski) {
-    y = addSectionTitle(doc, "JASKI", y);
+    y = addSectionTitle(doc, "JAŚKI", y);
     y = addTable(doc, y,
-      ["Jaski", "Typ", "Wykonczenie"],
+      ["Jaśki", "Typ", "Wykończenie"],
       [[decoded.jaski.code, decoded.jaski.name, `${decoded.jaski.finish} (${decoded.jaski.finishName})`]]
     );
   }

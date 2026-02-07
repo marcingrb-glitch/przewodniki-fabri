@@ -6,8 +6,8 @@ function seriesLine(decoded: DecodedSKU): string {
   return `[${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]]`;
 }
 
-export function generateSofaLabelsPDF(decoded: DecodedSKU): Blob {
-  const doc = createDoc("landscape", [100, 30]);
+export async function generateSofaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
+  const doc = await createDoc("landscape", [100, 30]);
   const s = seriesLine(decoded);
   const orderNum = decoded.orderNumber || "";
   const chestLeg = decoded.legHeights.sofa_chest;
@@ -30,18 +30,18 @@ export function generateSofaLabelsPDF(decoded: DecodedSKU): Blob {
 
   // 6. Nóżki pod skrzynią
   const chestLegStr = chestLeg ? `${chestLeg.leg} H=${chestLeg.height}cm` : "N4 H=2.5cm";
-  addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga skrzynia: ${chestLegStr}`, `Ilosc: ${chestLeg?.count || 4} szt`], false);
+  addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga skrzynia: ${chestLegStr}`, `Ilość: ${chestLeg?.count || 4} szt`], false);
 
   // 7. Nóżki pod siedziskiem (only AT1)
   if (seatLeg) {
-    addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga siedzisko: ${seatLeg.leg} H=${seatLeg.height}cm`, `Ilosc: ${seatLeg.count} szt`], false);
+    addLabel(doc, [s, `Numer zam: ${orderNum}`, `Noga siedzisko: ${seatLeg.leg} H=${seatLeg.height}cm`, `Ilość: ${seatLeg.count} szt`], false);
   }
 
   return toBlob(doc);
 }
 
-export function generatePufaLabelsPDF(decoded: DecodedSKU): Blob {
-  const doc = createDoc("landscape", [100, 30]);
+export async function generatePufaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
+  const doc = await createDoc("landscape", [100, 30]);
   const s = seriesLine(decoded);
   const orderNum = decoded.orderNumber || "";
   const pufaSeat = SEATS_PUFA[decoded.seat.code];
@@ -54,14 +54,14 @@ export function generatePufaLabelsPDF(decoded: DecodedSKU): Blob {
 
   // 3. Nóżki
   if (decoded.legs) {
-    addLabel(doc, [s, `PUFA | Numer zam: ${orderNum}`, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilosc: 4 szt`], false);
+    addLabel(doc, [s, `PUFA | Numer zam: ${orderNum}`, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilość: 4 szt`], false);
   }
 
   return toBlob(doc);
 }
 
-export function generateFotelLabelsPDF(decoded: DecodedSKU): Blob {
-  const doc = createDoc("landscape", [100, 30]);
+export async function generateFotelLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
+  const doc = await createDoc("landscape", [100, 30]);
   const s = seriesLine(decoded);
   const orderNum = decoded.orderNumber || "";
 
@@ -73,7 +73,7 @@ export function generateFotelLabelsPDF(decoded: DecodedSKU): Blob {
 
   // 3. Nóżki
   if (decoded.legs) {
-    addLabel(doc, [s, `FOTEL | Numer zam: ${orderNum}`, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilosc: 4 szt`], false);
+    addLabel(doc, [s, `FOTEL | Numer zam: ${orderNum}`, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilość: 4 szt`], false);
   }
 
   return toBlob(doc);
