@@ -9,6 +9,15 @@ interface OrderInsert {
   decoded_data: DecodedSKU;
 }
 
+export async function checkOrderNumberExists(orderNumber: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("order_number", orderNumber)
+    .maybeSingle();
+  return !!data;
+}
+
 export async function saveOrder(data: OrderInsert) {
   const { data: result, error } = await supabase
     .from("orders")
