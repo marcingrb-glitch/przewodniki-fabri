@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { parseSKU } from "@/utils/skuParser";
 import { validateSKU } from "@/utils/skuValidator";
 import { decodeSKU } from "@/utils/skuDecoder";
+import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder } from "@/utils/supabaseQueries";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -48,13 +49,23 @@ const OrderForm = () => {
       // 2. Parse
       const parsed = parseSKU(sku);
 
-      // 3. Decode
+      // 3. Validate finishes against DB
+      try {
+        const finishWarnings = await validateFinishesFromDB(parsed);
+        finishWarnings.forEach((w) =>
+          toast.warning(`⚠️ ${w.component} ${w.code} ma wykończenie ${w.finish}, ale dozwolone są: ${w.allowed.join(', ')}`)
+        );
+      } catch {
+        // Non-blocking — continue even if DB check fails
+      }
+
+      // 4. Decode
       const decoded = decodeSKU(parsed);
       decoded.orderNumber = orderNumber;
       decoded.orderDate = format(orderDate, "dd.MM.yyyy");
       decoded.rawSKU = sku.trim().toUpperCase();
 
-      // 4. Save to DB
+      // 5. Save to DB
       const saved = await saveOrder({
         order_number: orderNumber,
         order_date: format(orderDate, "yyyy-MM-dd"),
@@ -66,7 +77,7 @@ const OrderForm = () => {
       toast.success("✅ Zamówienie zdekodowane pomyślnie");
       queryClient.invalidateQueries({ queryKey: ["recent-orders"] });
 
-      // 5. Navigate to details
+      // 6. Navigate to details
       navigate(`/order/${saved?.id}`, { state: { decoded } });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Nieznany błąd";
