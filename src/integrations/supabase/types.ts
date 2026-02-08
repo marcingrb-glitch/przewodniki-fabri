@@ -14,6 +14,240 @@ export type Database = {
   }
   public: {
     Tables: {
+      automats: {
+        Row: {
+          code: string
+          created_at: string
+          has_seat_legs: boolean
+          id: string
+          name: string
+          type: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          has_seat_legs?: boolean
+          id?: string
+          name: string
+          type?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          has_seat_legs?: boolean
+          id?: string
+          name?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
+      backrests: {
+        Row: {
+          code: string
+          created_at: string
+          foam: string | null
+          frame: string | null
+          height_cm: string | null
+          id: string
+          series_id: string
+          top: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          foam?: string | null
+          frame?: string | null
+          height_cm?: string | null
+          id?: string
+          series_id: string
+          top?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          foam?: string | null
+          frame?: string | null
+          height_cm?: string | null
+          id?: string
+          series_id?: string
+          top?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backrests_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chests: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          leg_height_cm: number
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          leg_height_cm?: number
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          leg_height_cm?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      extras: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          series_id: string
+          type: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          series_id: string
+          type?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          series_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extras_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fabrics: {
+        Row: {
+          code: string
+          colors: Json
+          created_at: string
+          id: string
+          name: string
+          price_group: number
+        }
+        Insert: {
+          code: string
+          colors?: Json
+          created_at?: string
+          id?: string
+          name: string
+          price_group?: number
+        }
+        Update: {
+          code?: string
+          colors?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          price_group?: number
+        }
+        Relationships: []
+      }
+      finishes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      jaskis: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      legs: {
+        Row: {
+          code: string
+          colors: Json
+          created_at: string
+          id: string
+          material: string | null
+          name: string
+          series_id: string
+        }
+        Insert: {
+          code: string
+          colors?: Json
+          created_at?: string
+          id?: string
+          material?: string | null
+          name: string
+          series_id: string
+        }
+        Update: {
+          code?: string
+          colors?: Json
+          created_at?: string
+          id?: string
+          material?: string | null
+          name?: string
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legs_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_files: {
         Row: {
           created_at: string
@@ -76,6 +310,195 @@ export type Database = {
           order_number?: string
           series_code?: string | null
           sku?: string
+        }
+        Relationships: []
+      }
+      pillows: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      seats_pufa: {
+        Row: {
+          base_foam: string | null
+          box_height: string | null
+          code: string
+          created_at: string
+          front_back: string | null
+          id: string
+          series_id: string
+          sides: string | null
+        }
+        Insert: {
+          base_foam?: string | null
+          box_height?: string | null
+          code: string
+          created_at?: string
+          front_back?: string | null
+          id?: string
+          series_id: string
+          sides?: string | null
+        }
+        Update: {
+          base_foam?: string | null
+          box_height?: string | null
+          code?: string
+          created_at?: string
+          front_back?: string | null
+          id?: string
+          series_id?: string
+          sides?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seats_pufa_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seats_sofa: {
+        Row: {
+          center_strip: boolean
+          code: string
+          created_at: string
+          default_finish: string | null
+          foam: string | null
+          frame: string | null
+          front: string | null
+          id: string
+          series_id: string
+          type: string | null
+        }
+        Insert: {
+          center_strip?: boolean
+          code: string
+          created_at?: string
+          default_finish?: string | null
+          foam?: string | null
+          frame?: string | null
+          front?: string | null
+          id?: string
+          series_id: string
+          type?: string | null
+        }
+        Update: {
+          center_strip?: boolean
+          code?: string
+          created_at?: string
+          default_finish?: string | null
+          foam?: string | null
+          frame?: string | null
+          front?: string | null
+          id?: string
+          series_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seats_sofa_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      series: {
+        Row: {
+          code: string
+          collection: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          collection?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          collection?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      sides: {
+        Row: {
+          code: string
+          created_at: string
+          frame: string | null
+          id: string
+          name: string
+          series_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          frame?: string | null
+          id?: string
+          name: string
+          series_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          frame?: string | null
+          id?: string
+          name?: string
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sides_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waleks: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
