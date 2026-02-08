@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface FieldDefinition {
   name: string;
   label: string;
-  type: "text" | "number" | "select" | "json" | "textarea" | "boolean" | "colors";
+  type: "text" | "number" | "select" | "json" | "textarea" | "boolean" | "colors" | "multi-select";
   required?: boolean;
   options?: { value: string; label: string }[];
   hidden?: boolean;
@@ -79,13 +80,14 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
     if (open) {
       const initial: Record<string, any> = {};
       fields.forEach((f) => {
-        if (initialData && initialData[f.name] !== undefined) {
-          if (f.type === "json") initial[f.name] = JSON.stringify(initialData[f.name], null, 2);
-          else if (f.type === "colors") initial[f.name] = Array.isArray(initialData[f.name]) ? initialData[f.name] : [];
-          else initial[f.name] = initialData[f.name];
-        } else {
-          initial[f.name] = f.type === "number" ? "" : f.type === "boolean" ? "false" : f.type === "colors" ? [] : "";
-        }
+          if (initialData && initialData[f.name] !== undefined) {
+            if (f.type === "json") initial[f.name] = JSON.stringify(initialData[f.name], null, 2);
+            else if (f.type === "colors") initial[f.name] = Array.isArray(initialData[f.name]) ? initialData[f.name] : [];
+            else if (f.type === "multi-select") initial[f.name] = Array.isArray(initialData[f.name]) ? initialData[f.name] : [];
+            else initial[f.name] = initialData[f.name];
+          } else {
+            initial[f.name] = f.type === "number" ? "" : f.type === "boolean" ? "false" : (f.type === "colors" || f.type === "multi-select") ? [] : "";
+          }
       });
       setFormData(initial);
       setErrors({});
@@ -110,6 +112,15 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
           if (err) { newErrors[f.name] = err; continue; }
         }
         result[f.name] = [...colorsVal].sort((a, b) => a.code.localeCompare(b.code));
+        continue;
+      }
+      if (f.type === "multi-select") {
+        const arrVal = (val as string[]) || [];
+        if (f.required && arrVal.length === 0) {
+          newErrors[f.name] = "Wybierz przynajmniej jedną opcję";
+          continue;
+        }
+        result[f.name] = arrVal;
         continue;
       }
       if (f.required && (val === "" || val === undefined || val === null)) {
@@ -141,6 +152,24 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
               <Label>{f.label}{f.required && " *"}</Label>
               {f.type === "colors" ? (
                 <ColorsListEditor value={formData[f.name] || []} onChange={(c) => handleChange(f.name, c)} error={errors[f.name]} />
+              ) : f.type === "multi-select" ? (
+                <div className="border rounded-md p-3 space-y-2">
+                  {f.options?.map((o) => (
+                    <div key={o.value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`${f.name}-${o.value}`}
+                        checked={Array.isArray(formData[f.name]) && formData[f.name].includes(o.value)}
+                        onCheckedChange={(checked) => {
+                          const current = Array.isArray(formData[f.name]) ? formData[f.name] : [];
+                          const updated = checked ? [...current, o.value] : current.filter((v: string) => v !== o.value);
+                          handleChange(f.name, updated);
+                        }}
+                      />
+                      <label htmlFor={`${f.name}-${o.value}`} className="text-sm cursor-pointer">{o.label}</label>
+                    </div>
+                  ))}
+                  {errors[f.name] && <p className="text-sm text-destructive">{errors[f.name]}</p>}
+                </div>
               ) : f.type === "select" ? (
                 <Select value={formData[f.name] ?? ""} onValueChange={(v) => handleChange(f.name, v)}>
                   <SelectTrigger><SelectValue placeholder="Wybierz..." /></SelectTrigger>

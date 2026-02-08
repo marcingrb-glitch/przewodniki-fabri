@@ -11,6 +11,7 @@ const columns = [
   { key: "front", label: "Front" },
   { key: "center_strip", label: "Pasek środek", render: (v: boolean) => v ? "TAK" : "NIE" },
   { key: "default_finish", label: "Wykończenie" },
+  { key: "allowed_finishes", label: "Możliwe wykończenia", render: (v: string[]) => Array.isArray(v) ? v.join(", ") : "-" },
 ];
 
 const fields: FieldDefinition[] = [
@@ -21,6 +22,12 @@ const fields: FieldDefinition[] = [
   { name: "front", label: "Front", type: "text" },
   { name: "center_strip", label: "Pasek środek", type: "boolean" },
   { name: "default_finish", label: "Domyślne wykończenie", type: "text" },
+  { name: "allowed_finishes", label: "Możliwe wykończenia", type: "multi-select", required: true, options: [
+    { value: "A", label: "A (Stebnówka)" },
+    { value: "B", label: "B (Szczypanka)" },
+    { value: "C", label: "C (Dwuigłówka)" },
+    { value: "D", label: "D (Zwykły)" },
+  ]},
 ];
 
 export default function SeatsSofa() {
