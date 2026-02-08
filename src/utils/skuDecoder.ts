@@ -5,6 +5,20 @@ import {
   FINISHES, DEFAULT_FINISHES,
 } from "@/data/mappings";
 
+export function validateFinish(
+  componentType: string,
+  componentCode: string,
+  finish: string,
+  allowedFinishes?: string[]
+): void {
+  if (!allowedFinishes || allowedFinishes.length === 0) return;
+  if (!allowedFinishes.includes(finish)) {
+    console.warn(
+      `⚠️ Wykończenie ${finish} nie jest dozwolone dla ${componentType} ${componentCode}. Dozwolone: ${allowedFinishes.join(', ')}`
+    );
+  }
+}
+
 export function decodeSKU(parsed: ParsedSKU): DecodedSKU {
   // Series
   const seriesData = SERIES[parsed.series] || { name: "Nieznana", collection: "?" };

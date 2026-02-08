@@ -9,6 +9,7 @@ const columns = [
   { key: "frame", label: "Stelaż" },
   { key: "foam", label: "Pianka" },
   { key: "top", label: "Góra" },
+  { key: "allowed_finishes", label: "Możliwe wykończenia", render: (v: string[]) => Array.isArray(v) ? v.join(", ") : "-" },
 ];
 
 const fields: FieldDefinition[] = [
@@ -17,6 +18,11 @@ const fields: FieldDefinition[] = [
   { name: "frame", label: "Stelaż", type: "text" },
   { name: "foam", label: "Pianka", type: "text" },
   { name: "top", label: "Góra", type: "text" },
+  { name: "allowed_finishes", label: "Możliwe wykończenia", type: "multi-select", required: true, options: [
+    { value: "A", label: "A (Stebnówka)" },
+    { value: "B", label: "B (Szczypanka)" },
+    { value: "C", label: "C (Dwuigłówka)" },
+  ]},
 ];
 
 export default function Backrests() {
