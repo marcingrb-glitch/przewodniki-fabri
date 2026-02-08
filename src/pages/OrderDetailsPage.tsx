@@ -20,7 +20,7 @@ import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
 import { generateFotelGuidePDF } from "@/utils/pdfGenerators/fotelGuide";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
 import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
-import { uploadPDF, saveOrderFile } from "@/utils/storage";
+import { uploadAndSaveOrderFile } from "@/utils/storage";
 import PDFPreview from "@/components/PDFPreview";
 
 const OrderDetailsPage = () => {
@@ -60,8 +60,7 @@ const OrderDetailsPage = () => {
   const downloadAndSave = async (blob: Blob, fileName: string, fileType: string) => {
     downloadBlob(blob, fileName);
     try {
-      const url = await uploadPDF(orderNumber, fileName, blob);
-      await saveOrderFile(orderId, fileType, url, fileName);
+      await uploadAndSaveOrderFile(orderId, orderNumber, fileName, fileType, blob);
     } catch { /* storage upload is optional */ }
     toast.success(`✅ Pobrano: ${fileName}`);
   };

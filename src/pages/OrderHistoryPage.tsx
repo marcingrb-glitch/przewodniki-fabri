@@ -19,7 +19,7 @@ import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
 import { generateFotelGuidePDF } from "@/utils/pdfGenerators/fotelGuide";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
 import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
-import { uploadPDF, saveOrderFile } from "@/utils/storage";
+import { uploadAndSaveOrderFile } from "@/utils/storage";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DecodedSKU } from "@/types";
 import { cn } from "@/lib/utils";
@@ -114,8 +114,7 @@ const OrderHistoryPage = () => {
       const orderNumber = order.order_number;
 
       const uploadAndSave = async (blob: Blob, fileName: string, fileType: string) => {
-        const url = await uploadPDF(orderNumber, fileName, blob);
-        await saveOrderFile(orderId, fileType, url, fileName);
+        await uploadAndSaveOrderFile(orderId, orderNumber, fileName, fileType, blob);
       };
 
       // Batch generate & upload
