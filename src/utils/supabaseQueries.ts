@@ -8,6 +8,7 @@ interface OrderInsert {
   series_code: string;
   decoded_data: DecodedSKU;
   created_by?: string;
+  visible_to_workers?: boolean;
 }
 
 export async function checkOrderNumberExists(orderNumber: string): Promise<boolean> {
@@ -29,6 +30,7 @@ export async function saveOrder(data: OrderInsert) {
       series_code: data.series_code,
       decoded_data: JSON.parse(JSON.stringify(data.decoded_data)),
       created_by: data.created_by,
+      visible_to_workers: data.visible_to_workers ?? false,
     }])
     .select()
     .maybeSingle();

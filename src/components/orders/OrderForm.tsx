@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarIcon, Search, Loader2, HelpCircle } from "lucide-react";
+import { CalendarIcon, Search, Loader2, HelpCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -34,7 +35,8 @@ const OrderForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const [visibleToWorkers, setVisibleToWorkers] = useState(true);
 
   const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
@@ -134,6 +136,7 @@ const OrderForm = () => {
         series_code: parsed.series,
         decoded_data: decoded,
         created_by: user?.id,
+        visible_to_workers: isAdmin ? visibleToWorkers : false,
       });
 
       toast.success("Zamówienie zdekodowane pomyślnie", {
@@ -259,6 +262,35 @@ const OrderForm = () => {
               <p className="text-xs text-destructive">{errors.sku}</p>
             )}
           </div>
+
+          {isAdmin && (
+            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <Checkbox
+                id="visibleToWorkers"
+                checked={visibleToWorkers}
+                onCheckedChange={(checked) => setVisibleToWorkers(checked as boolean)}
+                disabled={loading}
+              />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="visibleToWorkers" className="text-sm font-medium leading-none cursor-pointer">
+                    Widoczne dla pracowników
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs text-xs">
+                        <p>Jeśli zaznaczone, wszyscy pracownicy będą mogli zobaczyć to zamówienie jako wzorzec.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-muted-foreground">Pracownicy zobaczą to zamówienie w historii jako przykład</p>
+              </div>
+            </div>
+          )}
 
           <Button
             type="submit"

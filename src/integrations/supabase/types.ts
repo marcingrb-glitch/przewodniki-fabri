@@ -299,6 +299,7 @@ export type Database = {
           order_number: string
           series_code: string | null
           sku: string
+          visible_to_workers: boolean
         }
         Insert: {
           created_at?: string
@@ -309,6 +310,7 @@ export type Database = {
           order_number: string
           series_code?: string | null
           sku: string
+          visible_to_workers?: boolean
         }
         Update: {
           created_at?: string
@@ -319,6 +321,7 @@ export type Database = {
           order_number?: string
           series_code?: string | null
           sku?: string
+          visible_to_workers?: boolean
         }
         Relationships: []
       }
