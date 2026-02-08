@@ -12,11 +12,13 @@ export async function uploadPDF(orderNumber: string, fileName: string, pdfBlob: 
 
   if (error) throw error;
 
-  const { data } = supabase.storage
+  const { data, error: signError } = await supabase.storage
     .from("order-files")
-    .getPublicUrl(path);
+    .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
 
-  return data.publicUrl;
+  if (signError || !data?.signedUrl) throw signError || new Error("Failed to create signed URL");
+
+  return data.signedUrl;
 }
 
 export async function saveOrderFile(orderId: string, fileType: string, fileUrl: string, fileName?: string) {
