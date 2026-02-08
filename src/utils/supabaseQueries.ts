@@ -47,3 +47,67 @@ export async function getOrderById(id: string) {
   if (error) throw error;
   return data;
 }
+
+interface GetOrdersParams {
+  searchQuery?: string;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  seriesCode?: string | null;
+  page?: number;
+  limit?: number;
+}
+
+export async function getOrders({
+  searchQuery = "",
+  dateFrom = null,
+  dateTo = null,
+  seriesCode = null,
+  page = 1,
+  limit = 20,
+}: GetOrdersParams = {}) {
+  let query = supabase
+    .from("orders")
+    .select("*", { count: "exact" });
+
+  if (searchQuery) {
+    query = query.ilike("order_number", `%${searchQuery}%`);
+  }
+  if (dateFrom) {
+    query = query.gte("order_date", dateFrom);
+  }
+  if (dateTo) {
+    query = query.lte("order_date", dateTo);
+  }
+  if (seriesCode && seriesCode !== "all") {
+    query = query.eq("series_code", seriesCode);
+  }
+
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+  return { data, count };
+}
+
+export async function deleteOrder(orderId: string, orderNumber: string) {
+  // 1. Delete files from storage
+  const { data: files } = await supabase.storage
+    .from("order-files")
+    .list(orderNumber);
+
+  if (files && files.length > 0) {
+    const filePaths = files.map((f) => `${orderNumber}/${f.name}`);
+    await supabase.storage.from("order-files").remove(filePaths);
+  }
+
+  // 2. Delete order_files records
+  await supabase.from("order_files").delete().eq("order_id", orderId);
+
+  // 3. Delete order
+  const { error } = await supabase.from("orders").delete().eq("id", orderId);
+  if (error) throw error;
+}
