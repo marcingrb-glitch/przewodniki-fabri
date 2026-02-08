@@ -43,6 +43,7 @@ export type Database = {
       }
       backrests: {
         Row: {
+          allowed_finishes: string[] | null
           code: string
           created_at: string
           foam: string | null
@@ -53,6 +54,7 @@ export type Database = {
           top: string | null
         }
         Insert: {
+          allowed_finishes?: string[] | null
           code: string
           created_at?: string
           foam?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           top?: string | null
         }
         Update: {
+          allowed_finishes?: string[] | null
           code?: string
           created_at?: string
           foam?: string | null
@@ -315,18 +318,21 @@ export type Database = {
       }
       pillows: {
         Row: {
+          allowed_finishes: string[] | null
           code: string
           created_at: string
           id: string
           name: string
         }
         Insert: {
+          allowed_finishes?: string[] | null
           code: string
           created_at?: string
           id?: string
           name: string
         }
         Update: {
+          allowed_finishes?: string[] | null
           code?: string
           created_at?: string
           id?: string
@@ -377,6 +383,7 @@ export type Database = {
       }
       seats_sofa: {
         Row: {
+          allowed_finishes: string[] | null
           center_strip: boolean
           code: string
           created_at: string
@@ -389,6 +396,7 @@ export type Database = {
           type: string | null
         }
         Insert: {
+          allowed_finishes?: string[] | null
           center_strip?: boolean
           code: string
           created_at?: string
@@ -401,6 +409,7 @@ export type Database = {
           type?: string | null
         }
         Update: {
+          allowed_finishes?: string[] | null
           center_strip?: boolean
           code?: string
           created_at?: string
@@ -448,6 +457,7 @@ export type Database = {
       }
       sides: {
         Row: {
+          allowed_finishes: string[] | null
           code: string
           created_at: string
           frame: string | null
@@ -456,6 +466,7 @@ export type Database = {
           series_id: string
         }
         Insert: {
+          allowed_finishes?: string[] | null
           code: string
           created_at?: string
           frame?: string | null
@@ -464,6 +475,7 @@ export type Database = {
           series_id: string
         }
         Update: {
+          allowed_finishes?: string[] | null
           code?: string
           created_at?: string
           frame?: string | null
