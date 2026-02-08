@@ -116,24 +116,29 @@ const OrderHistoryPage = () => {
         await saveOrderFile(orderId, fileType, url, fileName);
       };
 
-      // Sofa
-      await uploadAndSave(await generateSofaGuidePDF(decoded), `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide");
-      await uploadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels");
+      // Batch generate & upload
+      const uploads: Promise<void>[] = [];
+
+      // Sofa (always)
+      uploads.push(generateSofaGuidePDF(decoded).then((b) => uploadAndSave(b, `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide")));
+      uploads.push(generateSofaLabelsPDF(decoded).then((b) => uploadAndSave(b, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")));
 
       // Pufa
       if (decoded.pufaSKU) {
-        await uploadAndSave(await generatePufaGuidePDF(decoded), `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide");
-        await uploadAndSave(await generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels");
+        uploads.push(generatePufaGuidePDF(decoded).then((b) => uploadAndSave(b, `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide")));
+        uploads.push(generatePufaLabelsPDF(decoded).then((b) => uploadAndSave(b, `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")));
       }
 
       // Fotel
       if (decoded.fotelSKU) {
-        await uploadAndSave(await generateFotelGuidePDF(decoded), `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide");
-        await uploadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels");
+        uploads.push(generateFotelGuidePDF(decoded).then((b) => uploadAndSave(b, `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")));
+        uploads.push(generateFotelLabelsPDF(decoded).then((b) => uploadAndSave(b, `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")));
       }
 
       // Decoding
-      await uploadAndSave(await generateDecodingPDF(decoded), `dekodowanie_${orderNumber}.pdf`, "decoding");
+      uploads.push(generateDecodingPDF(decoded).then((b) => uploadAndSave(b, `dekodowanie_${orderNumber}.pdf`, "decoding")));
+
+      await Promise.all(uploads);
 
       // Update decoded_data in DB
       await supabase.from("orders").update({ decoded_data: JSON.parse(JSON.stringify(decoded)) }).eq("id", orderId);
@@ -210,7 +215,8 @@ const OrderHistoryPage = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Szukaj po numerze zamówienia..."
+                data-search-input
+                placeholder="Szukaj po numerze zamówienia... (Ctrl+K)"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); resetPage(); }}
                 className="pl-9"
