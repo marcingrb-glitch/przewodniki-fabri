@@ -50,6 +50,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error("Wpisz adres email, aby zresetować hasło");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`,
+      });
+      if (error) {
+        toast.error(`Błąd: ${error.message}`);
+        return;
+      }
+      toast.success("Link do resetu hasła został wysłany na podany email");
+    } catch {
+      toast.error("Nieoczekiwany błąd");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -138,6 +160,14 @@ export default function LoginPage() {
                   )}
                   {isLoading ? "Logowanie..." : "Zaloguj się"}
                 </Button>
+                <button
+                  type="button"
+                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors mt-2"
+                  onClick={handleForgotPassword}
+                  disabled={isLoading}
+                >
+                  Zapomniałem hasła
+                </button>
               </form>
             </TabsContent>
 
