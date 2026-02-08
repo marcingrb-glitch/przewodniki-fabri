@@ -5,9 +5,10 @@ import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
   Search, CalendarIcon, FileSpreadsheet, Eye, RotateCw, Trash2,
-  PackageOpen, Plus, Loader2,
+  PackageOpen, Plus, Loader2, Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getOrders, deleteOrder } from "@/utils/supabaseQueries";
@@ -54,6 +55,7 @@ const LIMIT = 20;
 
 const OrderHistoryPage = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   // Filters
   const [search, setSearch] = useState("");
@@ -210,6 +212,13 @@ const OrderHistoryPage = () => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Worker info */}
+          {!isAdmin && (
+            <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 mb-4 text-sm text-muted-foreground">
+              <Info className="h-4 w-4 shrink-0" />
+              Widzisz tylko swoje zamówienia
+            </div>
+          )}
           {/* Filters */}
           <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -337,27 +346,31 @@ const OrderHistoryPage = () => {
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/order/${order.id}`)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              disabled={regeneratingId === order.id}
-                              onClick={() => handleRegenerate(order)}
-                            >
-                              {regeneratingId === order.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <RotateCw className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => setDeleteTarget({ id: order.id, orderNumber: order.order_number })}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isAdmin && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  disabled={regeneratingId === order.id}
+                                  onClick={() => handleRegenerate(order)}
+                                >
+                                  {regeneratingId === order.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RotateCw className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteTarget({ id: order.id, orderNumber: order.order_number })}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

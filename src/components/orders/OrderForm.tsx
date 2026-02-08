@@ -24,6 +24,7 @@ import { decodeSKU } from "@/utils/skuDecoder";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder, checkOrderNumberExists } from "@/utils/supabaseQueries";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 const OrderForm = () => {
   const [orderNumber, setOrderNumber] = useState("");
@@ -33,6 +34,7 @@ const OrderForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
@@ -131,6 +133,7 @@ const OrderForm = () => {
         sku: sku.trim().toUpperCase(),
         series_code: parsed.series,
         decoded_data: decoded,
+        created_by: user?.id,
       });
 
       toast.success("Zamówienie zdekodowane pomyślnie", {
