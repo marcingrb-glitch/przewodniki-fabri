@@ -6,14 +6,17 @@ const columns = [
   { key: "code", label: "Kod" },
   { key: "name", label: "Nazwa" },
   { key: "price_group", label: "Grupa" },
-  { key: "colors", label: "Kolory", render: (v: any) => JSON.stringify(v) },
+  { key: "colors", label: "Kolory", render: (v: any) => {
+    if (!v || !Array.isArray(v)) return "-";
+    return v.map((c: any) => `${c.code}: ${c.name}`).join(", ");
+  }},
 ];
 
 const fields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
   { name: "name", label: "Nazwa", type: "text", required: true },
   { name: "price_group", label: "Grupa cenowa", type: "number", required: true },
-  { name: "colors", label: 'Kolory (JSON)', type: "json", required: true },
+  { name: "colors", label: "Kolory", type: "colors", required: true },
 ];
 
 export default function Fabrics() {

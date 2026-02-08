@@ -5,15 +5,60 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 export interface FieldDefinition {
   name: string;
   label: string;
-  type: "text" | "number" | "select" | "json" | "textarea" | "boolean";
+  type: "text" | "number" | "select" | "json" | "textarea" | "boolean" | "colors";
   required?: boolean;
   options?: { value: string; label: string }[];
   hidden?: boolean;
+}
+
+interface Color {
+  code: string;
+  name: string;
+}
+
+function ColorsListEditor({ value, onChange, error }: { value: Color[]; onChange: (colors: Color[]) => void; error?: string }) {
+  const [colors, setColors] = useState<Color[]>(value || []);
+
+  useEffect(() => { setColors(value || []); }, [value]);
+
+  const update = (newColors: Color[]) => { setColors(newColors); onChange(newColors); };
+  const addColor = () => update([...colors, { code: "", name: "" }]);
+  const removeColor = (i: number) => update(colors.filter((_, idx) => idx !== i));
+  const updateColor = (i: number, field: "code" | "name", val: string) => {
+    const next = [...colors];
+    next[i] = { ...next[i], [field]: field === "code" ? val.toUpperCase() : val };
+    update(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      {colors.map((color, i) => (
+        <div key={i} className="flex gap-2 items-center">
+          <Input placeholder="A, B, C..." value={color.code} onChange={(e) => updateColor(i, "code", e.target.value)} className="w-20" maxLength={1} />
+          <Input placeholder="Sand, Cement..." value={color.name} onChange={(e) => updateColor(i, "name", e.target.value)} className="flex-1" />
+          <Button type="button" variant="ghost" size="icon" onClick={() => removeColor(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        </div>
+      ))}
+      <Button type="button" variant="outline" size="sm" onClick={addColor} className="w-full"><Plus className="h-4 w-4 mr-1" /> Dodaj kolor</Button>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function validateColors(colors: Color[]): string | null {
+  if (!colors || colors.length === 0) return "Dodaj przynajmniej jeden kolor";
+  for (const c of colors) {
+    if (!c.code || !c.name) return "Wszystkie kolory muszą mieć kod i nazwę";
+    if (!/^[A-Z]$/.test(c.code)) return "Kod koloru musi być pojedynczą literą A-Z";
+  }
+  const codes = colors.map((c) => c.code);
+  if (new Set(codes).size !== codes.length) return "Kody kolorów muszą być unikalne";
+  return null;
 }
 
 interface ComponentFormProps {
@@ -35,9 +80,11 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
       const initial: Record<string, any> = {};
       fields.forEach((f) => {
         if (initialData && initialData[f.name] !== undefined) {
-          initial[f.name] = f.type === "json" ? JSON.stringify(initialData[f.name], null, 2) : initialData[f.name];
+          if (f.type === "json") initial[f.name] = JSON.stringify(initialData[f.name], null, 2);
+          else if (f.type === "colors") initial[f.name] = Array.isArray(initialData[f.name]) ? initialData[f.name] : [];
+          else initial[f.name] = initialData[f.name];
         } else {
-          initial[f.name] = f.type === "number" ? "" : f.type === "boolean" ? "false" : "";
+          initial[f.name] = f.type === "number" ? "" : f.type === "boolean" ? "false" : f.type === "colors" ? [] : "";
         }
       });
       setFormData(initial);
@@ -56,6 +103,15 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
 
     for (const f of fields) {
       const val = formData[f.name];
+      if (f.type === "colors") {
+        const colorsVal = val as Color[] || [];
+        if (f.required) {
+          const err = validateColors(colorsVal);
+          if (err) { newErrors[f.name] = err; continue; }
+        }
+        result[f.name] = [...colorsVal].sort((a, b) => a.code.localeCompare(b.code));
+        continue;
+      }
       if (f.required && (val === "" || val === undefined || val === null)) {
         newErrors[f.name] = "Pole wymagane";
         continue;
@@ -83,7 +139,9 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
           {fields.filter((f) => !f.hidden).map((f) => (
             <div key={f.name} className="space-y-1.5">
               <Label>{f.label}{f.required && " *"}</Label>
-              {f.type === "select" ? (
+              {f.type === "colors" ? (
+                <ColorsListEditor value={formData[f.name] || []} onChange={(c) => handleChange(f.name, c)} error={errors[f.name]} />
+              ) : f.type === "select" ? (
                 <Select value={formData[f.name] ?? ""} onValueChange={(v) => handleChange(f.name, v)}>
                   <SelectTrigger><SelectValue placeholder="Wybierz..." /></SelectTrigger>
                   <SelectContent>
@@ -103,7 +161,7 @@ export default function ComponentForm({ open, title, fields, initialData, onSubm
               ) : (
                 <Input type={f.type === "number" ? "number" : "text"} value={formData[f.name] ?? ""} onChange={(e) => handleChange(f.name, e.target.value)} />
               )}
-              {errors[f.name] && <p className="text-sm text-destructive">{errors[f.name]}</p>}
+              {f.type !== "colors" && errors[f.name] && <p className="text-sm text-destructive">{errors[f.name]}</p>}
             </div>
           ))}
         </div>
