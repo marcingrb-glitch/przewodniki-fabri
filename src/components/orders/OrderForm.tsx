@@ -35,7 +35,7 @@ const OrderForm = () => {
     setLoading(true);
 
     try {
-      // 1. Validate
+      // 1. Basic validation
       const validation = validateSKU(sku);
       if (!validation.valid) {
         validation.errors.forEach((err) => toast.error(`❌ ${err}`));
@@ -49,12 +49,38 @@ const OrderForm = () => {
       // 2. Parse
       const parsed = parseSKU(sku);
 
-      // 3. Validate finishes against DB
+      // 3. Validate finishes against DB (blocking errors + non-blocking warnings)
       try {
-        const finishWarnings = await validateFinishesFromDB(parsed);
-        finishWarnings.forEach((w) =>
+        const finishResult = await validateFinishesFromDB(parsed);
+
+        // Errors BLOCK processing
+        if (finishResult.errors.length > 0) {
+          finishResult.errors.forEach((e) => {
+            if (e.finish) {
+              toast.error(`❌ ${e.component} ${e.code} ma wykończenie ${e.finish}, ale dozwolone są: ${e.allowed.join(', ')}`);
+            } else {
+              toast.error(`❌ ${e.component} ${e.code} wymaga wykończenia. Możliwe: ${e.allowed.join(', ')}`);
+            }
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Warnings are informational
+        finishResult.warnings.forEach((w) =>
           toast.warning(`⚠️ ${w.component} ${w.code} ma wykończenie ${w.finish}, ale dozwolone są: ${w.allowed.join(', ')}`)
         );
+
+        // Apply defaults from DB
+        if (finishResult.defaults.seat && !parsed.seat.finish) {
+          parsed.seat.finish = finishResult.defaults.seat;
+        }
+        if (finishResult.defaults.side && !parsed.side.finish) {
+          parsed.side.finish = finishResult.defaults.side;
+        }
+        if (finishResult.defaults.backrest && !parsed.backrest.finish) {
+          parsed.backrest.finish = finishResult.defaults.backrest;
+        }
       } catch {
         // Non-blocking — continue even if DB check fails
       }

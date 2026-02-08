@@ -46,6 +46,7 @@ export type Database = {
           allowed_finishes: string[] | null
           code: string
           created_at: string
+          default_finish: string | null
           foam: string | null
           frame: string | null
           height_cm: string | null
@@ -57,6 +58,7 @@ export type Database = {
           allowed_finishes?: string[] | null
           code: string
           created_at?: string
+          default_finish?: string | null
           foam?: string | null
           frame?: string | null
           height_cm?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           allowed_finishes?: string[] | null
           code?: string
           created_at?: string
+          default_finish?: string | null
           foam?: string | null
           frame?: string | null
           height_cm?: string | null
@@ -321,6 +324,7 @@ export type Database = {
           allowed_finishes: string[] | null
           code: string
           created_at: string
+          default_finish: string | null
           id: string
           name: string
         }
@@ -328,6 +332,7 @@ export type Database = {
           allowed_finishes?: string[] | null
           code: string
           created_at?: string
+          default_finish?: string | null
           id?: string
           name: string
         }
@@ -335,6 +340,7 @@ export type Database = {
           allowed_finishes?: string[] | null
           code?: string
           created_at?: string
+          default_finish?: string | null
           id?: string
           name?: string
         }
@@ -460,6 +466,7 @@ export type Database = {
           allowed_finishes: string[] | null
           code: string
           created_at: string
+          default_finish: string | null
           frame: string | null
           id: string
           name: string
@@ -469,6 +476,7 @@ export type Database = {
           allowed_finishes?: string[] | null
           code: string
           created_at?: string
+          default_finish?: string | null
           frame?: string | null
           id?: string
           name: string
@@ -478,6 +486,7 @@ export type Database = {
           allowed_finishes?: string[] | null
           code?: string
           created_at?: string
+          default_finish?: string | null
           frame?: string | null
           id?: string
           name?: string
