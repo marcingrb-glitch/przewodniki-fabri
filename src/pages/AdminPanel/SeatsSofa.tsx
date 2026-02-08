@@ -10,7 +10,6 @@ const columns = [
   { key: "foam", label: "Pianka" },
   { key: "front", label: "Front" },
   { key: "center_strip", label: "Pasek środek", render: (v: boolean) => v ? "TAK" : "NIE" },
-  { key: "default_finish", label: "Wykończenie" },
   { key: "allowed_finishes", label: "Możliwe wykończenia", render: (v: string[]) => Array.isArray(v) ? v.join(", ") : "-" },
 ];
 
@@ -21,7 +20,6 @@ const fields: FieldDefinition[] = [
   { name: "foam", label: "Pianka", type: "text" },
   { name: "front", label: "Front", type: "text" },
   { name: "center_strip", label: "Pasek środek", type: "boolean" },
-  { name: "default_finish", label: "Domyślne wykończenie", type: "text" },
   { name: "allowed_finishes", label: "Możliwe wykończenia", type: "multi-select", required: true, options: [
     { value: "A", label: "A (Stebnówka)" },
     { value: "B", label: "B (Szczypanka)" },

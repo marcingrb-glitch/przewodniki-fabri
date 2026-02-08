@@ -16,13 +16,8 @@ export function validateSKU(sku: string): ValidationResult {
   if (!parsed.chest) errors.push("Brak skrzyni (SK15, SK17, SK23)");
   if (!parsed.automat) errors.push("Brak automatu (AT1, AT2)");
 
-  // Finish validations
-  if (parsed.side.code && !parsed.side.finish) {
-    errors.push("Boczek musi mieć wykończenie (A, B lub C)");
-  }
-  if (parsed.backrest.code && !parsed.backrest.finish) {
-    errors.push("Oparcie musi mieć wykończenie (A, B lub C)");
-  }
+  // Note: finish validations are handled by DB-based validateFinishesFromDB
+  // which checks allowed_finishes and default_finish intelligently
 
   // Legs validation
   const hasExtras = parsed.extras.length > 0;
