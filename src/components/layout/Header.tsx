@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 const Header = () => {
   const { profile, isAdmin, signOut } = useAuth();
@@ -65,11 +66,13 @@ const Header = () => {
                 </Badge>
               )}
             </div>
+            <ChangePasswordDialog />
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
               onClick={handleSignOut}
+              title="Wyloguj"
             >
               <LogOut className="h-4 w-4" />
             </Button>
