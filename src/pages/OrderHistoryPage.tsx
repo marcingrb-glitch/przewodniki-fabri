@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
-  Search, CalendarIcon, FileSpreadsheet, Eye, RotateCw, Trash2,
+  Search, CalendarIcon, FileSpreadsheet, Eye, EyeOff, RotateCw, Trash2,
   PackageOpen, Plus, Loader2, Info,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -170,6 +170,21 @@ const OrderHistoryPage = () => {
     }
   };
 
+  // Toggle visibility
+  const handleToggleVisibility = async (order: any) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ visible_to_workers: !order.visible_to_workers })
+        .eq("id", order.id);
+      if (error) throw error;
+      toast.success(order.visible_to_workers ? "Zamówienie ustawione jako prywatne" : "Zamówienie ustawione jako publiczne");
+      refetch();
+    } catch (err: unknown) {
+      toast.error(`❌ Błąd zmiany widoczności: ${err instanceof Error ? err.message : "Nieznany błąd"}`);
+    }
+  };
+
   // Export CSV
   const exportToCSV = () => {
     if (!orders.length) return;
@@ -312,6 +327,7 @@ const OrderHistoryPage = () => {
                       <TableHead>Data</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead>Seria</TableHead>
+                      {isAdmin && <TableHead className="text-center">Widoczność</TableHead>}
                       <TableHead className="text-right">Akcje</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -341,6 +357,28 @@ const OrderHistoryPage = () => {
                         <TableCell>
                           {order.series_code && <Badge variant="outline">{order.series_code}</Badge>}
                         </TableCell>
+                        {isAdmin && (
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 gap-1.5"
+                              onClick={(e) => { e.stopPropagation(); handleToggleVisibility(order); }}
+                            >
+                              {order.visible_to_workers ? (
+                                <>
+                                  <Eye className="h-4 w-4 text-green-600" />
+                                  <span className="text-xs text-green-600">Publiczne</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">Prywatne</span>
+                                </>
+                              )}
+                            </Button>
+                          </TableCell>
+                        )}
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/order/${order.id}`)}>
