@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getUserFriendlyError } from "@/utils/errorHandler";
 
 interface UseAdminCrudOptions {
   table: string;
@@ -54,7 +55,7 @@ export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, fil
       setFormOpen(false);
       setEditingItem(null);
     } catch (err: any) {
-      toast.error(`❌ Błąd: ${err.message}`);
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
     } finally {
       setSubmitting(false);
     }
@@ -67,7 +68,7 @@ export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, fil
       toast.success(`✅ ${labelSingular} usunięty`);
       queryClient.invalidateQueries({ queryKey: fullKey });
     } catch (err: any) {
-      toast.error(`❌ Błąd: ${err.message}`);
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
     }
   }, [table, labelSingular, queryClient, fullKey]);
 

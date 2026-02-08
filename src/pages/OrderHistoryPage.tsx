@@ -23,6 +23,7 @@ import { uploadAndSaveOrderFile } from "@/utils/storage";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DecodedSKU } from "@/types";
 import { cn } from "@/lib/utils";
+import { getUserFriendlyError } from "@/utils/errorHandler";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,7 +181,7 @@ const OrderHistoryPage = () => {
       toast.success(order.visible_to_workers ? "Zamówienie ustawione jako prywatne" : "Zamówienie ustawione jako publiczne");
       refetch();
     } catch (err: unknown) {
-      toast.error(`❌ Błąd zmiany widoczności: ${err instanceof Error ? err.message : "Nieznany błąd"}`);
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
     }
   };
 

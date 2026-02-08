@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserFriendlyError } from "@/utils/errorHandler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +35,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        if (error.message.includes("Invalid login")) {
-          toast.error("Nieprawidłowy email lub hasło");
-        } else {
-          toast.error(`Błąd logowania: ${error.message}`);
-        }
+        toast.error(getUserFriendlyError(error));
         return;
       }
       toast.success("Zalogowano pomyślnie");
@@ -61,7 +58,7 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/`,
       });
       if (error) {
-        toast.error(`Błąd: ${error.message}`);
+        toast.error(getUserFriendlyError(error));
         return;
       }
       toast.success("Link do resetu hasła został wysłany na podany email");
@@ -92,11 +89,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          toast.error("Ten email jest już zarejestrowany");
-        } else {
-          toast.error(`Błąd rejestracji: ${error.message}`);
-        }
+        toast.error(getUserFriendlyError(error));
         return;
       }
 
