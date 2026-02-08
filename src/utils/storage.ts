@@ -1,30 +1,39 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export async function uploadPDF(orderNumber: string, fileName: string, pdfBlob: Blob): Promise<string> {
-  const path = `${orderNumber}/${fileName}`;
+export async function uploadAndSaveOrderFile(
+  orderId: string,
+  orderNumber: string,
+  fileName: string,
+  fileType: string,
+  pdfBlob: Blob
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("orderId", orderId);
+  formData.append("orderNumber", orderNumber);
+  formData.append("fileName", fileName);
+  formData.append("fileType", fileType);
+  formData.append("file", pdfBlob, fileName);
 
-  const { error } = await supabase.storage
-    .from("order-files")
-    .upload(path, pdfBlob, {
-      contentType: "application/pdf",
-      upsert: true,
-    });
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error("Not authenticated");
 
-  if (error) throw error;
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "gvjthssbfiftbfeounhm";
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-order-file`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: formData,
+    }
+  );
 
-  const { data, error: signError } = await supabase.storage
-    .from("order-files")
-    .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(err.error || "Upload failed");
+  }
 
-  if (signError || !data?.signedUrl) throw signError || new Error("Failed to create signed URL");
-
-  return data.signedUrl;
-}
-
-export async function saveOrderFile(orderId: string, fileType: string, fileUrl: string, fileName?: string) {
-  const { error } = await supabase
-    .from("order_files")
-    .insert([{ order_id: orderId, file_type: fileType, file_url: fileUrl, file_name: fileName }]);
-
-  if (error) throw error;
+  const result = await response.json();
+  return result.signedUrl;
 }
