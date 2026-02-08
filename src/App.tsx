@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Layout from "@/components/layout/Layout";
+import LoginPage from "@/pages/LoginPage";
 import NewOrderPage from "@/pages/NewOrderPage";
 import OrderDetailsPage from "@/pages/OrderDetailsPage";
 import OrderHistoryPage from "@/pages/OrderHistoryPage";
@@ -34,31 +37,34 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<NewOrderPage />} />
-              <Route path="/order/:id" element={<OrderDetailsPage />} />
-              <Route path="/history" element={<OrderHistoryPage />} />
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Series />} />
-                <Route path="series" element={<Series />} />
-                <Route path="fabrics" element={<Fabrics />} />
-                <Route path="chests" element={<Chests />} />
-                <Route path="automats" element={<Automats />} />
-                <Route path="pillows" element={<Pillows />} />
-                <Route path="jaskis" element={<Jaskis />} />
-                <Route path="waleks" element={<Waleks />} />
-                <Route path="finishes" element={<Finishes />} />
-                <Route path="seats-sofa" element={<SeatsSofa />} />
-                <Route path="seats-pufa" element={<SeatsPufa />} />
-                <Route path="backrests" element={<Backrests />} />
-                <Route path="sides" element={<Sides />} />
-                <Route path="legs" element={<Legs />} />
-                <Route path="extras" element={<Extras />} />
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/" element={<NewOrderPage />} />
+                <Route path="/order/:id" element={<OrderDetailsPage />} />
+                <Route path="/history" element={<OrderHistoryPage />} />
+                <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
+                  <Route index element={<Series />} />
+                  <Route path="series" element={<Series />} />
+                  <Route path="fabrics" element={<Fabrics />} />
+                  <Route path="chests" element={<Chests />} />
+                  <Route path="automats" element={<Automats />} />
+                  <Route path="pillows" element={<Pillows />} />
+                  <Route path="jaskis" element={<Jaskis />} />
+                  <Route path="waleks" element={<Waleks />} />
+                  <Route path="finishes" element={<Finishes />} />
+                  <Route path="seats-sofa" element={<SeatsSofa />} />
+                  <Route path="seats-pufa" element={<SeatsPufa />} />
+                  <Route path="backrests" element={<Backrests />} />
+                  <Route path="sides" element={<Sides />} />
+                  <Route path="legs" element={<Legs />} />
+                  <Route path="extras" element={<Extras />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
