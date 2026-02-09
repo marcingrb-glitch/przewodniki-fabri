@@ -93,11 +93,12 @@ Deno.serve(async (req) => {
     // Upload file using service client (bypasses storage RLS)
     const path = `${orderNumber}/${fileName}`;
     const fileBuffer = await file.arrayBuffer();
+    const contentType = file.type || "application/octet-stream";
 
     const { error: uploadError } = await serviceClient.storage
       .from("order-files")
       .upload(path, fileBuffer, {
-        contentType: "application/pdf",
+        contentType,
         upsert: true,
       });
 
@@ -123,18 +124,32 @@ Deno.serve(async (req) => {
     }
 
     // Save file metadata using service client
-    const { error: metaError } = await serviceClient
-      .from("order_files")
-      .insert([{
-        order_id: orderId,
-        file_type: fileType,
-        file_url: signedData.signedUrl,
-        file_name: fileName,
-      }]);
+    if (fileType === "variant_image") {
+      // For variant images, update the order's variant_image_path
+      const { error: pathError } = await serviceClient
+        .from("orders")
+        .update({ variant_image_path: path })
+        .eq("id", orderId);
 
-    if (metaError) {
-      console.error("[upload-order-file] Metadata save failed:", metaError.message);
-      // File uploaded but metadata failed - not critical
+      if (pathError) {
+        console.error("[upload-order-file] variant_image_path update failed:", pathError.message);
+      } else {
+        console.log(`[upload-order-file] variant_image_path set to ${path}`);
+      }
+    } else {
+      // For other files, save to order_files table
+      const { error: metaError } = await serviceClient
+        .from("order_files")
+        .insert([{
+          order_id: orderId,
+          file_type: fileType,
+          file_url: signedData.signedUrl,
+          file_name: fileName,
+        }]);
+
+      if (metaError) {
+        console.error("[upload-order-file] Metadata save failed:", metaError.message);
+      }
     }
 
     console.log(`[upload-order-file] Success: ${path}`);
