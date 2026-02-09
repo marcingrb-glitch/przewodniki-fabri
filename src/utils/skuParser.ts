@@ -46,7 +46,9 @@ export function parseSKU(sku: string): ParsedSKU {
     // Side/Boczek: B8C, B1A
     const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])$/);
     if (sideMatch) {
-      result.side = { code: `B${sideMatch[1]}`, finish: sideMatch[2] };
+      const rawCode = sideMatch[1];
+      const code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
+      result.side = { code: `B${code}`, finish: sideMatch[2] };
       continue;
     }
 
