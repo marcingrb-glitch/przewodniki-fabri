@@ -180,6 +180,7 @@ const OrderForm = () => {
         description: `#${orderNumber} - ${format(orderDate, "dd.MM.yyyy")}`,
       });
       queryClient.invalidateQueries({ queryKey: ["recent-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order", saved?.id] });
 
       // 7. Navigate to details
       navigate(`/order/${saved?.id}`, { state: { decoded } });
