@@ -67,6 +67,8 @@ export const SIDES: Record<string, { frame: string; name: string }> = {
   B6: { frame: "B6/B8 [Iga\\Vamos]", name: "Iga A" },
   B7: { frame: "B7 [Iga I]", name: "Iga B" },
   B8: { frame: "B6/B8 [Iga\\Vamos]", name: "Iga C" },
+  B6S: { frame: "B6/B8 [Iga\\Vamos]", name: "Iga A" },
+  B6W: { frame: "B10 [Iga\\Vamos Cienka]", name: "Iga A Wąska" },
   B9: { frame: "B9 [Viena]", name: "Viena" },
 };
 
