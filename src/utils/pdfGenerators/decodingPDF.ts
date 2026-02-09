@@ -25,15 +25,11 @@ export async function generateDecodingPDF(
   doc.line(15, y, 195, y);
   y += 5;
 
-  // Layout: image left (80mm), components right
+  // Full-width image
   const imageX = 15;
-  const imageY = y;
-  const imageW = 70;
-  const imageH = 70;
-  const componentsX = imageX + imageW + 5;
-  const componentsW = 195 - componentsX;
+  const imageW = 180; // full page width minus margins
+  const imageH = 90;
 
-  // Draw image or placeholder
   if (variantImageUrl) {
     try {
       const response = await fetch(variantImageUrl);
@@ -43,19 +39,39 @@ export async function generateDecodingPDF(
         reader.onloadend = () => resolve(reader.result as string);
         reader.readAsDataURL(blob);
       });
-      doc.addImage(base64, "JPEG", imageX, imageY, imageW, imageH);
+      doc.addImage(base64, "JPEG", imageX, y, imageW, imageH);
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
-      doc.rect(imageX, imageY, imageW, imageH);
+      doc.rect(imageX, y, imageW, imageH);
     } catch (error) {
       console.error("Error adding image to PDF:", error);
-      drawPlaceholder(doc, imageX, imageY, imageW, imageH);
+      drawPlaceholder(doc, imageX, y, imageW, imageH);
     }
   } else {
-    drawPlaceholder(doc, imageX, imageY, imageW, imageH);
+    drawPlaceholder(doc, imageX, y, imageW, imageH);
   }
 
-  // Components table on the right
+  y += imageH + 5;
+
+  // Two-column layout below image
+  const colGap = 4;
+  const leftColX = 15;
+  const colW = (180 - colGap) / 2;
+  const rightColX = leftColX + colW + colGap;
+
+  const tableStyles = {
+    font: "Roboto" as const,
+    fontSize: 8,
+    cellPadding: 1.5,
+    overflow: "linebreak" as const,
+    textColor: [0, 0, 0] as [number, number, number],
+    lineWidth: 0.3,
+    lineColor: [0, 0, 0] as [number, number, number],
+  };
+  const headStyle = { fillColor: [255, 255, 255] as [number, number, number], textColor: [0, 0, 0] as [number, number, number], fontStyle: "bold" as const };
+  const bodyStyle = { fillColor: [255, 255, 255] as [number, number, number] };
+
+  // LEFT COLUMN: Main components
   const mainRows: string[][] = [
     ["Seria", `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`],
     ["Tkanina", `${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`],
@@ -74,169 +90,79 @@ export async function generateDecodingPDF(
   }
 
   autoTable(doc, {
-    startY: imageY,
-    margin: { left: componentsX, right: 15 },
-    tableWidth: componentsW,
+    startY: y,
+    margin: { left: leftColX, right: 195 - leftColX - colW },
+    tableWidth: colW,
     head: [["GŁÓWNE KOMPONENTY", ""]],
     body: mainRows,
     theme: "grid",
-    styles: {
-      font: "Roboto",
-      fontSize: 8,
-      cellPadding: 1.5,
-      overflow: "linebreak",
-      textColor: [0, 0, 0],
-      lineWidth: 0.3,
-      lineColor: [0, 0, 0],
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-    },
-    bodyStyles: {
-      fillColor: [255, 255, 255],
-    },
-    alternateRowStyles: {
-      fillColor: [255, 255, 255],
-    },
-    columnStyles: {
-      0: { cellWidth: 28, fontStyle: "bold" },
-    },
+    styles: tableStyles,
+    headStyles: headStyle,
+    bodyStyles: bodyStyle,
+    alternateRowStyles: bodyStyle,
+    columnStyles: { 0: { cellWidth: 25, fontStyle: "bold" } },
   });
 
-  const mainTableEndY = (doc as any).lastAutoTable.finalY;
+  const leftEndY = (doc as any).lastAutoTable.finalY;
 
-  // Extras section below the image/components area
-  let extrasY = Math.max(imageY + imageH + 5, mainTableEndY + 5);
+  // RIGHT COLUMN: Extras + Legs + Pufa/Fotel
+  const rightRows: string[][] = [];
 
-  const hasExtras = decoded.pillow || decoded.jaski || decoded.walek || decoded.extras.length > 0;
-
-  if (hasExtras) {
-    const extrasRows: string[][] = [];
-    if (decoded.pillow) {
-      extrasRows.push(["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name}`]);
-      extrasRows.push(["  Wykończenie", `${decoded.pillow.finish} (${decoded.pillow.finishName})`]);
-    }
-    if (decoded.jaski) {
-      extrasRows.push(["Jaśki", `${decoded.jaski.code} - ${decoded.jaski.name}`]);
-      extrasRows.push(["  Wykończenie", `${decoded.jaski.finish} (${decoded.jaski.finishName})`]);
-    }
-    if (decoded.walek) {
-      extrasRows.push(["Wałek", decoded.walek.code]);
-      extrasRows.push(["  Wykończenie", `${decoded.walek.finish} (${decoded.walek.finishName})`]);
-    }
-    decoded.extras.forEach(e => {
-      extrasRows.push([e.name, e.code]);
-    });
-
-    autoTable(doc, {
-      startY: extrasY,
-      margin: { left: 15, right: 15 },
-      head: [["DODATKI", ""]],
-      body: extrasRows,
-      theme: "grid",
-      styles: {
-        font: "Roboto",
-        fontSize: 8,
-        cellPadding: 1.5,
-        overflow: "linebreak",
-        textColor: [0, 0, 0],
-        lineWidth: 0.3,
-        lineColor: [0, 0, 0],
-      },
-      headStyles: {
-        fillColor: [255, 255, 255],
-        textColor: [0, 0, 0],
-        fontStyle: "bold",
-      },
-      bodyStyles: { fillColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [255, 255, 255] },
-      columnStyles: {
-        0: { cellWidth: 35, fontStyle: "bold" },
-      },
-    });
-
-    extrasY = (doc as any).lastAutoTable.finalY + 5;
+  // Extras
+  if (decoded.pillow) {
+    rightRows.push(["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name}`]);
+    rightRows.push(["  Wykończenie", `${decoded.pillow.finish} (${decoded.pillow.finishName})`]);
   }
+  if (decoded.jaski) {
+    rightRows.push(["Jaśki", `${decoded.jaski.code} - ${decoded.jaski.name}`]);
+    rightRows.push(["  Wykończenie", `${decoded.jaski.finish} (${decoded.jaski.finishName})`]);
+  }
+  if (decoded.walek) {
+    rightRows.push(["Wałek", decoded.walek.code]);
+    rightRows.push(["  Wykończenie", `${decoded.walek.finish} (${decoded.walek.finishName})`]);
+  }
+  decoded.extras.forEach(e => {
+    rightRows.push([e.name, e.code]);
+  });
 
   // Leg heights
-  const legRows: string[][] = [];
   const chestLeg = decoded.legHeights.sofa_chest;
   const seatLeg = decoded.legHeights.sofa_seat;
-  legRows.push(["Pod skrzynią", chestLeg ? `${chestLeg.leg} H ${chestLeg.height}cm (${chestLeg.count} szt)` : "-"]);
-  legRows.push(["Pod siedziskiem", seatLeg ? `${seatLeg.leg} H ${seatLeg.height}cm (${seatLeg.count} szt)` : "BRAK"]);
+  rightRows.push(["NÓŻKI SOFA", ""]);
+  rightRows.push(["Pod skrzynią", chestLeg ? `${chestLeg.leg} H ${chestLeg.height}cm (${chestLeg.count} szt)` : "-"]);
+  rightRows.push(["Pod siedziskiem", seatLeg ? `${seatLeg.leg} H ${seatLeg.height}cm (${seatLeg.count} szt)` : "BRAK"]);
 
-  autoTable(doc, {
-    startY: extrasY,
-    margin: { left: 15, right: 15 },
-    head: [["NÓŻKI - SOFA", ""]],
-    body: legRows,
-    theme: "grid",
-    styles: {
-      font: "Roboto",
-      fontSize: 8,
-      cellPadding: 1.5,
-      overflow: "linebreak",
-      textColor: [0, 0, 0],
-      lineWidth: 0.3,
-      lineColor: [0, 0, 0],
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-    },
-    bodyStyles: { fillColor: [255, 255, 255] },
-    alternateRowStyles: { fillColor: [255, 255, 255] },
-    columnStyles: {
-      0: { cellWidth: 35, fontStyle: "bold" },
-    },
-  });
-
-  let finalY = (doc as any).lastAutoTable.finalY + 5;
-
-  // Pufa/Fotel
+  // Pufa
   if (decoded.pufaSKU) {
-    const pufaRows: string[][] = [
-      ["SKU pufy", decoded.pufaSKU],
-    ];
+    rightRows.push(["PUFA", ""]);
+    rightRows.push(["SKU pufy", decoded.pufaSKU]);
     if (decoded.legs) {
-      pufaRows.push(["Nóżki pufy", `${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`]);
+      rightRows.push(["Nóżki pufy", `${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`]);
     }
-    autoTable(doc, {
-      startY: finalY,
-      margin: { left: 15, right: 15 },
-      head: [["DODATKI - PUFA", ""]],
-      body: pufaRows,
-      theme: "grid",
-      styles: { font: "Roboto", fontSize: 8, cellPadding: 1.5, textColor: [0, 0, 0], lineWidth: 0.3, lineColor: [0, 0, 0] },
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: "bold" },
-      bodyStyles: { fillColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [255, 255, 255] },
-      columnStyles: { 0: { cellWidth: 35, fontStyle: "bold" } },
-    });
-    finalY = (doc as any).lastAutoTable.finalY + 5;
   }
 
+  // Fotel
   if (decoded.fotelSKU) {
-    const fotelRows: string[][] = [
-      ["SKU fotela", decoded.fotelSKU],
-    ];
+    rightRows.push(["FOTEL", ""]);
+    rightRows.push(["SKU fotela", decoded.fotelSKU]);
     if (decoded.legs) {
-      fotelRows.push(["Nóżki fotela", `${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`]);
+      rightRows.push(["Nóżki fotela", `${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`]);
     }
+  }
+
+  if (rightRows.length > 0) {
     autoTable(doc, {
-      startY: finalY,
-      margin: { left: 15, right: 15 },
-      head: [["DODATKI - FOTEL", ""]],
-      body: fotelRows,
+      startY: y,
+      margin: { left: rightColX, right: 15 },
+      tableWidth: colW,
+      head: [["DODATKI / NÓŻKI", ""]],
+      body: rightRows,
       theme: "grid",
-      styles: { font: "Roboto", fontSize: 8, cellPadding: 1.5, textColor: [0, 0, 0], lineWidth: 0.3, lineColor: [0, 0, 0] },
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: "bold" },
-      bodyStyles: { fillColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [255, 255, 255] },
-      columnStyles: { 0: { cellWidth: 35, fontStyle: "bold" } },
+      styles: tableStyles,
+      headStyles: headStyle,
+      bodyStyles: bodyStyle,
+      alternateRowStyles: bodyStyle,
+      columnStyles: { 0: { cellWidth: 25, fontStyle: "bold" } },
     });
   }
 
