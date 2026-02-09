@@ -39,7 +39,36 @@ export async function generateDecodingPDF(
         reader.onloadend = () => resolve(reader.result as string);
         reader.readAsDataURL(blob);
       });
-      doc.addImage(base64, "JPEG", imageX, y, imageW, imageH);
+
+      // Get natural dimensions
+      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.src = base64;
+      });
+
+      // Draw grey background
+      doc.setFillColor(245, 245, 245);
+      doc.rect(imageX, y, imageW, imageH, "F");
+
+      // Calculate proportional fit
+      const imgRatio = dims.w / dims.h;
+      const areaRatio = imageW / imageH;
+      let drawW: number, drawH: number, drawX: number, drawY: number;
+
+      if (imgRatio > areaRatio) {
+        drawW = imageW;
+        drawH = imageW / imgRatio;
+        drawX = imageX;
+        drawY = y + (imageH - drawH) / 2;
+      } else {
+        drawH = imageH;
+        drawW = imageH * imgRatio;
+        drawX = imageX + (imageW - drawW) / 2;
+        drawY = y;
+      }
+
+      doc.addImage(base64, "JPEG", drawX, drawY, drawW, drawH);
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(imageX, y, imageW, imageH);
