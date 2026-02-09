@@ -20,6 +20,8 @@ const routeMap: Record<string, string> = {
   order: "Zamówienie",
 };
 
+const nonNavigableSegments = new Set(["order"]);
+
 const Breadcrumbs = () => {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);
@@ -32,8 +34,9 @@ const Breadcrumbs = () => {
   segments.forEach((seg, i) => {
     currentPath += `/${seg}`;
     const isLast = i === segments.length - 1;
+    const isNonNavigable = nonNavigableSegments.has(seg);
     const label = routeMap[seg] || (seg.length > 8 ? `#${seg.substring(0, 8)}…` : `#${seg}`);
-    crumbs.push({ label, path: isLast ? undefined : currentPath });
+    crumbs.push({ label, path: (isLast || isNonNavigable) ? undefined : currentPath });
   });
 
   return (
