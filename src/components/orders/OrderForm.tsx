@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarIcon, Search, Loader2, HelpCircle, Info } from "lucide-react";
+import { CalendarIcon, Search, Loader2, HelpCircle, Info, ImageIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import { validateSKU } from "@/utils/skuValidator";
 import { decodeSKU } from "@/utils/skuDecoder";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder, checkOrderNumberExists } from "@/utils/supabaseQueries";
+import { uploadVariantImage } from "@/utils/variantImageUpload";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -37,6 +38,33 @@ const OrderForm = () => {
   const queryClient = useQueryClient();
   const { user, isAdmin } = useAuth();
   const [visibleToWorkers, setVisibleToWorkers] = useState(true);
+  const [variantImage, setVariantImage] = useState<File | null>(null);
+  const [variantImagePreview, setVariantImagePreview] = useState<string | null>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Dozwolone formaty: JPG, PNG, WebP");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Plik jest za duży. Maksymalnie 5MB.");
+      return;
+    }
+
+    setVariantImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setVariantImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setVariantImage(null);
+    setVariantImagePreview(null);
+  };
 
   const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
@@ -139,12 +167,21 @@ const OrderForm = () => {
         visible_to_workers: isAdmin ? visibleToWorkers : false,
       });
 
+      // 6. Upload variant image if provided
+      if (variantImage && saved?.id) {
+        try {
+          await uploadVariantImage(saved.id, orderNumber, variantImage);
+        } catch {
+          toast.warning("⚠️ Zdjęcie wariantu nie zostało przesłane");
+        }
+      }
+
       toast.success("Zamówienie zdekodowane pomyślnie", {
         description: `#${orderNumber} - ${format(orderDate, "dd.MM.yyyy")}`,
       });
       queryClient.invalidateQueries({ queryKey: ["recent-orders"] });
 
-      // 6. Navigate to details
+      // 7. Navigate to details
       navigate(`/order/${saved?.id}`, { state: { decoded } });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Nieznany błąd";
@@ -260,6 +297,33 @@ const OrderForm = () => {
             />
             {errors.sku && (
               <p className="text-xs text-destructive">{errors.sku}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="variant-image">Zdjęcie wariantu sofy (opcjonalne)</Label>
+            <Input
+              id="variant-image"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleImageUpload}
+              disabled={loading}
+            />
+            {variantImagePreview && (
+              <div className="relative mt-2 inline-block">
+                <img
+                  src={variantImagePreview}
+                  alt="Podgląd wariantu"
+                  className="max-w-xs max-h-40 rounded border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             )}
           </div>
 

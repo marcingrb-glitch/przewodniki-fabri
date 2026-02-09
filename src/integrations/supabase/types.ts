@@ -299,6 +299,7 @@ export type Database = {
           order_number: string
           series_code: string | null
           sku: string
+          variant_image_path: string | null
           visible_to_workers: boolean
         }
         Insert: {
@@ -310,6 +311,7 @@ export type Database = {
           order_number: string
           series_code?: string | null
           sku: string
+          variant_image_path?: string | null
           visible_to_workers?: boolean
         }
         Update: {
@@ -321,6 +323,7 @@ export type Database = {
           order_number?: string
           series_code?: string | null
           sku?: string
+          variant_image_path?: string | null
           visible_to_workers?: boolean
         }
         Relationships: []
