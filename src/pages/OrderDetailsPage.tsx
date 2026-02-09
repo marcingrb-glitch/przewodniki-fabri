@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,12 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
 import { getOrderById } from "@/utils/supabaseQueries";
+import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
 import { SEATS_PUFA } from "@/data/mappings";
 import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateSofaGuidePDF } from "@/utils/pdfGenerators/sofaGuide";
@@ -31,6 +35,8 @@ const OrderDetailsPage = () => {
   const [previewTitle, setPreviewTitle] = useState("");
   const [previewFileName, setPreviewFileName] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [imagePopupOpen, setImagePopupOpen] = useState(false);
+  const [variantImageUrl, setVariantImageUrl] = useState<string | null>(null);
 
   const stateDecoded = (location.state as { decoded?: DecodedSKU })?.decoded;
 
@@ -41,8 +47,16 @@ const OrderDetailsPage = () => {
   });
 
   const decoded: DecodedSKU | undefined = stateDecoded || (order?.decoded_data as unknown as DecodedSKU);
+  const variantImagePath = (order as any)?.variant_image_path as string | undefined;
   const orderId = id || "";
   const orderNumber = decoded?.orderNumber || order?.order_number || "";
+
+  // Load variant image signed URL
+  useEffect(() => {
+    if (variantImagePath) {
+      getVariantImageSignedUrl(variantImagePath).then(url => setVariantImageUrl(url));
+    }
+  }, [variantImagePath]);
 
   const withLoading = async (key: string, fn: () => Promise<void>) => {
     setLoading(key);
@@ -104,12 +118,29 @@ const OrderDetailsPage = () => {
       <Card className="shadow-md">
         <CardHeader>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
-              </p>
-              <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
+            <div className="flex items-start gap-4">
+              {variantImageUrl && (
+                <div
+                  className="relative w-16 h-16 rounded border cursor-pointer hover:opacity-80 transition shrink-0 overflow-hidden"
+                  onClick={() => setImagePopupOpen(true)}
+                >
+                  <img
+                    src={variantImageUrl}
+                    alt="Wariant sofy"
+                    className="w-full h-full object-cover rounded"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition">
+                    <Maximize2 className="w-4 h-4 text-white opacity-0 group-hover:opacity-100" />
+                  </div>
+                </div>
+              )}
+              <div>
+                <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
+                </p>
+                <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
+              </div>
             </div>
             <Badge variant="secondary" className="self-start text-sm">
               {decoded.series.code} - {decoded.series.name} [{decoded.series.collection}]
@@ -237,8 +268,8 @@ const OrderDetailsPage = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <ActionBtn icon={Eye} label="Podgląd dekodowania" loadKey="decode-preview" onClick={async () => preview(await generateDecodingPDF(decoded), "Dekodowanie SKU", `dekodowanie_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="decode-dl" onClick={async () => downloadAndSave(await generateDecodingPDF(decoded), `dekodowanie_${orderNumber}.pdf`, "decoding")} />
+            <ActionBtn icon={Eye} label="Podgląd dekodowania" loadKey="decode-preview" onClick={async () => preview(await generateDecodingPDF(decoded, variantImageUrl || undefined), "Dekodowanie SKU", `dekodowanie_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="decode-dl" onClick={async () => downloadAndSave(await generateDecodingPDF(decoded, variantImageUrl || undefined), `dekodowanie_${orderNumber}.pdf`, "decoding")} />
           </div>
         </CardContent>
       </Card>
@@ -283,7 +314,7 @@ const OrderDetailsPage = () => {
               zip.file("fotel_przewodnik.pdf", await generateFotelGuidePDF(decoded));
               zip.file("fotel_etykiety.pdf", await generateFotelLabelsPDF(decoded));
             }
-            zip.file("dekodowanie.pdf", await generateDecodingPDF(decoded));
+            zip.file("dekodowanie.pdf", await generateDecodingPDF(decoded, variantImageUrl || undefined));
             const zipBlob = await zip.generateAsync({ type: "blob" });
             downloadBlob(zipBlob, `zamowienie_${orderNumber}.zip`);
             toast.success("✅ Pobrano kompletny pakiet");
@@ -294,6 +325,24 @@ const OrderDetailsPage = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Variant image popup */}
+      {variantImageUrl && (
+        <Dialog open={imagePopupOpen} onOpenChange={setImagePopupOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Zdjęcie wariantu - {orderNumber}</DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
+              <img
+                src={variantImageUrl}
+                alt="Wariant sofy"
+                className="w-full h-auto rounded"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
