@@ -47,7 +47,9 @@ export function parseSKU(sku: string): ParsedSKU {
     const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])$/);
     if (sideMatch) {
       const rawCode = sideMatch[1];
-      const code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
+      let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
+      // B6 bez sufiksu -> automatycznie B6s
+      if (code === "6") code = "6s";
       result.side = { code: `B${code}`, finish: sideMatch[2] };
       continue;
     }
