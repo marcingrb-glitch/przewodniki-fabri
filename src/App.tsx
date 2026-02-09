@@ -26,6 +26,7 @@ import Backrests from "@/pages/AdminPanel/Backrests";
 import Sides from "@/pages/AdminPanel/Sides";
 import Legs from "@/pages/AdminPanel/Legs";
 import Extras from "@/pages/AdminPanel/Extras";
+import Users from "@/pages/AdminPanel/Users";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
                   <Route path="sides" element={<Sides />} />
                   <Route path="legs" element={<Legs />} />
                   <Route path="extras" element={<Extras />} />
+                  <Route path="users" element={<Users />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

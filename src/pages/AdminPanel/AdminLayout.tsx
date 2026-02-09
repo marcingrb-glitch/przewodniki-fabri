@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const sharedLinks = [
+  { to: "/admin/users", label: "👥 Użytkownicy" },
   { to: "/admin/series", label: "Serie" },
   { to: "/admin/fabrics", label: "Tkaniny" },
   { to: "/admin/chests", label: "Skrzynie" },
