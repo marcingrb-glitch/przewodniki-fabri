@@ -6,6 +6,7 @@ interface Profile {
   id: string;
   email: string;
   full_name: string;
+  is_approved: boolean;
 }
 
 type AppRole = "admin" | "worker";
@@ -17,6 +18,7 @@ interface AuthContextType {
   role: AppRole;
   isLoading: boolean;
   isAdmin: boolean;
+  isApproved: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -91,6 +93,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRole("worker");
   };
 
+  const isAdmin = role === "admin";
+  const isApproved = isAdmin || (profile?.is_approved ?? false);
+
   return (
     <AuthContext.Provider
       value={{
@@ -99,7 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         role,
         isLoading,
-        isAdmin: role === "admin",
+        isAdmin,
+        isApproved,
         signOut,
       }}
     >
