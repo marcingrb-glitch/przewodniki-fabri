@@ -43,7 +43,7 @@ const OrderDetailsPage = () => {
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: () => getOrderById(id!),
-    enabled: !stateDecoded && !!id,
+    enabled: !!id,
   });
 
   const decoded: DecodedSKU | undefined = stateDecoded || (order?.decoded_data as unknown as DecodedSKU);
