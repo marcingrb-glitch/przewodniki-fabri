@@ -1,31 +1,82 @@
 
 
-## Dodanie obslugi zamowien Shopify
+## Utworzenie Edge Function `fetch-shopify-order`
 
-### Co zostanie zrobione
+### Problem
+Frontend wywoluje `supabase.functions.invoke("fetch-shopify-order")`, ale ta funkcja nie istnieje -- brak katalogu `supabase/functions/fetch-shopify-order/` i brak wpisu w `config.toml`. Stad blad "Failed to send a request to the Edge Function".
 
-Dodanie zakladek (Tabs) na stronie nowego zamowienia: "Zamowienia Shopify" i "Zamowienia reczne". Zamowienia reczne to istniejacy `OrderForm`. Zamowienia Shopify to nowy formularz pobierajacy dane z Shopify.
+### Rozwiazanie
+
+Utworzenie nowej edge function ktora:
+1. Przyjmuje `{ order_number: string }` w body
+2. Uwierzytelnia sie w Shopify (Client Credentials Grant -- ten sam wzorzec co `get-variant-image`)
+3. Pobiera zamowienie z Shopify REST Admin API (`GET /admin/api/{version}/orders.json?name={order_number}`)
+4. Mapuje line items na format `ShopifyOrderResponse` (SKU, title, variant_title, quantity, image_url, product_id, shortcode, is_mmq_product, properties)
+5. Zwraca dane do frontendu
 
 ### Nowe pliki
 
-1. **`src/types/shopifyOrder.ts`** -- typy TypeScript dla danych zamowienia Shopify (ShopifyLineItem, ShopifyOrderResponse, ShopifyOrderFormData)
-
-2. **`src/utils/fetchShopifyOrder.ts`** -- funkcja wywolujaca edge function `fetch-shopify-order` przez `supabase.functions.invoke` oraz helper `getImageForLineItem`
-
-3. **`src/components/orders/ShopifyLineItemsSelector.tsx`** -- komponent listy pozycji zamowienia z checkboxami, podgladem zdjec, badge'ami (Mimeeq, SKU, shortcode) i rozwijanymi szczegolami konfiguracji (Collapsible)
-
-4. **`src/components/orders/ShopifyOrderForm.tsx`** -- glowny formularz: pole numeru zamowienia Shopify, przycisk "Pobierz", pole numeru wewnetrznego, lista pozycji (ShopifyLineItemsSelector), przycisk "Generuj przewodnik" (z TODO placeholder na dekoder)
-
-5. **`src/components/orders/OrderTabs.tsx`** -- komponent zakladek (Tabs) laczacy ShopifyOrderForm i istniejacy OrderForm
+**`supabase/functions/fetch-shopify-order/index.ts`**
+- CORS headers (identyczne jak w get-variant-image)
+- OPTIONS handler
+- JWT verification (autoryzacja uzytkownika)
+- Shopify auth: `POST https://{storeDomain}/admin/oauth/access_token` z client_credentials grant (uzywa istniejacych sekretow SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, SHOPIFY_STORE_DOMAIN)
+- Fetch zamowienia: `GET https://{storeDomain}/admin/api/{version}/orders.json?name={orderNumber}&status=any`
+- Mapowanie line_items:
+  - `line_item_id` = line_item.id
+  - `sku` = line_item.sku
+  - `title` = line_item.title
+  - `variant_title` = line_item.variant_title
+  - `quantity` = line_item.quantity
+  - `image_url` = line_item.image?.src (zdjecie produktu z Shopify)
+  - `product_id` = line_item.product_id
+  - `shortcode` = wyciagniete z properties (jesli istnieje klucz np. "_mmq_shortcode" lub "shortcode")
+  - `is_mmq_product` = true jesli shortcode znaleziony
+  - `properties` = line_item.properties jako Record
+- Logi diagnostyczne (console.log) na kazdym etapie
 
 ### Zmienione pliki
 
-6. **`src/pages/NewOrderPage.tsx`** -- zamiana `<OrderForm />` na `<OrderTabs />`, zachowanie layoutu z RecentOrders w bocznej kolumnie
+**`supabase/config.toml`** -- dodanie wpisu:
+```text
+[functions.fetch-shopify-order]
+verify_jwt = false
+```
 
-### Wazne uwagi techniczne
+### Sekrety
+Wszystkie potrzebne sekrety juz istnieja: SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, SHOPIFY_STORE_DOMAIN, SHOPIFY_API_VERSION.
 
-- Edge function `fetch-shopify-order` jeszcze NIE istnieje -- komponenty sa przygotowane do jej wywolania, ale funkcja zostanie utworzona w kolejnym kroku
-- Komponent ShopifyOrderForm ma placeholder TODO w sekcji generowania -- dekoder SKU zostanie podlaczony pozniej
-- Istniejacy OrderForm i RecentOrders pozostaja bez zmian
-- Wszystkie nowe komponenty umieszczone w `src/components/orders/` dla spojnosci z istniejaca struktura
+### Szczegoly techniczne
+
+Struktura odpowiedzi edge function:
+```text
+{
+  "success": true,
+  "order_name": "#1001",
+  "line_items": [
+    {
+      "line_item_id": 123,
+      "sku": "S01-PLMJIOE-...",
+      "title": "Sofa 3-osobowa",
+      "variant_title": "Szary / Nogi dab",
+      "quantity": 1,
+      "image_url": "https://cdn.shopify.com/...",
+      "product_id": 456,
+      "shortcode": "PLMJIOE",
+      "is_mmq_product": true,
+      "properties": { "kolor": "szary" }
+    }
+  ]
+}
+```
+
+W przypadku bledu:
+```text
+{
+  "success": false,
+  "order_name": null,
+  "line_items": [],
+  "error": "Order not found"
+}
+```
 
