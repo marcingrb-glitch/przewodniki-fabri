@@ -295,11 +295,13 @@ export type Database = {
           created_by: string | null
           decoded_data: Json | null
           id: string
+          mimeeq_shortcode: string | null
           order_date: string
           order_number: string
           series_code: string | null
           sku: string
           variant_image_path: string | null
+          variant_image_url: string | null
           visible_to_workers: boolean
         }
         Insert: {
@@ -307,11 +309,13 @@ export type Database = {
           created_by?: string | null
           decoded_data?: Json | null
           id?: string
+          mimeeq_shortcode?: string | null
           order_date?: string
           order_number: string
           series_code?: string | null
           sku: string
           variant_image_path?: string | null
+          variant_image_url?: string | null
           visible_to_workers?: boolean
         }
         Update: {
@@ -319,11 +323,13 @@ export type Database = {
           created_by?: string | null
           decoded_data?: Json | null
           id?: string
+          mimeeq_shortcode?: string | null
           order_date?: string
           order_number?: string
           series_code?: string | null
           sku?: string
           variant_image_path?: string | null
+          variant_image_url?: string | null
           visible_to_workers?: boolean
         }
         Relationships: []
