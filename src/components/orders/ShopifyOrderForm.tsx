@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Download, Package, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -35,7 +36,9 @@ const ShopifyOrderForm = () => {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [orderFetched, setOrderFetched] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-
+  const [fabricChange, setFabricChange] = useState(false);
+  const [fabricName, setFabricName] = useState("");
+  const [fabricColor, setFabricColor] = useState("");
   const handleFetchOrder = async () => {
     if (!shopifyOrderNumber.trim()) {
       toast({
@@ -104,6 +107,11 @@ const ShopifyOrderForm = () => {
       return;
     }
 
+    if (fabricChange && (!fabricName.trim() || !fabricColor.trim())) {
+      toast({ title: "Błąd", description: "Wypełnij nazwę tkaniny i kolor", variant: "destructive" });
+      return;
+    }
+
     const itemsWithSku = selectedItems.filter((item) => item.sku);
     if (itemsWithSku.length === 0) {
       toast({ title: "Błąd", description: "Żadna z zaznaczonych pozycji nie ma SKU", variant: "destructive" });
@@ -168,6 +176,24 @@ const ShopifyOrderForm = () => {
         decoded.orderDate = format(new Date(), "dd.MM.yyyy");
         decoded.rawSKU = normalizedSku;
 
+        // 4b. Apply fabric override
+        let finalSku = normalizedSku;
+        if (fabricChange && fabricName.trim() && fabricColor.trim()) {
+          const overrideName = fabricName.trim().toUpperCase().replace(/\s+/g, "_");
+          const overrideColor = fabricColor.trim().toUpperCase().replace(/\s+/g, "_");
+          // Replace fabric segment in SKU (T... segment between first and second dash after series)
+          finalSku = normalizedSku.replace(/-[A-Z]\d+[A-Z0-9]*-/, `-${overrideName}_${overrideColor}-`);
+          decoded.fabric = {
+            ...decoded.fabric,
+            code: overrideName,
+            name: fabricName.trim(),
+            color: overrideColor,
+            colorName: fabricColor.trim(),
+          };
+          decoded.fabricOverride = { name: fabricName.trim(), color: fabricColor.trim() };
+          decoded.rawSKU = finalSku;
+        }
+
         // 5. Determine image: Shopify image_url → Mimeeq shortcode fallback
         const variantImageUrl = item.image_url || undefined;
         const mimeeqShortcode = item.shortcode || undefined;
@@ -176,7 +202,7 @@ const ShopifyOrderForm = () => {
         const saved = await saveOrder({
           order_number: itemOrderNumber,
           order_date: format(new Date(), "yyyy-MM-dd"),
-          sku: normalizedSku,
+          sku: finalSku,
           series_code: parsed.series,
           decoded_data: decoded,
           created_by: user?.id,
@@ -227,6 +253,9 @@ const ShopifyOrderForm = () => {
     setLineItems([]);
     setFetchError(null);
     setOrderFetched(false);
+    setFabricChange(false);
+    setFabricName("");
+    setFabricColor("");
   };
 
   const selectedWithSku = lineItems.filter((item) => item.selected && item.sku).length;
@@ -277,6 +306,39 @@ const ShopifyOrderForm = () => {
                 value={baseOrderNumber}
                 onChange={(e) => setBaseOrderNumber(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="fabric-change"
+                  checked={fabricChange}
+                  onCheckedChange={(checked) => setFabricChange(checked === true)}
+                />
+                <Label htmlFor="fabric-change" className="cursor-pointer">Zmiana tkaniny</Label>
+              </div>
+              {fabricChange && (
+                <div className="grid grid-cols-2 gap-3 pl-6">
+                  <div className="space-y-1">
+                    <Label htmlFor="fabric-name">Nazwa tkaniny *</Label>
+                    <Input
+                      id="fabric-name"
+                      placeholder="np. Seattle"
+                      value={fabricName}
+                      onChange={(e) => setFabricName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="fabric-color">Kolor *</Label>
+                    <Input
+                      id="fabric-color"
+                      placeholder="np. Green"
+                      value={fabricColor}
+                      onChange={(e) => setFabricColor(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
