@@ -53,4 +53,5 @@ export interface DecodedSKU {
   orderNumber?: string;
   orderDate?: string;
   rawSKU?: string;
+  fabricOverride?: { name: string; color: string };
 }

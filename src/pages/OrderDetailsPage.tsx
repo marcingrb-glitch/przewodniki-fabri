@@ -143,6 +143,11 @@ const OrderDetailsPage = () => {
                   SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
                 </p>
                 <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
+                {decoded.fabricOverride && (
+                  <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600">
+                    Zmiana tkaniny: {decoded.fabricOverride.name} {decoded.fabricOverride.color}
+                  </Badge>
+                )}
               </div>
             </div>
             <Badge variant="secondary" className="self-start text-sm">
