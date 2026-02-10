@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
 
     // 5. Query Shopify Files API via GraphQL
     const graphqlQuery = `{
-      files(first: 1, query: "filename:*${shortcode}*") {
+      files(first: 1, query: "${shortcode}") {
         edges {
           node {
             ... on MediaImage {
@@ -159,6 +159,7 @@ Deno.serve(async (req) => {
     }
 
     const shopifyData = await shopifyRes.json();
+    console.log("Shopify files response:", JSON.stringify(shopifyData));
     const edges = shopifyData?.data?.files?.edges;
     const imageUrl = edges?.[0]?.node?.image?.url || null;
 
