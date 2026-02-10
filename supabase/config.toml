@@ -3,5 +3,8 @@ project_id = "gvjthssbfiftbfeounhm"
 [functions.upload-order-file]
 verify_jwt = false
 
+[functions.fetch-shopify-order]
+verify_jwt = false
+
 [functions.get-variant-image]
 verify_jwt = false
