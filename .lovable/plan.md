@@ -1,67 +1,31 @@
 
 
-## Pełna Edge Function `get-variant-image` z integracją Shopify
+## Dodanie obslugi zamowien Shopify
 
 ### Co zostanie zrobione
 
-Frontend (OrderForm) jest juz gotowy i wywoluje `POST /functions/v1/get-variant-image`. Brakuje samej funkcji backendowej i tabeli cache.
+Dodanie zakladek (Tabs) na stronie nowego zamowienia: "Zamowienia Shopify" i "Zamowienia reczne". Zamowienia reczne to istniejacy `OrderForm`. Zamowienia Shopify to nowy formularz pobierajacy dane z Shopify.
 
-### Kroki implementacji
+### Nowe pliki
 
-**1. Dodanie sekretow Shopify (4 sekrety)**
+1. **`src/types/shopifyOrder.ts`** -- typy TypeScript dla danych zamowienia Shopify (ShopifyLineItem, ShopifyOrderResponse, ShopifyOrderFormData)
 
-Potrzebne sa 4 sekrety w Lovable Cloud:
-- `SHOPIFY_CLIENT_ID` -- Client ID z aplikacji Shopify
-- `SHOPIFY_CLIENT_SECRET` -- Client Secret z aplikacji Shopify
-- `SHOPIFY_STORE_DOMAIN` -- `0vpqnh-0p.myshopify.com`
-- `SHOPIFY_API_VERSION` -- `2026-01`
+2. **`src/utils/fetchShopifyOrder.ts`** -- funkcja wywolujaca edge function `fetch-shopify-order` przez `supabase.functions.invoke` oraz helper `getImageForLineItem`
 
-Zostaniesz poproszony o podanie kazdego z nich.
+3. **`src/components/orders/ShopifyLineItemsSelector.tsx`** -- komponent listy pozycji zamowienia z checkboxami, podgladem zdjec, badge'ami (Mimeeq, SKU, shortcode) i rozwijanymi szczegolami konfiguracji (Collapsible)
 
-**2. Tabela cache `variant_images`**
+4. **`src/components/orders/ShopifyOrderForm.tsx`** -- glowny formularz: pole numeru zamowienia Shopify, przycisk "Pobierz", pole numeru wewnetrznego, lista pozycji (ShopifyLineItemsSelector), przycisk "Generuj przewodnik" (z TODO placeholder na dekoder)
 
-```text
-variant_images
-+-------------------+---------------------------+
-| shortcode (PK)    | TEXT, NOT NULL, UNIQUE     |
-| image_url         | TEXT, NOT NULL             |
-| created_at        | TIMESTAMPTZ, DEFAULT now() |
-+-------------------+---------------------------+
-```
+5. **`src/components/orders/OrderTabs.tsx`** -- komponent zakladek (Tabs) laczacy ShopifyOrderForm i istniejacy OrderForm
 
-Polityka RLS: authenticated users moga SELECT; INSERT/UPDATE/DELETE tylko przez service role (edge function).
+### Zmienione pliki
 
-**3. Edge Function `get-variant-image/index.ts`**
+6. **`src/pages/NewOrderPage.tsx`** -- zamiana `<OrderForm />` na `<OrderTabs />`, zachowanie layoutu z RecentOrders w bocznej kolumnie
 
-Pelna logika:
+### Wazne uwagi techniczne
 
-```text
-POST { shortcode } -->
-  1. Weryfikacja JWT (getUser)
-  2. Sprawdzenie cache (variant_images WHERE shortcode = ?)
-     - Jesli znaleziono: zwroc { image_url, source: "cache" }
-  3. Uzyskanie access token:
-     POST https://shopify.com/authentication/oauth/token
-     grant_type=client_credentials
-     &client_id={SHOPIFY_CLIENT_ID}
-     &client_secret={SHOPIFY_CLIENT_SECRET}
-     &scope=read_files
-  4. Zapytanie GraphQL Admin API:
-     POST https://{store}/admin/api/{version}/graphql.json
-     { files(first:1, query:"filename:*{shortcode}*") { edges { node { ... on MediaImage { image { url } } } } } }
-  5. Zapis do cache variant_images
-  6. Zwroc { image_url, source: "shopify" }
-```
-
-**4. Konfiguracja `supabase/config.toml`**
-
-Dodanie sekcji `[functions.get-variant-image]` z `verify_jwt = false` (weryfikacja w kodzie).
-
-### Szczegoly techniczne
-
-- Edge function uzywa `SUPABASE_SERVICE_ROLE_KEY` do zapisu w cache (omija RLS)
-- Shopify OAuth2 Client Credentials Grant nie wymaga interakcji uzytkownika
-- Token Shopify jest pobierany przy kazdym uzyciu (krotkotrwale tokeny, bez cachowania)
-- Timeout na zapytania Shopify: standardowy fetch (bez dodatkowego timeout)
-- Obsluga bledow: jesli Shopify nie zwroci pliku, zwracany jest `{ image_url: null }`
+- Edge function `fetch-shopify-order` jeszcze NIE istnieje -- komponenty sa przygotowane do jej wywolania, ale funkcja zostanie utworzona w kolejnym kroku
+- Komponent ShopifyOrderForm ma placeholder TODO w sekcji generowania -- dekoder SKU zostanie podlaczony pozniej
+- Istniejacy OrderForm i RecentOrders pozostaja bez zmian
+- Wszystkie nowe komponenty umieszczone w `src/components/orders/` dla spojnosci z istniejaca struktura
 
