@@ -119,8 +119,13 @@ const ShopifyOrderForm = () => {
         : `${baseOrderNumber.trim()}-${item.line_item_id}`;
 
       try {
+        // Normalize SKU: trim, uppercase, collapse whitespace
+        const normalizedSku = item.sku.trim().replace(/\s+/g, "-").toUpperCase();
+        console.log("[ShopifyFlow] Original SKU:", JSON.stringify(item.sku), "Normalized:", JSON.stringify(normalizedSku));
+
         // 1. Validate SKU
-        const validation = validateSKU(item.sku);
+        const validation = validateSKU(normalizedSku);
+        console.log("[ShopifyFlow] Validation result:", validation);
         if (!validation.valid) {
           const errMsg = validation.errors.join("; ");
           results.push({ item, error: errMsg });
@@ -134,7 +139,8 @@ const ShopifyOrderForm = () => {
         }
 
         // 2. Parse
-        const parsed = parseSKU(item.sku);
+        const parsed = parseSKU(normalizedSku);
+        console.log("[ShopifyFlow] Parsed SKU:", parsed);
 
         // 3. Validate finishes against DB
         try {
@@ -160,7 +166,7 @@ const ShopifyOrderForm = () => {
         const decoded = decodeSKU(parsed);
         decoded.orderNumber = itemOrderNumber;
         decoded.orderDate = format(new Date(), "dd.MM.yyyy");
-        decoded.rawSKU = item.sku.trim().toUpperCase();
+        decoded.rawSKU = normalizedSku;
 
         // 5. Determine image: Shopify image_url → Mimeeq shortcode fallback
         const variantImageUrl = item.image_url || undefined;
@@ -170,7 +176,7 @@ const ShopifyOrderForm = () => {
         const saved = await saveOrder({
           order_number: itemOrderNumber,
           order_date: format(new Date(), "yyyy-MM-dd"),
-          sku: item.sku.trim().toUpperCase(),
+          sku: normalizedSku,
           series_code: parsed.series,
           decoded_data: decoded,
           created_by: user?.id,
