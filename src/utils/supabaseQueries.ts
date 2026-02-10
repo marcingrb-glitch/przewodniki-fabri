@@ -9,6 +9,8 @@ interface OrderInsert {
   decoded_data: DecodedSKU;
   created_by?: string;
   visible_to_workers?: boolean;
+  variant_image_url?: string;
+  mimeeq_shortcode?: string;
 }
 
 export async function checkOrderNumberExists(orderNumber: string): Promise<boolean> {
@@ -31,6 +33,8 @@ export async function saveOrder(data: OrderInsert) {
       decoded_data: JSON.parse(JSON.stringify(data.decoded_data)),
       created_by: data.created_by,
       visible_to_workers: data.visible_to_workers ?? false,
+      variant_image_url: data.variant_image_url ?? null,
+      mimeeq_shortcode: data.mimeeq_shortcode ?? null,
     }])
     .select()
     .maybeSingle();

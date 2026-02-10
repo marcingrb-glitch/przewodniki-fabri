@@ -48,15 +48,18 @@ const OrderDetailsPage = () => {
 
   const decoded: DecodedSKU | undefined = stateDecoded || (order?.decoded_data as unknown as DecodedSKU);
   const variantImagePath = (order as any)?.variant_image_path as string | undefined;
+  const variantImageUrlFromOrder = (order as any)?.variant_image_url as string | undefined;
   const orderId = id || "";
   const orderNumber = decoded?.orderNumber || order?.order_number || "";
 
-  // Load variant image signed URL
+  // Load variant image: manual upload (signed URL) takes priority, then Shopify CDN URL
   useEffect(() => {
     if (variantImagePath) {
       getVariantImageSignedUrl(variantImagePath).then(url => setVariantImageUrl(url));
+    } else if (variantImageUrlFromOrder) {
+      setVariantImageUrl(variantImageUrlFromOrder);
     }
-  }, [variantImagePath]);
+  }, [variantImagePath, variantImageUrlFromOrder]);
 
   const withLoading = async (key: string, fn: () => Promise<void>) => {
     setLoading(key);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarIcon, Search, Loader2, HelpCircle, Info, ImageIcon, X } from "lucide-react";
+import { CalendarIcon, Search, Loader2, HelpCircle, Info, ImageIcon, X, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import { saveOrder, checkOrderNumberExists } from "@/utils/supabaseQueries";
 import { uploadVariantImage } from "@/utils/variantImageUpload";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const OrderForm = () => {
   const [orderNumber, setOrderNumber] = useState("");
@@ -40,6 +41,49 @@ const OrderForm = () => {
   const [visibleToWorkers, setVisibleToWorkers] = useState(true);
   const [variantImage, setVariantImage] = useState<File | null>(null);
   const [variantImagePreview, setVariantImagePreview] = useState<string | null>(null);
+  const [shortcode, setShortcode] = useState("");
+  const [autoImageUrl, setAutoImageUrl] = useState<string | null>(null);
+  const [autoImageLoading, setAutoImageLoading] = useState(false);
+
+  const fetchShopifyImage = async () => {
+    const code = shortcode.trim().toUpperCase();
+    if (!code) { toast.error("Podaj shortcode Mimeeq"); return; }
+    setAutoImageLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-variant-image`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ shortcode: code }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Błąd pobierania" }));
+        throw new Error(err.error || "Błąd pobierania zdjęcia");
+      }
+      const data = await res.json();
+      if (data.image_url) {
+        setAutoImageUrl(data.image_url);
+        // Only set preview if no manual upload
+        if (!variantImage) {
+          setVariantImagePreview(data.image_url);
+        }
+        toast.success("Pobrano zdjęcie z Shopify");
+      } else {
+        toast.warning("Nie znaleziono zdjęcia dla tego shortcode");
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Błąd pobierania zdjęcia");
+    } finally {
+      setAutoImageLoading(false);
+    }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -165,9 +209,11 @@ const OrderForm = () => {
         decoded_data: decoded,
         created_by: user?.id,
         visible_to_workers: isAdmin ? visibleToWorkers : false,
+        variant_image_url: !variantImage && autoImageUrl ? autoImageUrl : undefined,
+        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined,
       });
 
-      // 6. Upload variant image if provided
+      // 6. Upload variant image if provided (manual upload takes priority)
       if (variantImage && saved?.id) {
         try {
           await uploadVariantImage(saved.id, orderNumber, variantImage);
@@ -302,6 +348,30 @@ const OrderForm = () => {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="shortcode">Shortcode Mimeeq (opcjonalne)</Label>
+            <p className="text-xs text-muted-foreground">Shortcode z koszyka klienta w Mimeeq</p>
+            <div className="flex gap-2">
+              <Input
+                id="shortcode"
+                value={shortcode}
+                onChange={(e) => setShortcode(e.target.value.toUpperCase())}
+                placeholder="np. FHGTD58"
+                disabled={loading || autoImageLoading}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={fetchShopifyImage}
+                disabled={loading || autoImageLoading || !shortcode.trim()}
+              >
+                {autoImageLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Pobierz zdjęcie
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="variant-image">Zdjęcie wariantu sofy (opcjonalne)</Label>
             <Input
               id="variant-image"
@@ -319,7 +389,7 @@ const OrderForm = () => {
                 />
                 <button
                   type="button"
-                  onClick={clearImage}
+                  onClick={() => { clearImage(); if (!variantImage && autoImageUrl) setVariantImagePreview(null); }}
                   className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5"
                 >
                   <X className="h-3.5 w-3.5" />
