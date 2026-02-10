@@ -299,6 +299,7 @@ export type Database = {
           order_date: string
           order_number: string
           series_code: string | null
+          shopify_order_name: string | null
           sku: string
           variant_image_path: string | null
           variant_image_url: string | null
@@ -313,6 +314,7 @@ export type Database = {
           order_date?: string
           order_number: string
           series_code?: string | null
+          shopify_order_name?: string | null
           sku: string
           variant_image_path?: string | null
           variant_image_url?: string | null
@@ -327,6 +329,7 @@ export type Database = {
           order_date?: string
           order_number?: string
           series_code?: string | null
+          shopify_order_name?: string | null
           sku?: string
           variant_image_path?: string | null
           variant_image_url?: string | null

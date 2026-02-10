@@ -240,7 +240,7 @@ const OrderHistoryPage = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 data-search-input
-                placeholder="Szukaj po numerze zamówienia... (Ctrl+K)"
+                placeholder="Szukaj po numerze zamówienia lub Shopify... (Ctrl+K)"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); resetPage(); }}
                 className="pl-9"
@@ -338,7 +338,12 @@ const OrderHistoryPage = () => {
                         className="cursor-pointer"
                         onClick={() => navigate(`/order/${order.id}`)}
                       >
-                        <TableCell className="font-bold">{order.order_number}</TableCell>
+                        <TableCell>
+                          <div className="font-bold">{order.order_number}</div>
+                          {order.shopify_order_name && (
+                            <div className="text-xs text-muted-foreground">Shopify: {order.shopify_order_name}</div>
+                          )}
+                        </TableCell>
                         <TableCell>{format(new Date(order.order_date), "dd.MM.yyyy")}</TableCell>
                         <TableCell>
                           <TooltipProvider>

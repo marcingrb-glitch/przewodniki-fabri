@@ -48,9 +48,16 @@ const RecentOrders = () => {
                 className="w-full rounded-md border p-3 text-left transition-colors hover:bg-accent"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm">
-                    #{order.order_number}
-                  </span>
+                  <div>
+                    <span className="font-semibold text-sm">
+                      #{order.order_number}
+                    </span>
+                    {order.shopify_order_name && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        Shopify: {order.shopify_order_name}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {order.order_date
                       ? format(new Date(order.order_date), "dd.MM.yyyy")
