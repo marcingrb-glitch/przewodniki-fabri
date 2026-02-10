@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,12 +8,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Download, Package, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import ShopifyLineItemsSelector from "./ShopifyLineItemsSelector";
 import { fetchShopifyOrder } from "@/utils/fetchShopifyOrder";
+import { parseSKU } from "@/utils/skuParser";
+import { validateSKU } from "@/utils/skuValidator";
+import { decodeSKU } from "@/utils/skuDecoder";
+import { validateFinishesFromDB } from "@/utils/finishValidator";
+import { saveOrder } from "@/utils/supabaseQueries";
 import type { ShopifyLineItem } from "@/types/shopifyOrder";
 
 const ShopifyOrderForm = () => {
   const { toast } = useToast();
+
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, isAdmin } = useAuth();
 
   const [shopifyOrderNumber, setShopifyOrderNumber] = useState("");
   const [baseOrderNumber, setBaseOrderNumber] = useState("");
@@ -81,63 +95,122 @@ const ShopifyOrderForm = () => {
     const selectedItems = lineItems.filter((item) => item.selected);
 
     if (selectedItems.length === 0) {
-      toast({
-        title: "Błąd",
-        description: "Zaznacz co najmniej jedną pozycję",
-        variant: "destructive",
-      });
+      toast({ title: "Błąd", description: "Zaznacz co najmniej jedną pozycję", variant: "destructive" });
       return;
     }
 
     if (!baseOrderNumber.trim()) {
-      toast({
-        title: "Błąd",
-        description: "Podaj numer wewnętrzny (Base)",
-        variant: "destructive",
-      });
+      toast({ title: "Błąd", description: "Podaj numer wewnętrzny (Base)", variant: "destructive" });
       return;
     }
 
     const itemsWithSku = selectedItems.filter((item) => item.sku);
     if (itemsWithSku.length === 0) {
-      toast({
-        title: "Błąd",
-        description: "Żadna z zaznaczonych pozycji nie ma SKU",
-        variant: "destructive",
-      });
+      toast({ title: "Błąd", description: "Żadna z zaznaczonych pozycji nie ma SKU", variant: "destructive" });
       return;
     }
 
     setIsGenerating(true);
+    const results: { item: ShopifyLineItem; orderId?: string; error?: string }[] = [];
 
-    try {
-      // TODO: Tu podłączyć istniejący dekoder SKU i generator PDF
-      // Dla każdej pozycji z itemsWithSku:
-      // 1. Dekoduj SKU
-      // 2. Zdjęcie: item.image_url (Shopify) → fallback item.shortcode (Mimeeq) → brak
-      // 3. Generuj PDF
-      // 4. Zapisz do Supabase
+    for (const item of itemsWithSku) {
+      const itemOrderNumber = itemsWithSku.length === 1
+        ? baseOrderNumber.trim()
+        : `${baseOrderNumber.trim()}-${item.line_item_id}`;
 
-      setLineItems((prev) =>
-        prev.map((item) => {
-          if (!item.selected || !item.sku) return item;
-          return { ...item, decoded: true };
-        })
-      );
+      try {
+        // 1. Validate SKU
+        const validation = validateSKU(item.sku);
+        if (!validation.valid) {
+          const errMsg = validation.errors.join("; ");
+          results.push({ item, error: errMsg });
+          setLineItems((prev) =>
+            prev.map((li) => li.line_item_id === item.line_item_id ? { ...li, decoded: false, decode_error: errMsg } : li)
+          );
+          continue;
+        }
+        if (validation.warnings.length > 0) {
+          validation.warnings.forEach((w) => sonnerToast.warning(`⚠️ ${item.title}: ${w}`));
+        }
 
-      toast({
-        title: "Sukces",
-        description: `Wygenerowano przewodnik dla ${itemsWithSku.length} pozycji`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Błąd generowania",
-        description: error.message || "Wystąpił błąd",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
+        // 2. Parse
+        const parsed = parseSKU(item.sku);
+
+        // 3. Validate finishes against DB
+        try {
+          const finishResult = await validateFinishesFromDB(parsed);
+          if (finishResult.errors.length > 0) {
+            const errMsg = finishResult.errors.map((e) =>
+              e.finish
+                ? `${e.component} ${e.code}: wykończenie ${e.finish} niedozwolone (${e.allowed.join(", ")})`
+                : `${e.component} ${e.code}: brak wymaganego wykończenia (${e.allowed.join(", ")})`
+            ).join("; ");
+            results.push({ item, error: errMsg });
+            setLineItems((prev) =>
+              prev.map((li) => li.line_item_id === item.line_item_id ? { ...li, decoded: false, decode_error: errMsg } : li)
+            );
+            continue;
+          }
+          if (finishResult.defaults.seat && !parsed.seat.finish) parsed.seat.finish = finishResult.defaults.seat;
+          if (finishResult.defaults.side && !parsed.side.finish) parsed.side.finish = finishResult.defaults.side;
+          if (finishResult.defaults.backrest && !parsed.backrest.finish) parsed.backrest.finish = finishResult.defaults.backrest;
+        } catch { /* non-blocking */ }
+
+        // 4. Decode
+        const decoded = decodeSKU(parsed);
+        decoded.orderNumber = itemOrderNumber;
+        decoded.orderDate = format(new Date(), "dd.MM.yyyy");
+        decoded.rawSKU = item.sku.trim().toUpperCase();
+
+        // 5. Determine image: Shopify image_url → Mimeeq shortcode fallback
+        const variantImageUrl = item.image_url || undefined;
+        const mimeeqShortcode = item.shortcode || undefined;
+
+        // 6. Save to DB
+        const saved = await saveOrder({
+          order_number: itemOrderNumber,
+          order_date: format(new Date(), "yyyy-MM-dd"),
+          sku: item.sku.trim().toUpperCase(),
+          series_code: parsed.series,
+          decoded_data: decoded,
+          created_by: user?.id,
+          visible_to_workers: false,
+          variant_image_url: variantImageUrl,
+          mimeeq_shortcode: mimeeqShortcode,
+        });
+
+        results.push({ item, orderId: saved?.id });
+        setLineItems((prev) =>
+          prev.map((li) => li.line_item_id === item.line_item_id ? { ...li, decoded: true, decode_error: undefined } : li)
+        );
+      } catch (error: any) {
+        const errMsg = error.message || "Nieznany błąd";
+        results.push({ item, error: errMsg });
+        setLineItems((prev) =>
+          prev.map((li) => li.line_item_id === item.line_item_id ? { ...li, decoded: false, decode_error: errMsg } : li)
+        );
+      }
     }
+
+    const successCount = results.filter((r) => r.orderId).length;
+    const errorCount = results.filter((r) => r.error).length;
+
+    if (successCount > 0) {
+      queryClient.invalidateQueries({ queryKey: ["recent-orders"] });
+      sonnerToast.success(`Zapisano ${successCount} zamówień${orderName ? ` (${orderName})` : ""}`, {
+        description: errorCount > 0 ? `${errorCount} pozycji z błędami` : undefined,
+      });
+
+      // Navigate to first successful order
+      const firstSuccess = results.find((r) => r.orderId);
+      if (firstSuccess?.orderId) {
+        navigate(`/order/${firstSuccess.orderId}`);
+      }
+    } else {
+      sonnerToast.error("Nie udało się zdekodować żadnej pozycji");
+    }
+
+    setIsGenerating(false);
   };
 
   const handleReset = () => {
