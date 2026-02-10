@@ -562,6 +562,24 @@ export type Database = {
         }
         Relationships: []
       }
+      variant_images: {
+        Row: {
+          created_at: string
+          image_url: string
+          shortcode: string
+        }
+        Insert: {
+          created_at?: string
+          image_url: string
+          shortcode: string
+        }
+        Update: {
+          created_at?: string
+          image_url?: string
+          shortcode?: string
+        }
+        Relationships: []
+      }
       waleks: {
         Row: {
           code: string
