@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
     const storeDomain = Deno.env.get("SHOPIFY_STORE_DOMAIN")!;
     const apiVersion = Deno.env.get("SHOPIFY_API_VERSION") || "2026-01";
 
+    console.log("Requesting Shopify token for store:", storeDomain);
     const tokenRes = await fetch(
       "https://shopify.com/authentication/oauth/token",
       {
@@ -96,6 +97,7 @@ Deno.serve(async (req) => {
       }
     );
 
+    console.log("Shopify token response status:", tokenRes.status);
     if (!tokenRes.ok) {
       const errText = await tokenRes.text();
       console.error("Shopify token error:", tokenRes.status, errText);
