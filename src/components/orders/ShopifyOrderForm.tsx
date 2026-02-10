@@ -183,6 +183,7 @@ const ShopifyOrderForm = () => {
           visible_to_workers: false,
           variant_image_url: variantImageUrl,
           mimeeq_shortcode: mimeeqShortcode,
+          shopify_order_name: orderName || undefined,
         });
 
         results.push({ item, orderId: saved?.id });
