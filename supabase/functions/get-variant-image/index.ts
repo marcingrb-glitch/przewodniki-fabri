@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     console.log("Requesting Shopify token for store:", storeDomain);
     const tokenRes = await fetch(
-      "https://shopify.com/authentication/oauth/token",
+      `https://${storeDomain}/admin/oauth/access_token`,
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -92,7 +92,6 @@ Deno.serve(async (req) => {
           grant_type: "client_credentials",
           client_id: clientId,
           client_secret: clientSecret,
-          scope: "read_files",
         }),
       }
     );
