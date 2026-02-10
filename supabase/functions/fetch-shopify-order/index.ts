@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
     const order = orders[0];
     console.log("Processing order:", order.name, "with", order.line_items?.length, "line items");
 
-    // 5. Map line items
-    const lineItems = (order.line_items || []).map((li: any) => {
+    // 5. Map line items and fetch product images
+    const rawItems = (order.line_items || []).map((li: any) => {
       const propsRecord: Record<string, string> = {};
       let shortcode: string | null = null;
 
@@ -141,15 +141,71 @@ Deno.serve(async (req) => {
         title: li.title || "",
         variant_title: li.variant_title || null,
         quantity: li.quantity || 1,
-        image_url: li.image?.src || null,
         product_id: li.product_id,
+        variant_id: li.variant_id,
         shortcode,
         is_mmq_product: !!shortcode,
         properties: propsRecord,
       };
     });
 
-    console.log("Mapped", lineItems.length, "line items");
+    // 6. Fetch product images for each unique product_id
+    const uniqueProductIds = [...new Set(rawItems.map((i: any) => i.product_id).filter(Boolean))];
+    console.log("Fetching images for", uniqueProductIds.length, "unique products");
+
+    const productImageMap: Record<string, any> = {};
+    await Promise.all(
+      uniqueProductIds.map(async (productId: number) => {
+        try {
+          const prodUrl = `https://${storeDomain}/admin/api/${apiVersion}/products/${productId}.json?fields=images,variants`;
+          const prodRes = await fetch(prodUrl, {
+            headers: { "X-Shopify-Access-Token": accessToken },
+          });
+          if (prodRes.ok) {
+            const prodData = await prodRes.json();
+            productImageMap[productId] = prodData.product;
+          } else {
+            console.warn("Failed to fetch product", productId, prodRes.status);
+          }
+        } catch (e) {
+          console.warn("Error fetching product", productId, e);
+        }
+      })
+    );
+
+    // 7. Resolve image_url per line item
+    const lineItems = rawItems.map((item: any) => {
+      let imageUrl: string | null = null;
+      const product = productImageMap[item.product_id];
+
+      if (product) {
+        const variant = (product.variants || []).find((v: any) => v.id === item.variant_id);
+        if (variant?.image_id) {
+          const variantImage = (product.images || []).find((img: any) => img.id === variant.image_id);
+          if (variantImage) {
+            imageUrl = variantImage.src;
+          }
+        }
+        if (!imageUrl && product.images?.length > 0) {
+          imageUrl = product.images[0].src;
+        }
+      }
+
+      return {
+        line_item_id: item.line_item_id,
+        sku: item.sku,
+        title: item.title,
+        variant_title: item.variant_title,
+        quantity: item.quantity,
+        image_url: imageUrl,
+        product_id: item.product_id,
+        shortcode: item.shortcode,
+        is_mmq_product: item.is_mmq_product,
+        properties: item.properties,
+      };
+    });
+
+    console.log("Mapped", lineItems.length, "line items with images");
 
     return new Response(
       JSON.stringify({ success: true, order_name: order.name, line_items: lineItems }),
