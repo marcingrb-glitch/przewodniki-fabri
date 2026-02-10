@@ -120,6 +120,8 @@ Deno.serve(async (req) => {
     const rawItems = (order.line_items || []).map((li: any) => {
       const propsRecord: Record<string, string> = {};
       let shortcode: string | null = null;
+      let isMmqProduct = false;
+      let mmqSku: string | null = null;
 
       if (Array.isArray(li.properties)) {
         for (const prop of li.properties) {
@@ -131,20 +133,29 @@ Deno.serve(async (req) => {
             ) {
               shortcode = String(prop.value);
             }
+            if (prop.name === "_mmqProduct" && String(prop.value) === "true") {
+              isMmqProduct = true;
+            }
+            if (prop.name === "SKU" && prop.value) {
+              mmqSku = String(prop.value).trim();
+            }
           }
         }
       }
 
+      // For Mimeeq products, use SKU from properties instead of generic line_item.sku
+      const effectiveSku = (isMmqProduct || shortcode) && mmqSku ? mmqSku : (li.sku || "");
+
       return {
         line_item_id: li.id,
-        sku: li.sku || "",
+        sku: effectiveSku,
         title: li.title || "",
         variant_title: li.variant_title || null,
         quantity: li.quantity || 1,
         product_id: li.product_id,
         variant_id: li.variant_id,
         shortcode,
-        is_mmq_product: !!shortcode,
+        is_mmq_product: isMmqProduct || !!shortcode,
         properties: propsRecord,
       };
     });
