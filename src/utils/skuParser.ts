@@ -4,6 +4,14 @@ import { ParsedSKU } from "@/types";
  * Parse SKU string into structured components.
  * Format: S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF
  */
+// Side (boczek) exception map for legacy Shopify SKUs — applied before regex parsing
+const SIDE_EXCEPTIONS: Record<string, Record<string, string>> = {
+  S1: {
+    B6WD: "B6WC",
+    B6D: "B6C",
+  },
+};
+
 export function parseSKU(sku: string): ParsedSKU {
   const parts = sku.trim().toUpperCase().split("-");
 
@@ -16,6 +24,7 @@ export function parseSKU(sku: string): ParsedSKU {
     chest: "",
     automat: "",
     extras: [],
+    sideException: undefined,
   };
 
   for (const part of parts) {
@@ -43,12 +52,28 @@ export function parseSKU(sku: string): ParsedSKU {
       continue;
     }
 
-    // Side/Boczek: B8C, B1A
+    // Side/Boczek: B8C, B1A — with exception pre-processing
+    const seriesExceptions = result.series ? SIDE_EXCEPTIONS[result.series] : undefined;
+    if (seriesExceptions && seriesExceptions[part]) {
+      const original = part;
+      const mapped = seriesExceptions[part];
+      result.sideException = `Zamieniono ${original} → ${mapped} (wyjątek Shopify)`;
+      console.log(`[SKU Parser] Side exception: ${original} → ${mapped}`);
+      // Parse the mapped value instead
+      const mappedMatch = mapped.match(/^B(\d+(?:S|W)?)([A-C])$/);
+      if (mappedMatch) {
+        const rawCode = mappedMatch[1];
+        let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
+        if (code === "6") code = "6s";
+        result.side = { code: `B${code}`, finish: mappedMatch[2] };
+      }
+      continue;
+    }
+
     const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])$/);
     if (sideMatch) {
       const rawCode = sideMatch[1];
       let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
-      // B6 bez sufiksu -> automatycznie B6s
       if (code === "6") code = "6s";
       result.side = { code: `B${code}`, finish: sideMatch[2] };
       continue;

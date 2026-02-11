@@ -23,6 +23,7 @@ export interface ParsedSKU {
   jaski?: string;
   walek?: string;
   extras: string[];
+  sideException?: string; // e.g. "Zamieniono B6wD → B6wC (wyjątek Shopify)"
 }
 
 export interface ValidationResult {
