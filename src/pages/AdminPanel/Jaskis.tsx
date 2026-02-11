@@ -13,7 +13,7 @@ const fields: FieldDefinition[] = [
 ];
 
 export default function Jaskis() {
-  const crud = useAdminCrud({ table: "jaskis", queryKey: "admin-jaskis", labelSingular: "Jaśek" });
+  const crud = useAdminCrud({ table: "jaskis", queryKey: "admin-jaskis", labelSingular: "Jasiek" });
 
   return (
     <>

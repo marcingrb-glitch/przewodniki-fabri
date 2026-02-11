@@ -97,8 +97,8 @@ export const PILLOWS: Record<string, { name: string }> = {
 };
 
 export const JASKI: Record<string, { name: string }> = {
-  J1: { name: "Jaśek kwadratowy" },
-  J2: { name: "Jaśek zaokrąglony" },
+  J1: { name: "Jasiek kwadratowy" },
+  J2: { name: "Jasiek zaokrąglony" },
 };
 
 export const WALKI: Record<string, { name: string }> = {
