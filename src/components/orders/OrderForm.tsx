@@ -115,10 +115,6 @@ const OrderForm = () => {
     const trimmedOrder = orderNumber.trim();
     if (!trimmedOrder) {
       newErrors.orderNumber = "Numer zamówienia jest wymagany";
-    } else if (trimmedOrder.length < 3) {
-      newErrors.orderNumber = "Numer zamówienia musi mieć min. 3 znaki";
-    } else if (!/^[a-zA-Z0-9]+$/.test(trimmedOrder)) {
-      newErrors.orderNumber = "Tylko litery i cyfry";
     } else {
       try {
         const exists = await checkOrderNumberExists(trimmedOrder);
