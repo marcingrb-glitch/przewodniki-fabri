@@ -9,15 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
-} from "@/components/ui/card";
-import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { parseSKU } from "@/utils/skuParser";
 import { validateSKU } from "@/utils/skuValidator";
@@ -28,7 +22,6 @@ import { uploadVariantImage } from "@/utils/variantImageUpload";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-
 const OrderForm = () => {
   const [orderNumber, setOrderNumber] = useState("");
   const [orderDate, setOrderDate] = useState<Date>(new Date());
@@ -37,34 +30,44 @@ const OrderForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, isAdmin } = useAuth();
+  const {
+    user,
+    isAdmin
+  } = useAuth();
   const [visibleToWorkers, setVisibleToWorkers] = useState(true);
   const [variantImage, setVariantImage] = useState<File | null>(null);
   const [variantImagePreview, setVariantImagePreview] = useState<string | null>(null);
   const [shortcode, setShortcode] = useState("");
   const [autoImageUrl, setAutoImageUrl] = useState<string | null>(null);
   const [autoImageLoading, setAutoImageLoading] = useState(false);
-
   const fetchShopifyImage = async () => {
     const code = shortcode.trim().toUpperCase();
-    if (!code) { toast.error("Podaj shortcode Mimeeq"); return; }
+    if (!code) {
+      toast.error("Podaj shortcode Mimeeq");
+      return;
+    }
     setAutoImageLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-variant-image`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ shortcode: code }),
+      const {
+        data: {
+          session
         }
-      );
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-variant-image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          shortcode: code
+        })
+      });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Błąd pobierania" }));
+        const err = await res.json().catch(() => ({
+          error: "Błąd pobierania"
+        }));
         throw new Error(err.error || "Błąd pobierania zdjęcia");
       }
       const data = await res.json();
@@ -84,11 +87,9 @@ const OrderForm = () => {
       setAutoImageLoading(false);
     }
   };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Dozwolone formaty: JPG, PNG, WebP");
@@ -98,18 +99,15 @@ const OrderForm = () => {
       toast.error("Plik jest za duży. Maksymalnie 5MB.");
       return;
     }
-
     setVariantImage(file);
     const reader = new FileReader();
     reader.onloadend = () => setVariantImagePreview(reader.result as string);
     reader.readAsDataURL(file);
   };
-
   const clearImage = () => {
     setVariantImage(null);
     setVariantImagePreview(null);
   };
-
   const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
 
@@ -125,7 +123,7 @@ const OrderForm = () => {
       try {
         const exists = await checkOrderNumberExists(trimmedOrder);
         if (exists) newErrors.orderNumber = "Ten numer zamówienia już istnieje";
-      } catch { /* non-blocking */ }
+      } catch {/* non-blocking */}
     }
 
     // Date
@@ -142,15 +140,12 @@ const OrderForm = () => {
     } else if (trimmedSku.length < 10) {
       newErrors.sku = "SKU musi mieć min. 10 znaków";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const formValid = await validateForm();
       if (!formValid) {
@@ -161,12 +156,12 @@ const OrderForm = () => {
       // 1. Basic validation
       const validation = validateSKU(sku);
       if (!validation.valid) {
-        validation.errors.forEach((err) => toast.error(`❌ ${err}`));
+        validation.errors.forEach(err => toast.error(`❌ ${err}`));
         setLoading(false);
         return;
       }
       if (validation.warnings.length > 0) {
-        validation.warnings.forEach((w) => toast.warning(`⚠️ ${w}`));
+        validation.warnings.forEach(w => toast.warning(`⚠️ ${w}`));
       }
 
       // 2. Parse
@@ -176,7 +171,7 @@ const OrderForm = () => {
       try {
         const finishResult = await validateFinishesFromDB(parsed);
         if (finishResult.errors.length > 0) {
-          finishResult.errors.forEach((e) => {
+          finishResult.errors.forEach(e => {
             if (e.finish) {
               toast.error(`❌ ${e.component} ${e.code} ma wykończenie ${e.finish}, ale dozwolone są: ${e.allowed.join(', ')}`);
             } else {
@@ -186,13 +181,11 @@ const OrderForm = () => {
           setLoading(false);
           return;
         }
-        finishResult.warnings.forEach((w) =>
-          toast.warning(`⚠️ ${w.component} ${w.code} ma wykończenie ${w.finish}, ale dozwolone są: ${w.allowed.join(', ')}`)
-        );
+        finishResult.warnings.forEach(w => toast.warning(`⚠️ ${w.component} ${w.code} ma wykończenie ${w.finish}, ale dozwolone są: ${w.allowed.join(', ')}`));
         if (finishResult.defaults.seat && !parsed.seat.finish) parsed.seat.finish = finishResult.defaults.seat;
         if (finishResult.defaults.side && !parsed.side.finish) parsed.side.finish = finishResult.defaults.side;
         if (finishResult.defaults.backrest && !parsed.backrest.finish) parsed.backrest.finish = finishResult.defaults.backrest;
-      } catch { /* non-blocking */ }
+      } catch {/* non-blocking */}
 
       // 4. Decode
       const decoded = decodeSKU(parsed);
@@ -210,7 +203,7 @@ const OrderForm = () => {
         created_by: user?.id,
         visible_to_workers: isAdmin ? visibleToWorkers : false,
         variant_image_url: !variantImage && autoImageUrl ? autoImageUrl : undefined,
-        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined,
+        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined
       });
 
       // 6. Upload variant image if provided (manual upload takes priority)
@@ -221,39 +214,44 @@ const OrderForm = () => {
           toast.warning("⚠️ Zdjęcie wariantu nie zostało przesłane");
         }
       }
-
       toast.success("Zamówienie zdekodowane pomyślnie", {
-        description: `#${orderNumber} - ${format(orderDate, "dd.MM.yyyy")}`,
+        description: `#${orderNumber} - ${format(orderDate, "dd.MM.yyyy")}`
       });
-      queryClient.invalidateQueries({ queryKey: ["recent-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["order", saved?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["recent-orders"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["order", saved?.id]
+      });
 
       // 7. Navigate to details
-      navigate(`/order/${saved?.id}`, { state: { decoded } });
+      navigate(`/order/${saved?.id}`, {
+        state: {
+          decoded
+        }
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Nieznany błąd";
       toast.error("Nie można zapisać zamówienia", {
-        description: message,
+        description: message
       });
     } finally {
       setLoading(false);
     }
   };
-
   const isValid = orderNumber.trim() !== "" && sku.trim() !== "";
-
   const clearError = (field: string) => {
     if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
+      setErrors(prev => {
+        const next = {
+          ...prev
+        };
         delete next[field];
         return next;
       });
     }
   };
-
-  return (
-    <Card className="shadow-md">
+  return <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="text-2xl">📝 Nowe zamówienie</CardTitle>
         <CardDescription>
@@ -268,51 +266,32 @@ const OrderForm = () => {
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="orderNumber">Numer zamówienia</Label>
-              <Input
-                id="orderNumber"
-                value={orderNumber}
-                onChange={(e) => { setOrderNumber(e.target.value); clearError("orderNumber"); }}
-                placeholder="np. 30654114"
-                required
-                disabled={loading}
-                className={errors.orderNumber ? "border-destructive" : ""}
-              />
-              {errors.orderNumber && (
-                <p className="text-xs text-destructive">{errors.orderNumber}</p>
-              )}
+              <Input id="orderNumber" value={orderNumber} onChange={e => {
+              setOrderNumber(e.target.value);
+              clearError("orderNumber");
+            }} placeholder="np. 30654114" required disabled={loading} className={errors.orderNumber ? "border-destructive" : ""} />
+              {errors.orderNumber && <p className="text-xs text-destructive">{errors.orderNumber}</p>}
             </div>
 
             <div className="space-y-2">
               <Label>Data zamówienia</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !orderDate && "text-muted-foreground",
-                      errors.orderDate && "border-destructive"
-                    )}
-                    disabled={loading}
-                  >
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !orderDate && "text-muted-foreground", errors.orderDate && "border-destructive")} disabled={loading}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {orderDate ? format(orderDate, "dd.MM.yyyy") : "Wybierz datę"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={orderDate}
-                    onSelect={(date) => { if (date) { setOrderDate(date); clearError("orderDate"); } }}
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
+                  <Calendar mode="single" selected={orderDate} onSelect={date => {
+                  if (date) {
+                    setOrderDate(date);
+                    clearError("orderDate");
+                  }
+                }} disabled={date => date > new Date()} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-              {errors.orderDate && (
-                <p className="text-xs text-destructive">{errors.orderDate}</p>
-              )}
+              {errors.orderDate && <p className="text-xs text-destructive">{errors.orderDate}</p>}
             </div>
           </div>
 
@@ -332,39 +311,19 @@ const OrderForm = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <Textarea
-              id="sku"
-              value={sku}
-              onChange={(e) => { setSku(e.target.value); clearError("sku"); }}
-              placeholder="np. S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF"
-              rows={3}
-              required
-              disabled={loading}
-              className={errors.sku ? "border-destructive" : ""}
-            />
-            {errors.sku && (
-              <p className="text-xs text-destructive">{errors.sku}</p>
-            )}
+            <Textarea id="sku" value={sku} onChange={e => {
+            setSku(e.target.value);
+            clearError("sku");
+          }} placeholder="np. S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF" rows={3} required disabled={loading} className={errors.sku ? "border-destructive" : ""} />
+            {errors.sku && <p className="text-xs text-destructive">{errors.sku}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="shortcode">Shortcode Mimeeq (opcjonalne)</Label>
             <p className="text-xs text-muted-foreground">Shortcode z koszyka klienta w Mimeeq</p>
             <div className="flex gap-2">
-              <Input
-                id="shortcode"
-                value={shortcode}
-                onChange={(e) => setShortcode(e.target.value.toUpperCase())}
-                placeholder="np. FHGTD58"
-                disabled={loading || autoImageLoading}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={fetchShopifyImage}
-                disabled={loading || autoImageLoading || !shortcode.trim()}
-              >
+              <Input id="shortcode" value={shortcode} onChange={e => setShortcode(e.target.value.toUpperCase())} placeholder="np. FHGTD58" disabled={loading || autoImageLoading} className="flex-1" />
+              <Button type="button" variant="outline" onClick={fetchShopifyImage} disabled={loading || autoImageLoading || !shortcode.trim()}>
                 {autoImageLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Pobierz zdjęcie
               </Button>
@@ -373,39 +332,20 @@ const OrderForm = () => {
 
           <div className="space-y-2">
             <Label htmlFor="variant-image">Zdjęcie wariantu sofy (opcjonalne)</Label>
-            <Input
-              id="variant-image"
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
-              onChange={handleImageUpload}
-              disabled={loading}
-            />
-            {variantImagePreview && (
-              <div className="relative mt-2 inline-block">
-                <img
-                  src={variantImagePreview}
-                  alt="Podgląd wariantu"
-                  className="max-w-xs max-h-40 rounded border object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => { clearImage(); if (!variantImage && autoImageUrl) setVariantImagePreview(null); }}
-                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5"
-                >
+            <Input id="variant-image" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleImageUpload} disabled={loading} />
+            {variantImagePreview && <div className="relative mt-2 inline-block">
+                <img src={variantImagePreview} alt="Podgląd wariantu" className="max-w-xs max-h-40 rounded border object-cover" />
+                <button type="button" onClick={() => {
+              clearImage();
+              if (!variantImage && autoImageUrl) setVariantImagePreview(null);
+            }} className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5">
                   <X className="h-3.5 w-3.5" />
                 </button>
-              </div>
-            )}
+              </div>}
           </div>
 
-          {isAdmin && (
-            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <Checkbox
-                id="visibleToWorkers"
-                checked={visibleToWorkers}
-                onCheckedChange={(checked) => setVisibleToWorkers(checked as boolean)}
-                disabled={loading}
-              />
+          {isAdmin && <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <Checkbox id="visibleToWorkers" checked={visibleToWorkers} onCheckedChange={checked => setVisibleToWorkers(checked as boolean)} disabled={loading} />
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="visibleToWorkers" className="text-sm font-medium leading-none cursor-pointer">
@@ -422,28 +362,16 @@ const OrderForm = () => {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <p className="text-xs text-muted-foreground">Pracownicy zobaczą to zamówienie w historii jako przykład</p>
+                <p className="text-xs text-muted-foreground">Pracownicy zobaczą to zamówienie w historii</p>
               </div>
-            </div>
-          )}
+            </div>}
 
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full text-base"
-            disabled={!isValid || loading}
-          >
-            {loading ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              <Search className="mr-2 h-5 w-5" />
-            )}
+          <Button type="submit" size="lg" className="w-full text-base" disabled={!isValid || loading}>
+            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Search className="mr-2 h-5 w-5" />}
             {loading ? "Dekodowanie..." : "Dekoduj i Generuj"}
           </Button>
         </form>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default OrderForm;
