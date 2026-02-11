@@ -315,7 +315,7 @@ const ShopifyOrderForm = () => {
                   checked={fabricChange}
                   onCheckedChange={(checked) => setFabricChange(checked === true)}
                 />
-                <Label htmlFor="fabric-change" className="cursor-pointer">Zmiana tkaniny</Label>
+                <Label htmlFor="fabric-change" className="cursor-pointer">Zmiana tkaniny (opcjonalne)</Label>
               </div>
               {fabricChange && (
                 <div className="grid grid-cols-2 gap-3 pl-6">

@@ -40,6 +40,9 @@ const OrderForm = () => {
   const [shortcode, setShortcode] = useState("");
   const [autoImageUrl, setAutoImageUrl] = useState<string | null>(null);
   const [autoImageLoading, setAutoImageLoading] = useState(false);
+  const [fabricChange, setFabricChange] = useState(false);
+  const [fabricName, setFabricName] = useState("");
+  const [fabricColor, setFabricColor] = useState("");
   const fetchShopifyImage = async () => {
     const code = shortcode.trim().toUpperCase();
     if (!code) {
@@ -136,6 +139,11 @@ const OrderForm = () => {
     } else if (trimmedSku.length < 10) {
       newErrors.sku = "SKU musi mieć min. 10 znaków";
     }
+    // Fabric change validation
+    if (fabricChange && (!fabricName.trim() || !fabricColor.trim())) {
+      newErrors.fabric = "Wypełnij nazwę tkaniny i kolor";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -187,13 +195,30 @@ const OrderForm = () => {
       const decoded = decodeSKU(parsed);
       decoded.orderNumber = orderNumber;
       decoded.orderDate = format(orderDate, "dd.MM.yyyy");
-      decoded.rawSKU = sku.trim().toUpperCase();
+      let finalSku = sku.trim().toUpperCase();
+      decoded.rawSKU = finalSku;
+
+      // 4b. Apply fabric override
+      if (fabricChange && fabricName.trim() && fabricColor.trim()) {
+        const overrideName = fabricName.trim().toUpperCase().replace(/\s+/g, "_");
+        const overrideColor = fabricColor.trim().toUpperCase().replace(/\s+/g, "_");
+        finalSku = finalSku.replace(/-[A-Z]\d+[A-Z0-9]*-/, `-${overrideName}_${overrideColor}-`);
+        decoded.fabric = {
+          ...decoded.fabric,
+          code: overrideName,
+          name: fabricName.trim(),
+          color: overrideColor,
+          colorName: fabricColor.trim(),
+        };
+        decoded.fabricOverride = { name: fabricName.trim(), color: fabricColor.trim() };
+        decoded.rawSKU = finalSku;
+      }
 
       // 5. Save to DB
       const saved = await saveOrder({
         order_number: orderNumber,
         order_date: format(orderDate, "yyyy-MM-dd"),
-        sku: sku.trim().toUpperCase(),
+        sku: finalSku,
         series_code: parsed.series,
         decoded_data: decoded,
         created_by: user?.id,
@@ -312,6 +337,45 @@ const OrderForm = () => {
             clearError("sku");
           }} placeholder="np. S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF" rows={3} required disabled={loading} className={errors.sku ? "border-destructive" : ""} />
             {errors.sku && <p className="text-xs text-destructive">{errors.sku}</p>}
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="fabric-change-manual"
+                checked={fabricChange}
+                onCheckedChange={(checked) => setFabricChange(checked === true)}
+                disabled={loading}
+              />
+              <Label htmlFor="fabric-change-manual" className="cursor-pointer">Zmiana tkaniny (opcjonalne)</Label>
+            </div>
+            {fabricChange && (
+              <div className="grid grid-cols-2 gap-3 pl-6">
+                <div className="space-y-1">
+                  <Label htmlFor="fabric-name-manual">Nazwa tkaniny *</Label>
+                  <Input
+                    id="fabric-name-manual"
+                    placeholder="np. Seattle"
+                    value={fabricName}
+                    onChange={(e) => setFabricName(e.target.value)}
+                    disabled={loading}
+                    className={errors.fabric ? "border-destructive" : ""}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="fabric-color-manual">Kolor *</Label>
+                  <Input
+                    id="fabric-color-manual"
+                    placeholder="np. Green"
+                    value={fabricColor}
+                    onChange={(e) => setFabricColor(e.target.value)}
+                    disabled={loading}
+                    className={errors.fabric ? "border-destructive" : ""}
+                  />
+                </div>
+              </div>
+            )}
+            {errors.fabric && <p className="text-xs text-destructive pl-6">{errors.fabric}</p>}
           </div>
 
           <div className="space-y-2">
