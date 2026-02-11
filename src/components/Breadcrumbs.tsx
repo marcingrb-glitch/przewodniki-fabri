@@ -17,10 +17,13 @@ const routeMap: Record<string, string> = {
   "": "Strona główna",
   history: "Historia zamówień",
   admin: "Panel Admin",
-  order: "Zamówienie",
+  order: "Zamówienia",
 };
 
-const nonNavigableSegments = new Set(["order"]);
+// Segments that should link to a custom path instead of their natural URL
+const customPaths: Record<string, string> = {
+  order: "/history",
+};
 
 const Breadcrumbs = () => {
   const location = useLocation();
@@ -34,9 +37,9 @@ const Breadcrumbs = () => {
   segments.forEach((seg, i) => {
     currentPath += `/${seg}`;
     const isLast = i === segments.length - 1;
-    const isNonNavigable = nonNavigableSegments.has(seg);
     const label = routeMap[seg] || (seg.length > 8 ? `#${seg.substring(0, 8)}…` : `#${seg}`);
-    crumbs.push({ label, path: (isLast || isNonNavigable) ? undefined : currentPath });
+    const path = isLast ? undefined : (customPaths[seg] ?? currentPath);
+    crumbs.push({ label, path });
   });
 
   return (
