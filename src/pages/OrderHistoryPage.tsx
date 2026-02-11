@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
   Search, CalendarIcon, FileSpreadsheet, Eye, EyeOff, RotateCw, Trash2,
-  PackageOpen, Plus, Loader2, Info,
+  PackageOpen, Plus, Loader2, Info, CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -70,8 +71,15 @@ const OrderHistoryPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; orderNumber: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkRegenerating, setBulkRegenerating] = useState(false);
+  const [bulkRegenProgress, setBulkRegenProgress] = useState({ done: 0, total: 0 });
+
   // Reset page on filter change
-  const resetPage = () => setPage(1);
+  const resetPage = () => { setPage(1); setSelectedIds(new Set()); };
 
   // Fetch series for filter
   const { data: seriesList = [] } = useQuery({
@@ -214,6 +222,82 @@ const OrderHistoryPage = () => {
     return pages;
   };
 
+  const allVisibleIds = useMemo(() => orders.map((o: any) => o.id as string), [orders]);
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const selectedOrders = useMemo(() => orders.filter((o: any) => selectedIds.has(o.id)), [orders, selectedIds]);
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const order of selectedOrders) {
+        await deleteOrder(order.id, order.order_number);
+      }
+      toast.success(`Usunięto ${selectedOrders.length} zamówień`);
+      clearSelection();
+      refetch();
+    } catch (err: unknown) {
+      toast.error(`Błąd usuwania: ${err instanceof Error ? err.message : "Nieznany błąd"}`);
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  // Bulk visibility
+  const handleBulkVisibility = async (visible: boolean) => {
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase
+        .from("orders")
+        .update({ visible_to_workers: visible })
+        .in("id", ids);
+      if (error) throw error;
+      toast.success(`${ids.length} zamówień ustawionych jako ${visible ? "publiczne" : "prywatne"}`);
+      clearSelection();
+      refetch();
+    } catch (err: unknown) {
+      toast.error(`Błąd: ${err instanceof Error ? err.message : "Nieznany błąd"}`);
+    }
+  };
+
+  // Bulk regenerate
+  const handleBulkRegenerate = async () => {
+    setBulkRegenerating(true);
+    setBulkRegenProgress({ done: 0, total: selectedOrders.length });
+    let successCount = 0;
+    for (const order of selectedOrders) {
+      try {
+        await handleRegenerate(order);
+        successCount++;
+      } catch { /* individual errors handled inside handleRegenerate */ }
+      setBulkRegenProgress((prev) => ({ ...prev, done: prev.done + 1 }));
+    }
+    toast.success(`Zregenerowano ${successCount} zamówień`);
+    clearSelection();
+    setBulkRegenerating(false);
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-md">
@@ -319,10 +403,79 @@ const OrderHistoryPage = () => {
           {/* Table */}
           {!isLoading && orders.length > 0 && (
             <>
+              {/* Bulk actions toolbar */}
+              {isAdmin && someSelected && (
+                <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/50 p-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <CheckSquare className="h-4 w-4" />
+                    Zaznaczono: {selectedIds.size} zamówień
+                  </div>
+                  <div className="flex flex-wrap gap-2 ml-auto">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setBulkDeleteOpen(true)}
+                      disabled={bulkDeleting || bulkRegenerating}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Usuń zaznaczone
+                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={bulkRegenerating}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          Zmień widoczność
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="end">
+                        <div className="flex flex-col gap-1">
+                          <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleBulkVisibility(true)}>
+                            <Eye className="h-4 w-4 mr-2" /> Ustaw jako publiczne
+                          </Button>
+                          <Button variant="ghost" size="sm" className="justify-start" onClick={() => handleBulkVisibility(false)}>
+                            <EyeOff className="h-4 w-4 mr-2" /> Ustaw jako prywatne
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkRegenerate}
+                      disabled={bulkRegenerating || bulkDeleting}
+                    >
+                      {bulkRegenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          {bulkRegenProgress.done}/{bulkRegenProgress.total}
+                        </>
+                      ) : (
+                        <>
+                          <RotateCw className="h-4 w-4 mr-1" />
+                          Regeneruj
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={clearSelection}>
+                      Odznacz
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {isAdmin && (
+                        <TableHead className="w-10">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={toggleSelectAll}
+                            aria-label="Zaznacz wszystkie"
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Numer zamówienia</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>SKU</TableHead>
@@ -335,9 +488,18 @@ const OrderHistoryPage = () => {
                     {orders.map((order: any) => (
                       <TableRow
                         key={order.id}
-                        className="cursor-pointer"
+                        className={cn("cursor-pointer", selectedIds.has(order.id) && "bg-primary/5")}
                         onClick={() => navigate(`/order/${order.id}`)}
                       >
+                        {isAdmin && (
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedIds.has(order.id)}
+                              onCheckedChange={() => toggleSelect(order.id)}
+                              aria-label={`Zaznacz ${order.order_number}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="font-bold">{order.order_number}</div>
                           {order.shopify_order_name && (
@@ -480,6 +642,29 @@ const OrderHistoryPage = () => {
             >
               {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirmation dialog */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={(open) => !open && setBulkDeleteOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usuń zaznaczone zamówienia</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć {selectedIds.size} zamówień? Wszystkie powiązane pliki również zostaną usunięte. Tej operacji nie można cofnąć.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Usuń {selectedIds.size} zamówień
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
