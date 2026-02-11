@@ -357,7 +357,7 @@ const OrderForm = () => {
                         <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs text-xs">
-                        <p>Jeśli zaznaczone, wszyscy pracownicy będą mogli zobaczyć to zamówienie jako wzorzec.</p>
+                        <p>Jeśli zaznaczone, wszyscy pracownicy będą mogli zobaczyć to zamówienie.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
