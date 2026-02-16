@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ParsedSKU } from "@/types";
+import { resolveSeriesId } from "@/utils/supabaseQueries";
 
 interface FinishValidationResult {
   component: string;
@@ -19,18 +20,19 @@ export async function validateFinishesFromDB(parsed: ParsedSKU): Promise<FinishV
   const warnings: FinishValidationResult[] = [];
   const defaults: FinishValidationOutput["defaults"] = {};
 
+  const seriesId = await resolveSeriesId(parsed.series);
   const seatCode = `${parsed.seat.base}${parsed.seat.type}`;
 
-  // Fetch all relevant data in parallel
+  // Fetch all relevant data in parallel, filtering by series_id where applicable
   const [seatsRes, sidesRes, backrestsRes, pillowsRes] = await Promise.all([
-    parsed.seat.base
-      ? supabase.from("seats_sofa").select("code, allowed_finishes, default_finish").eq("code", seatCode).maybeSingle()
+    parsed.seat.base && seriesId
+      ? supabase.from("seats_sofa").select("code, allowed_finishes, default_finish").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : null,
-    parsed.side.code
-      ? supabase.from("sides").select("code, allowed_finishes, default_finish").eq("code", parsed.side.code).maybeSingle()
+    parsed.side.code && seriesId
+      ? supabase.from("sides").select("code, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
       : null,
-    parsed.backrest.code
-      ? supabase.from("backrests").select("code, allowed_finishes, default_finish").eq("code", parsed.backrest.code).maybeSingle()
+    parsed.backrest.code && seriesId
+      ? supabase.from("backrests").select("code, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : null,
     parsed.pillow
       ? supabase.from("pillows").select("code, allowed_finishes, default_finish").eq("code", parsed.pillow).maybeSingle()
@@ -82,7 +84,7 @@ export async function validateFinishesFromDB(parsed: ParsedSKU): Promise<FinishV
     }
   }
 
-  // --- PILLOW (inherits seat finish) ---
+  // --- PILLOW (inherits seat finish, no series_id) ---
   const effectiveSeatFinish = parsed.seat.finish || defaults.seat;
   if (parsed.pillow && effectiveSeatFinish && pillowsRes?.data) {
     const allowed = (pillowsRes.data.allowed_finishes as string[]) || [];

@@ -192,7 +192,7 @@ const OrderForm = () => {
       } catch {/* non-blocking */}
 
       // 4. Decode
-      const decoded = decodeSKU(parsed);
+      const decoded = await decodeSKU(parsed);
       decoded.orderNumber = orderNumber;
       decoded.orderDate = format(orderDate, "dd.MM.yyyy");
       let finalSku = sku.trim().toUpperCase();
