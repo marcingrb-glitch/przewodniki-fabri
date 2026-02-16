@@ -40,7 +40,7 @@ export default function SeatsSofa() {
 
   return (
     <>
-      <DataTable title="Siedziska Sofa" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} isLoading={crud.isLoading} />
+      <DataTable title="Siedziska Sofa" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} onBulkDelete={crud.handleBulkDelete} onDuplicate={crud.handleDuplicate} isLoading={crud.isLoading} />
       <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj siedzisko" : "Dodaj siedzisko"} fields={fields} initialData={crud.editingItem} onSubmit={handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
     </>
   );

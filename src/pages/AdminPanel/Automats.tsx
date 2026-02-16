@@ -21,7 +21,7 @@ export default function Automats() {
 
   return (
     <>
-      <DataTable title="Automaty" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} isLoading={crud.isLoading} />
+      <DataTable title="Automaty" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} onBulkDelete={crud.handleBulkDelete} onDuplicate={crud.handleDuplicate} isLoading={crud.isLoading} />
       <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj automat" : "Dodaj automat"} fields={fields} initialData={crud.editingItem} onSubmit={crud.handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
     </>
   );

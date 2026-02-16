@@ -23,7 +23,7 @@ export default function Pillows() {
 
   return (
     <>
-      <DataTable title="Poduszki" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} isLoading={crud.isLoading} />
+      <DataTable title="Poduszki" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} onBulkDelete={crud.handleBulkDelete} onDuplicate={crud.handleDuplicate} isLoading={crud.isLoading} />
       <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj poduszkę" : "Dodaj poduszkę"} fields={fields} initialData={crud.editingItem} onSubmit={crud.handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
     </>
   );
