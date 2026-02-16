@@ -156,13 +156,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let seatTypeName = "";
 
   if (seatSofaRes.data) {
-    seatFrame = seatSofaRes.data.frame || seatFrame;
-    seatFoam = seatSofaRes.data.foam || seatFoam;
-    seatFront = seatSofaRes.data.front || seatFront;
-    seatMidStrip = seatSofaRes.data.center_strip ?? seatMidStrip;
-    if (seatSofaRes.data.default_finish) seatDefaultFinish = seatSofaRes.data.default_finish;
-    seatType = seatSofaRes.data.type || "";
-    seatTypeName = seatSofaRes.data.type || "";
+    seatFrame = seatSofaRes.data.frame ?? "";
+    seatFoam = seatSofaRes.data.foam ?? "";
+    seatFront = seatSofaRes.data.front ?? "";
+    seatMidStrip = seatSofaRes.data.center_strip ?? false;
+    seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
+    seatType = seatSofaRes.data.type ?? "";
+    seatTypeName = seatSofaRes.data.type ?? "";
   } else {
     // Extract type from static mappings for S1 format
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
@@ -188,8 +188,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let sideFrame = staticSide.frame;
 
   if (sidesRes.data) {
-    sideName = sidesRes.data.name || sideName;
-    sideFrame = sidesRes.data.frame || sideFrame;
+    sideName = sidesRes.data.name ?? "";
+    sideFrame = sidesRes.data.frame ?? "";
   }
 
   // ---- BACKREST (fallback to static) ----
@@ -200,10 +200,10 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let backrestHeight = staticBackrest.height;
 
   if (backrestsRes.data) {
-    backrestFrame = backrestsRes.data.frame || backrestFrame;
-    backrestFoam = backrestsRes.data.foam || backrestFoam;
-    backrestTop = backrestsRes.data.top || backrestTop;
-    backrestHeight = backrestsRes.data.height_cm || backrestHeight;
+    backrestFrame = backrestsRes.data.frame ?? "";
+    backrestFoam = backrestsRes.data.foam ?? "";
+    backrestTop = backrestsRes.data.top ?? "";
+    backrestHeight = backrestsRes.data.height_cm ?? "";
   }
 
   // ---- CHEST (fallback to static) ----
@@ -213,8 +213,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const chestLegCount = staticChest.legCount || 4;
 
   if (chestsRes.data) {
-    chestName = chestsRes.data.name || chestName;
-    chestLegHeight = chestsRes.data.leg_height_cm ?? chestLegHeight;
+    chestName = chestsRes.data.name ?? "";
+    chestLegHeight = chestsRes.data.leg_height_cm ?? 0;
   }
 
   // ---- AUTOMAT (fallback to static) ----
@@ -226,9 +226,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const automatSeatLegCount = staticAutomat.seatLegCount;
 
   if (automatsRes.data) {
-    automatName = automatsRes.data.name || automatName;
-    automatType = automatsRes.data.type || automatType;
-    automatSeatLegs = automatsRes.data.has_seat_legs ?? automatSeatLegs;
+    automatName = automatsRes.data.name ?? "";
+    automatType = automatsRes.data.type ?? "";
+    automatSeatLegs = automatsRes.data.has_seat_legs ?? false;
   }
 
   // ---- LEGS (fallback to static) ----
@@ -240,8 +240,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     let legColors: Record<string, string> = staticLeg.colors;
 
     if (legsRes.data) {
-      legName = legsRes.data.name || legName;
-      legMaterial = legsRes.data.material || legMaterial;
+      legName = legsRes.data.name ?? "";
+      legMaterial = legsRes.data.material ?? "";
       const dbLegColors = legsRes.data.colors;
       if (dbLegColors && typeof dbLegColors === "object" && !Array.isArray(dbLegColors)) {
         legColors = dbLegColors as Record<string, string>;

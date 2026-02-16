@@ -18,40 +18,41 @@ interface FinishValidationOutput {
 /**
  * Resolve seat code from rawSegment against database, same logic as decoder.
  */
+async function findSeatInDBForValidation(code: string, seriesId: string): Promise<string | null> {
+  const { data: exact } = await supabase
+    .from("seats_sofa").select("code")
+    .eq("code", code).eq("series_id", seriesId).maybeSingle();
+  if (exact) return exact.code;
+
+  const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
+  if (withZero !== code) {
+    const { data: padded } = await supabase
+      .from("seats_sofa").select("code")
+      .eq("code", withZero).eq("series_id", seriesId).maybeSingle();
+    if (padded) return padded.code;
+  }
+  return null;
+}
+
 async function resolveSeatCodeForValidation(
   rawSegment: string,
   parsedFinish: string | undefined,
   seriesId: string
 ): Promise<{ code: string; finish?: string }> {
   if (parsedFinish) {
-    const { data } = await supabase
-      .from("seats_sofa")
-      .select("code")
-      .eq("code", rawSegment)
-      .eq("series_id", seriesId)
-      .maybeSingle();
-    if (data) return { code: rawSegment, finish: parsedFinish };
+    const found = await findSeatInDBForValidation(rawSegment, seriesId);
+    if (found) return { code: found, finish: parsedFinish };
   }
 
-  const { data: fullMatch } = await supabase
-    .from("seats_sofa")
-    .select("code")
-    .eq("code", rawSegment)
-    .eq("series_id", seriesId)
-    .maybeSingle();
-  if (fullMatch) return { code: rawSegment, finish: parsedFinish };
+  const fullMatch = await findSeatInDBForValidation(rawSegment, seriesId);
+  if (fullMatch) return { code: fullMatch, finish: parsedFinish };
 
   if (!parsedFinish && rawSegment.length >= 3) {
     const possibleFinish = rawSegment.slice(-1);
     const possibleCode = rawSegment.slice(0, -1);
     if (/^[A-D]$/.test(possibleFinish)) {
-      const { data: codeMatch } = await supabase
-        .from("seats_sofa")
-        .select("code")
-        .eq("code", possibleCode)
-        .eq("series_id", seriesId)
-        .maybeSingle();
-      if (codeMatch) return { code: possibleCode, finish: possibleFinish };
+      const codeMatch = await findSeatInDBForValidation(possibleCode, seriesId);
+      if (codeMatch) return { code: codeMatch, finish: possibleFinish };
     }
   }
 
