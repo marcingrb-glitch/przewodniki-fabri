@@ -13,7 +13,7 @@ export interface Order {
 export interface ParsedSKU {
   series: string;
   fabric: { code: string; color: string };
-  seat: { base: string; type: string; finish?: string };
+  seat: { rawSegment: string; finish?: string };
   side: { code: string; finish: string };
   backrest: { code: string; finish: string };
   chest: string;
