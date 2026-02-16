@@ -11,43 +11,53 @@ import {
  * Resolve a raw seat segment against the database.
  * Tries the full rawSegment as a code first, then strips the last letter as finish.
  */
+async function findSeatInDB(code: string, seriesId: string): Promise<string | null> {
+  // Try exact match
+  const { data: exact } = await supabase
+    .from("seats_sofa")
+    .select("code")
+    .eq("code", code)
+    .eq("series_id", seriesId)
+    .maybeSingle();
+  if (exact) return exact.code;
+
+  // Try zero-padded variant (SD2N → SD02N)
+  const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
+  if (withZero !== code) {
+    const { data: padded } = await supabase
+      .from("seats_sofa")
+      .select("code")
+      .eq("code", withZero)
+      .eq("series_id", seriesId)
+      .maybeSingle();
+    if (padded) return padded.code;
+  }
+
+  return null;
+}
+
 async function resolveSeatCode(
   rawSegment: string,
   parsedFinish: string | undefined,
   seriesId: string
 ): Promise<{ code: string; finish?: string }> {
-  // If parser already extracted a finish, just use rawSegment as code
+  // If parser already extracted a finish, try rawSegment as code
   if (parsedFinish) {
-    const { data } = await supabase
-      .from("seats_sofa")
-      .select("code")
-      .eq("code", rawSegment)
-      .eq("series_id", seriesId)
-      .maybeSingle();
-    if (data) return { code: rawSegment, finish: parsedFinish };
+    const found = await findSeatInDB(rawSegment, seriesId);
+    if (found) return { code: found, finish: parsedFinish };
   }
 
   // Try full rawSegment as code (no finish)
-  const { data: fullMatch } = await supabase
-    .from("seats_sofa")
-    .select("code")
-    .eq("code", rawSegment)
-    .eq("series_id", seriesId)
-    .maybeSingle();
-  if (fullMatch) return { code: rawSegment, finish: parsedFinish };
+  const fullMatch = await findSeatInDB(rawSegment, seriesId);
+  if (fullMatch) return { code: fullMatch, finish: parsedFinish };
 
   // Try stripping last letter as finish (only if A-D)
   if (!parsedFinish && rawSegment.length >= 3) {
     const possibleFinish = rawSegment.slice(-1);
     const possibleCode = rawSegment.slice(0, -1);
     if (/^[A-D]$/.test(possibleFinish)) {
-      const { data: codeMatch } = await supabase
-        .from("seats_sofa")
-        .select("code")
-        .eq("code", possibleCode)
-        .eq("series_id", seriesId)
-        .maybeSingle();
-      if (codeMatch) return { code: possibleCode, finish: possibleFinish };
+      const codeMatch = await findSeatInDB(possibleCode, seriesId);
+      if (codeMatch) return { code: codeMatch, finish: possibleFinish };
     }
   }
 
