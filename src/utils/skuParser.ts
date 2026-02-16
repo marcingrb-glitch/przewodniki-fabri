@@ -86,7 +86,7 @@ export function parseSKU(sku: string): ParsedSKU {
 
     // Chest: SK15, SK17, SK23
     if (/^SK\d{2}$/.test(part)) {
-      result.chest = part;
+      result.chest = part === "SK22" ? "SK23" : part;
       continue;
     }
 
