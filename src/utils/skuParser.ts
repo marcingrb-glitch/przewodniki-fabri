@@ -18,7 +18,7 @@ export function parseSKU(sku: string): ParsedSKU {
   const result: ParsedSKU = {
     series: "",
     fabric: { code: "", color: "" },
-    seat: { base: "", type: "" },
+    seat: { rawSegment: "" },
     side: { code: "", finish: "" },
     backrest: { code: "", finish: "" },
     chest: "",
@@ -41,14 +41,12 @@ export function parseSKU(sku: string): ParsedSKU {
       continue;
     }
 
-    // Seat: SD2NA, SD01N, SD04D, SD1N, SD03A
-    // Format: SD + digits + type letters (N, ND, W, or empty) + optional finish (A-D)
-    const seatMatch = part.match(/^SD(\d+)(N[DB]?|W)?([A-D])?$/);
-    if (seatMatch) {
-      const num = seatMatch[1].padStart(2, "0");
-      const type = seatMatch[2] || "";
-      const finish = seatMatch[3] || "";
-      result.seat = { base: `SD${num}`, type, finish: finish || undefined };
+    // Seat: captures raw segment for later resolution by the decoder
+    // Supports both S1 format (SD01N, SD02NA, SD01ND) and S2 format (SD1, SD1D, SD4B)
+    // The decoder will resolve which part is code vs finish using the database
+    const seatMatch = part.match(/^(SD\d+(?:N[DB]?|W|D)?)([A-D])?$/);
+    if (seatMatch && !result.seat.rawSegment) {
+      result.seat = { rawSegment: seatMatch[1], finish: seatMatch[2] || undefined };
       continue;
     }
 

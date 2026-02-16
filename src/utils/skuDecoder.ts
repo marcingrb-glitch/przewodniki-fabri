@@ -7,12 +7,65 @@ import {
   FINISHES, DEFAULT_FINISHES,
 } from "@/data/mappings";
 
+/**
+ * Resolve a raw seat segment against the database.
+ * Tries the full rawSegment as a code first, then strips the last letter as finish.
+ */
+async function resolveSeatCode(
+  rawSegment: string,
+  parsedFinish: string | undefined,
+  seriesId: string
+): Promise<{ code: string; finish?: string }> {
+  // If parser already extracted a finish, just use rawSegment as code
+  if (parsedFinish) {
+    const { data } = await supabase
+      .from("seats_sofa")
+      .select("code")
+      .eq("code", rawSegment)
+      .eq("series_id", seriesId)
+      .maybeSingle();
+    if (data) return { code: rawSegment, finish: parsedFinish };
+  }
+
+  // Try full rawSegment as code (no finish)
+  const { data: fullMatch } = await supabase
+    .from("seats_sofa")
+    .select("code")
+    .eq("code", rawSegment)
+    .eq("series_id", seriesId)
+    .maybeSingle();
+  if (fullMatch) return { code: rawSegment, finish: parsedFinish };
+
+  // Try stripping last letter as finish (only if A-D)
+  if (!parsedFinish && rawSegment.length >= 3) {
+    const possibleFinish = rawSegment.slice(-1);
+    const possibleCode = rawSegment.slice(0, -1);
+    if (/^[A-D]$/.test(possibleFinish)) {
+      const { data: codeMatch } = await supabase
+        .from("seats_sofa")
+        .select("code")
+        .eq("code", possibleCode)
+        .eq("series_id", seriesId)
+        .maybeSingle();
+      if (codeMatch) return { code: possibleCode, finish: possibleFinish };
+    }
+  }
+
+  // Fallback: return as-is
+  return { code: rawSegment, finish: parsedFinish };
+}
+
 export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // Resolve series UUID for DB queries
   const seriesId = await resolveSeriesId(parsed.series);
 
-  // Build query keys
-  const seatKey = `${parsed.seat.base}${parsed.seat.type}`;
+  // Resolve seat code against database
+  const seatResolved = seriesId
+    ? await resolveSeatCode(parsed.seat.rawSegment, parsed.seat.finish, seriesId)
+    : { code: parsed.seat.rawSegment, finish: parsed.seat.finish };
+
+  const seatCode = seatResolved.code;
+  const seatFinishFromSKU = seatResolved.finish;
 
   // Fetch all relevant data from Supabase in parallel
   const [
@@ -25,7 +78,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
     // Seats sofa (series-specific)
     seriesId
-      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type").eq("code", seatKey).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     // Sides (series-specific)
     seriesId && parsed.side.code
@@ -75,7 +128,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   if (fabricsRes.data) {
     fabricName = fabricsRes.data.name;
     fabricGroup = fabricsRes.data.price_group;
-    // colors from DB is JSON — convert to Record<string, string>
     const dbColors = fabricsRes.data.colors;
     if (dbColors && typeof dbColors === "object" && !Array.isArray(dbColors)) {
       fabricColors = dbColors as Record<string, string>;
@@ -84,12 +136,14 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const colorName = fabricColors[parsed.fabric.color] || parsed.fabric.color;
 
   // ---- SEAT (fallback to static) ----
-  const staticSeat = SEATS_SOFA_S1[seatKey] || { frame: "?", foam: "?", front: "?", midStrip: false };
+  const staticSeat = SEATS_SOFA_S1[seatCode] || { frame: "?", foam: "?", front: "?", midStrip: false };
   let seatFrame = staticSeat.frame;
   let seatFoam = staticSeat.foam;
   let seatFront = staticSeat.front;
   let seatMidStrip = staticSeat.midStrip;
-  let seatDefaultFinish = DEFAULT_FINISHES[seatKey] || "A";
+  let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
+  let seatType = "";
+  let seatTypeName = "";
 
   if (seatSofaRes.data) {
     seatFrame = seatSofaRes.data.frame || seatFrame;
@@ -97,9 +151,25 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatFront = seatSofaRes.data.front || seatFront;
     seatMidStrip = seatSofaRes.data.center_strip ?? seatMidStrip;
     if (seatSofaRes.data.default_finish) seatDefaultFinish = seatSofaRes.data.default_finish;
+    seatType = seatSofaRes.data.type || "";
+    seatTypeName = seatSofaRes.data.type || "";
+  } else {
+    // Extract type from static mappings for S1 format
+    const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
+    if (typeMatch) {
+      seatType = typeMatch[1] || "";
+      seatTypeName = SEAT_TYPES[seatType] || seatType;
+    }
   }
 
-  const seatFinish = parsed.seat.finish || seatDefaultFinish;
+  // If DB provided a type but no typeName from static, use DB type directly
+  if (seatTypeName && !SEAT_TYPES[seatTypeName]) {
+    // seatTypeName is already the descriptive name from DB
+  } else if (seatType) {
+    seatTypeName = SEAT_TYPES[seatType] || seatType;
+  }
+
+  const seatFinish = seatFinishFromSKU || seatDefaultFinish;
   const seatFinishName = FINISHES[seatFinish] || seatFinish;
 
   // ---- SIDE (fallback to static) ----
@@ -224,7 +294,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const hasPufa = parsed.extras.some(e => e === "PF" || e === "PFO");
   if (hasPufa && parsed.legs) {
     const pufaType = parsed.extras.find(e => e === "PF" || e === "PFO")!;
-    pufaSKU = `${pufaType}-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatKey}-${parsed.legs.code}${parsed.legs.color || ""}`;
+    pufaSKU = `${pufaType}-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.legs.code}${parsed.legs.color || ""}`;
   }
 
   // ---- Generate fotel SKU ----
@@ -232,16 +302,16 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const hasFotel = parsed.extras.includes("FT");
   if (hasFotel && parsed.legs) {
     const jaskiPart = parsed.jaski ? `-${parsed.jaski}` : "";
-    fotelSKU = `FT-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatKey}-${parsed.side.code}${parsed.side.finish}${jaskiPart}-${parsed.legs.code}${parsed.legs.color || ""}`;
+    fotelSKU = `FT-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.side.code}${parsed.side.finish}${jaskiPart}-${parsed.legs.code}${parsed.legs.color || ""}`;
   }
 
   return {
     series: { code: parsed.series, name: seriesData.name, collection: seriesData.collection },
     fabric: { code: parsed.fabric.code, name: fabricName, color: parsed.fabric.color, colorName, group: fabricGroup },
     seat: {
-      code: seatKey,
-      type: parsed.seat.type,
-      typeName: SEAT_TYPES[parsed.seat.type] || parsed.seat.type,
+      code: seatCode,
+      type: seatType,
+      typeName: seatTypeName,
       finish: seatFinish,
       finishName: seatFinishName,
       frame: seatFrame,

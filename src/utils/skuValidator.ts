@@ -10,7 +10,7 @@ export function validateSKU(sku: string): ValidationResult {
   // Required components
   if (!parsed.series) errors.push("Brak serii (S1, S2, N1...)");
   if (!parsed.fabric.code) errors.push("Brak tkaniny (T1-T13)");
-  if (!parsed.seat.base) errors.push("Brak siedziska (SD01-SD04)");
+  if (!parsed.seat.rawSegment) errors.push("Brak siedziska");
   if (!parsed.side.code) errors.push("Brak boczka (B1-B9)");
   if (!parsed.backrest.code) errors.push("Brak oparcia (OP62, OP68)");
   if (!parsed.chest) errors.push("Brak skrzyni (SK15, SK17, SK23)");
