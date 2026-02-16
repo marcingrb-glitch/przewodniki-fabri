@@ -114,7 +114,7 @@ const OrderHistoryPage = () => {
     setRegeneratingId(order.id);
     try {
       const parsed = parseSKU(order.sku);
-      const decoded = decodeSKU(parsed);
+      const decoded = await decodeSKU(parsed);
       decoded.orderNumber = order.order_number;
       decoded.orderDate = format(new Date(order.order_date), "dd.MM.yyyy");
       decoded.rawSKU = order.sku;

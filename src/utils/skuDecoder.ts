@@ -1,89 +1,225 @@
 import { ParsedSKU, DecodedSKU } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { resolveSeriesId } from "@/utils/supabaseQueries";
 import {
   SERIES, FABRICS, SEAT_TYPES, SEATS_SOFA_S1, BACKRESTS, SIDES,
   CHESTS, AUTOMATS, LEGS, PILLOWS, JASKI, WALKI, EXTRAS,
   FINISHES, DEFAULT_FINISHES,
 } from "@/data/mappings";
 
-export function decodeSKU(parsed: ParsedSKU): DecodedSKU {
-  // Series
-  const seriesData = SERIES[parsed.series] || { name: "Nieznana", collection: "?" };
+export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
+  // Resolve series UUID for DB queries
+  const seriesId = await resolveSeriesId(parsed.series);
 
-  // Fabric
-  const fabricData = FABRICS[parsed.fabric.code] || { name: "Nieznana", group: 0, colors: {} };
-  const colorName = fabricData.colors[parsed.fabric.color] || parsed.fabric.color;
-
-  // Seat
+  // Build query keys
   const seatKey = `${parsed.seat.base}${parsed.seat.type}`;
-  const seatSofa = SEATS_SOFA_S1[seatKey] || { frame: "?", foam: "?", front: "?", midStrip: false };
-  const seatFinish = parsed.seat.finish || DEFAULT_FINISHES[seatKey] || "A";
+
+  // Fetch all relevant data from Supabase in parallel
+  const [
+    seriesRes, fabricsRes, seatSofaRes, sidesRes, backrestsRes,
+    chestsRes, automatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
+  ] = await Promise.all([
+    // Series
+    supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
+    // Fabrics
+    supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
+    // Seats sofa (series-specific)
+    seriesId
+      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type").eq("code", seatKey).eq("series_id", seriesId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Sides (series-specific)
+    seriesId && parsed.side.code
+      ? supabase.from("sides").select("code, name, frame, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Backrests (series-specific)
+    seriesId && parsed.backrest.code
+      ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Chests (no series_id)
+    parsed.chest
+      ? supabase.from("chests").select("code, name, leg_height_cm").eq("code", parsed.chest).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Automats (no series_id)
+    parsed.automat
+      ? supabase.from("automats").select("code, name, type, has_seat_legs").eq("code", parsed.automat).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Legs (series-specific)
+    seriesId && parsed.legs
+      ? supabase.from("legs").select("code, name, material, colors").eq("code", parsed.legs.code).eq("series_id", seriesId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Pillows (no series_id)
+    parsed.pillow
+      ? supabase.from("pillows").select("code, name").eq("code", parsed.pillow).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Jaskis (no series_id)
+    parsed.jaski
+      ? supabase.from("jaskis").select("code, name").eq("code", parsed.jaski).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Waleks (no series_id)
+    parsed.walek
+      ? supabase.from("waleks").select("code, name").eq("code", parsed.walek).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // ---- SERIES (fallback to static) ----
+  const seriesData = seriesRes.data
+    ? { name: seriesRes.data.name, collection: seriesRes.data.collection || "?" }
+    : (SERIES[parsed.series] || { name: "Nieznana", collection: "?" });
+
+  // ---- FABRIC (fallback to static) ----
+  const staticFabric = FABRICS[parsed.fabric.code] || { name: "Nieznana", group: 0, colors: {} };
+  let fabricName = staticFabric.name;
+  let fabricGroup = staticFabric.group;
+  let fabricColors: Record<string, string> = staticFabric.colors;
+
+  if (fabricsRes.data) {
+    fabricName = fabricsRes.data.name;
+    fabricGroup = fabricsRes.data.price_group;
+    // colors from DB is JSON — convert to Record<string, string>
+    const dbColors = fabricsRes.data.colors;
+    if (dbColors && typeof dbColors === "object" && !Array.isArray(dbColors)) {
+      fabricColors = dbColors as Record<string, string>;
+    }
+  }
+  const colorName = fabricColors[parsed.fabric.color] || parsed.fabric.color;
+
+  // ---- SEAT (fallback to static) ----
+  const staticSeat = SEATS_SOFA_S1[seatKey] || { frame: "?", foam: "?", front: "?", midStrip: false };
+  let seatFrame = staticSeat.frame;
+  let seatFoam = staticSeat.foam;
+  let seatFront = staticSeat.front;
+  let seatMidStrip = staticSeat.midStrip;
+  let seatDefaultFinish = DEFAULT_FINISHES[seatKey] || "A";
+
+  if (seatSofaRes.data) {
+    seatFrame = seatSofaRes.data.frame || seatFrame;
+    seatFoam = seatSofaRes.data.foam || seatFoam;
+    seatFront = seatSofaRes.data.front || seatFront;
+    seatMidStrip = seatSofaRes.data.center_strip ?? seatMidStrip;
+    if (seatSofaRes.data.default_finish) seatDefaultFinish = seatSofaRes.data.default_finish;
+  }
+
+  const seatFinish = parsed.seat.finish || seatDefaultFinish;
   const seatFinishName = FINISHES[seatFinish] || seatFinish;
 
-  // Side
-  const sideData = SIDES[parsed.side.code] || { frame: "?", name: "Nieznany" };
+  // ---- SIDE (fallback to static) ----
+  const staticSide = SIDES[parsed.side.code] || { frame: "?", name: "Nieznany" };
+  let sideName = staticSide.name;
+  let sideFrame = staticSide.frame;
 
-  // Backrest
-  const backrestData = BACKRESTS[parsed.backrest.code] || { frame: "?", foam: "?", top: "?", height: "?" };
+  if (sidesRes.data) {
+    sideName = sidesRes.data.name || sideName;
+    sideFrame = sidesRes.data.frame || sideFrame;
+  }
 
-  // Chest
-  const chestData = CHESTS[parsed.chest] || { name: "?", legHeight: 0, legCount: 0 };
+  // ---- BACKREST (fallback to static) ----
+  const staticBackrest = BACKRESTS[parsed.backrest.code] || { frame: "?", foam: "?", top: "?", height: "?" };
+  let backrestFrame = staticBackrest.frame;
+  let backrestFoam = staticBackrest.foam;
+  let backrestTop = staticBackrest.top;
+  let backrestHeight = staticBackrest.height;
 
-  // Automat
-  const automatData = AUTOMATS[parsed.automat] || { name: "?", type: "?", seatLegs: false, seatLegHeight: 0, seatLegCount: 0 };
+  if (backrestsRes.data) {
+    backrestFrame = backrestsRes.data.frame || backrestFrame;
+    backrestFoam = backrestsRes.data.foam || backrestFoam;
+    backrestTop = backrestsRes.data.top || backrestTop;
+    backrestHeight = backrestsRes.data.height_cm || backrestHeight;
+  }
 
-  // Legs
+  // ---- CHEST (fallback to static) ----
+  const staticChest = CHESTS[parsed.chest] || { name: "?", legHeight: 0, legCount: 0 };
+  let chestName = staticChest.name;
+  let chestLegHeight = staticChest.legHeight;
+  const chestLegCount = staticChest.legCount || 4;
+
+  if (chestsRes.data) {
+    chestName = chestsRes.data.name || chestName;
+    chestLegHeight = chestsRes.data.leg_height_cm ?? chestLegHeight;
+  }
+
+  // ---- AUTOMAT (fallback to static) ----
+  const staticAutomat = AUTOMATS[parsed.automat] || { name: "?", type: "?", seatLegs: false, seatLegHeight: 0, seatLegCount: 0 };
+  let automatName = staticAutomat.name;
+  let automatType = staticAutomat.type;
+  let automatSeatLegs = staticAutomat.seatLegs;
+  const automatSeatLegHeight = staticAutomat.seatLegHeight;
+  const automatSeatLegCount = staticAutomat.seatLegCount;
+
+  if (automatsRes.data) {
+    automatName = automatsRes.data.name || automatName;
+    automatType = automatsRes.data.type || automatType;
+    automatSeatLegs = automatsRes.data.has_seat_legs ?? automatSeatLegs;
+  }
+
+  // ---- LEGS (fallback to static) ----
   let legsDecoded: DecodedSKU["legs"] = undefined;
   if (parsed.legs) {
-    const legData = LEGS[parsed.legs.code] || { name: "?", material: "?", colors: {} };
+    const staticLeg = LEGS[parsed.legs.code] || { name: "?", material: "?", colors: {} };
+    let legName = staticLeg.name;
+    let legMaterial = staticLeg.material;
+    let legColors: Record<string, string> = staticLeg.colors;
+
+    if (legsRes.data) {
+      legName = legsRes.data.name || legName;
+      legMaterial = legsRes.data.material || legMaterial;
+      const dbLegColors = legsRes.data.colors;
+      if (dbLegColors && typeof dbLegColors === "object" && !Array.isArray(dbLegColors)) {
+        legColors = dbLegColors as Record<string, string>;
+      }
+    }
+
     legsDecoded = {
       code: parsed.legs.code,
-      name: legData.name,
-      material: legData.material,
+      name: legName,
+      material: legMaterial,
       color: parsed.legs.color,
-      colorName: parsed.legs.color ? legData.colors[parsed.legs.color] || parsed.legs.color : undefined,
+      colorName: parsed.legs.color ? (legColors[parsed.legs.color] || parsed.legs.color) : undefined,
     };
   }
 
-  // Leg heights for sofa
+  // ---- Leg heights for sofa ----
   const isSK23 = parsed.chest === "SK23";
   const sofaChestLeg = isSK23
     ? { leg: "N4", height: 2.5, count: 4 }
     : legsDecoded
-      ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: chestData.legHeight, count: chestData.legCount }
+      ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: chestLegHeight, count: chestLegCount }
       : null;
 
-  const sofaSeatLeg = automatData.seatLegs && legsDecoded
-    ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: automatData.seatLegHeight, count: automatData.seatLegCount }
+  const sofaSeatLeg = automatSeatLegs && legsDecoded
+    ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: automatSeatLegHeight, count: automatSeatLegCount }
     : null;
 
-  // Pillow (inherits seat finish)
+  // ---- PILLOW (fallback to static) ----
   let pillowDecoded: DecodedSKU["pillow"] = undefined;
   if (parsed.pillow) {
-    const pData = PILLOWS[parsed.pillow] || { name: "?" };
-    pillowDecoded = { code: parsed.pillow, name: pData.name, finish: seatFinish, finishName: seatFinishName };
+    const staticPillow = PILLOWS[parsed.pillow] || { name: "?" };
+    const pillowName = pillowsRes.data?.name || staticPillow.name;
+    pillowDecoded = { code: parsed.pillow, name: pillowName, finish: seatFinish, finishName: seatFinishName };
   }
 
-  // Jaski (inherits from pillow → seat)
+  // ---- JASKI (fallback to static) ----
   let jaskiDecoded: DecodedSKU["jaski"] = undefined;
   if (parsed.jaski) {
-    const jData = JASKI[parsed.jaski] || { name: "?" };
-    jaskiDecoded = { code: parsed.jaski, name: jData.name, finish: seatFinish, finishName: seatFinishName };
+    const staticJaski = JASKI[parsed.jaski] || { name: "?" };
+    const jaskiName = jaskisRes.data?.name || staticJaski.name;
+    jaskiDecoded = { code: parsed.jaski, name: jaskiName, finish: seatFinish, finishName: seatFinishName };
   }
 
-  // Walek (inherits from pillow → seat)
+  // ---- WALEK (fallback to static) ----
   let walekDecoded: DecodedSKU["walek"] = undefined;
   if (parsed.walek) {
-    const wData = WALKI[parsed.walek] || { name: "?" };
-    walekDecoded = { code: parsed.walek, name: wData.name, finish: seatFinish, finishName: seatFinishName };
+    const staticWalek = WALKI[parsed.walek] || { name: "?" };
+    const walekName = waleksRes.data?.name || staticWalek.name;
+    walekDecoded = { code: parsed.walek, name: walekName, finish: seatFinish, finishName: seatFinishName };
   }
 
-  // Extras
+  // ---- EXTRAS (static only — no series_id needed) ----
   const extrasDecoded = parsed.extras.map((e) => {
     const eData = EXTRAS[e] || { name: "?", type: "?" };
     return { code: e, name: eData.name, type: eData.type };
   });
 
-  // Generate pufa SKU
+  // ---- Generate pufa SKU ----
   let pufaSKU: string | undefined;
   const hasPufa = parsed.extras.some(e => e === "PF" || e === "PFO");
   if (hasPufa && parsed.legs) {
@@ -91,7 +227,7 @@ export function decodeSKU(parsed: ParsedSKU): DecodedSKU {
     pufaSKU = `${pufaType}-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatKey}-${parsed.legs.code}${parsed.legs.color || ""}`;
   }
 
-  // Generate fotel SKU
+  // ---- Generate fotel SKU ----
   let fotelSKU: string | undefined;
   const hasFotel = parsed.extras.includes("FT");
   if (hasFotel && parsed.legs) {
@@ -101,22 +237,22 @@ export function decodeSKU(parsed: ParsedSKU): DecodedSKU {
 
   return {
     series: { code: parsed.series, name: seriesData.name, collection: seriesData.collection },
-    fabric: { code: parsed.fabric.code, name: fabricData.name, color: parsed.fabric.color, colorName, group: fabricData.group },
+    fabric: { code: parsed.fabric.code, name: fabricName, color: parsed.fabric.color, colorName, group: fabricGroup },
     seat: {
       code: seatKey,
       type: parsed.seat.type,
       typeName: SEAT_TYPES[parsed.seat.type] || parsed.seat.type,
       finish: seatFinish,
       finishName: seatFinishName,
-      frame: seatSofa.frame,
-      foam: seatSofa.foam,
-      front: seatSofa.front,
-      midStrip: seatSofa.midStrip,
+      frame: seatFrame,
+      foam: seatFoam,
+      front: seatFront,
+      midStrip: seatMidStrip,
     },
-    side: { code: parsed.side.code, name: sideData.name, frame: sideData.frame, finish: parsed.side.finish, finishName: FINISHES[parsed.side.finish] || parsed.side.finish },
-    backrest: { code: parsed.backrest.code, height: backrestData.height, frame: backrestData.frame, foam: backrestData.foam, top: backrestData.top, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish },
-    chest: { code: parsed.chest, name: chestData.name, legHeight: chestData.legHeight, legCount: chestData.legCount },
-    automat: { code: parsed.automat, name: automatData.name, type: automatData.type, seatLegs: automatData.seatLegs, seatLegHeight: automatData.seatLegHeight, seatLegCount: automatData.seatLegCount },
+    side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish, finishName: FINISHES[parsed.side.finish] || parsed.side.finish },
+    backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: backrestFoam, top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish },
+    chest: { code: parsed.chest, name: chestName, legHeight: chestLegHeight, legCount: chestLegCount },
+    automat: { code: parsed.automat, name: automatName, type: automatType, seatLegs: automatSeatLegs, seatLegHeight: automatSeatLegHeight, seatLegCount: automatSeatLegCount },
     legs: legsDecoded,
     pillow: pillowDecoded,
     jaski: jaskiDecoded,

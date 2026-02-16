@@ -1,6 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DecodedSKU } from "@/types";
 
+export async function resolveSeriesId(seriesCode: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("series")
+    .select("id")
+    .eq("code", seriesCode)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 interface OrderInsert {
   order_number: string;
   order_date: string;

@@ -171,7 +171,7 @@ const ShopifyOrderForm = () => {
         } catch { /* non-blocking */ }
 
         // 4. Decode
-        const decoded = decodeSKU(parsed);
+        const decoded = await decodeSKU(parsed);
         decoded.orderNumber = itemOrderNumber;
         decoded.orderDate = format(new Date(), "dd.MM.yyyy");
         decoded.rawSKU = normalizedSku;
