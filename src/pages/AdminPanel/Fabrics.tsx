@@ -24,7 +24,7 @@ export default function Fabrics() {
 
   return (
     <>
-      <DataTable title="Tkaniny" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} isLoading={crud.isLoading} />
+      <DataTable title="Tkaniny" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} onBulkDelete={crud.handleBulkDelete} onDuplicate={crud.handleDuplicate} isLoading={crud.isLoading} />
       <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj tkaninę" : "Dodaj tkaninę"} fields={fields} initialData={crud.editingItem} onSubmit={crud.handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
     </>
   );

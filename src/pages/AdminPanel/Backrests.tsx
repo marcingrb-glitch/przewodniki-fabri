@@ -37,7 +37,7 @@ export default function Backrests() {
 
   return (
     <>
-      <DataTable title="Oparcia" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} isLoading={crud.isLoading} />
+      <DataTable title="Oparcia" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} onBulkDelete={crud.handleBulkDelete} onDuplicate={crud.handleDuplicate} isLoading={crud.isLoading} />
       <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj oparcie" : "Dodaj oparcie"} fields={fields} initialData={crud.editingItem} onSubmit={handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
     </>
   );

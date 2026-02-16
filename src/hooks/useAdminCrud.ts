@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getUserFriendlyError } from "@/utils/errorHandler";
@@ -72,6 +72,32 @@ export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, fil
     }
   }, [table, labelSingular, queryClient, fullKey]);
 
+  const handleBulkDelete = useCallback(async (ids: string[]) => {
+    try {
+      const { error } = await supabase.from(table as any).delete().in("id", ids);
+      if (error) throw error;
+      toast.success(`✅ Usunięto ${ids.length} rekordów`);
+      queryClient.invalidateQueries({ queryKey: fullKey });
+    } catch (err: any) {
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
+    }
+  }, [table, queryClient, fullKey]);
+
+  const handleDuplicate = useCallback(async (item: any) => {
+    try {
+      const { id, created_at, ...rest } = item;
+      if (rest.code) {
+        rest.code = rest.code + " (kopia)";
+      }
+      const { error } = await supabase.from(table as any).insert([rest]);
+      if (error) throw error;
+      toast.success("✅ Rekord został zduplikowany");
+      queryClient.invalidateQueries({ queryKey: fullKey });
+    } catch (err: any) {
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
+    }
+  }, [table, queryClient, fullKey]);
+
   return {
     data,
     isLoading,
@@ -83,5 +109,7 @@ export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, fil
     handleCancel,
     handleSubmit,
     handleDelete,
+    handleBulkDelete,
+    handleDuplicate,
   };
 }
