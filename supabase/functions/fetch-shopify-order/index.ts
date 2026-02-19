@@ -143,6 +143,12 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Fallback: if no shortcode found in properties, check if variant_title looks like a Mimeeq shortcode
+      if (!shortcode && li.variant_title && /^[A-Z0-9]{5,10}$/i.test(li.variant_title)) {
+        shortcode = li.variant_title;
+        console.log("Shortcode detected from variant_title:", shortcode);
+      }
+
       // For Mimeeq products, use SKU from properties instead of generic line_item.sku
       const effectiveSku = (isMmqProduct || shortcode) && mmqSku ? mmqSku : (li.sku || "");
 
