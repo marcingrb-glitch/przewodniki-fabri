@@ -8,6 +8,7 @@ export interface ShopifyLineItem {
   product_id: number;
   shortcode: string | null;
   is_mmq_product: boolean;
+  sku_source?: "shopify" | "mimeeq";
   properties: Record<string, string>;
   selected: boolean;
   decoded: boolean;
