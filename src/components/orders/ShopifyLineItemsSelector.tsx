@@ -97,9 +97,16 @@ const ShopifyLineItemsSelector = ({
 
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {item.sku ? (
-                    <Badge variant="outline" className="text-xs font-mono">
-                      {item.sku}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {item.sku}
+                      </Badge>
+                      {item.sku_source === "mimeeq" && (
+                        <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                          z Mimeeq
+                        </Badge>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-xs text-muted-foreground italic">Brak SKU</span>
                   )}

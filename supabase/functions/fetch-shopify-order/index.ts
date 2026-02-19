@@ -205,6 +205,7 @@ Deno.serve(async (req) => {
       return {
         line_item_id: item.line_item_id,
         sku: item.sku,
+        sku_source: "shopify" as const,
         title: item.title,
         variant_title: item.variant_title,
         quantity: item.quantity,
@@ -217,6 +218,47 @@ Deno.serve(async (req) => {
     });
 
     console.log("Mapped", lineItems.length, "line items with images");
+
+    // 8. Enrich SKU from Mimeeq API for items with shortcode but no/empty SKU
+    const mimeeqApiKey = Deno.env.get("MIMEEQ_API_KEY");
+
+    if (mimeeqApiKey) {
+      const itemsNeedingSku = lineItems.filter(
+        (item: any) => item.shortcode && (!item.sku || item.sku.trim() === "")
+      );
+
+      console.log("Items needing Mimeeq SKU enrichment:", itemsNeedingSku.length);
+
+      await Promise.all(
+        itemsNeedingSku.map(async (item: any) => {
+          try {
+            const mimeeqUrl = `https://mimeeqapi.com/get-product-info?shortCode=${encodeURIComponent(item.shortcode)}`;
+            console.log("Fetching Mimeeq SKU for shortcode:", item.shortcode);
+
+            const mimeeqRes = await fetch(mimeeqUrl, {
+              headers: { "X-API-KEY": mimeeqApiKey },
+            });
+
+            if (mimeeqRes.ok) {
+              const mimeeqData = await mimeeqRes.json();
+              if (mimeeqData.SKU && mimeeqData.SKU.trim() !== "") {
+                console.log(`Mimeeq SKU for ${item.shortcode}: ${mimeeqData.SKU}`);
+                item.sku = mimeeqData.SKU.trim();
+                item.sku_source = "mimeeq";
+              } else {
+                console.log(`No SKU in Mimeeq response for ${item.shortcode}`);
+              }
+            } else {
+              console.warn(`Mimeeq API error for ${item.shortcode}:`, mimeeqRes.status);
+            }
+          } catch (e) {
+            console.warn("Error fetching Mimeeq SKU for", item.shortcode, e);
+          }
+        })
+      );
+    } else {
+      console.log("MIMEEQ_API_KEY not set, skipping SKU enrichment");
+    }
 
     return new Response(
       JSON.stringify({ success: true, order_name: order.name, line_items: lineItems }),
