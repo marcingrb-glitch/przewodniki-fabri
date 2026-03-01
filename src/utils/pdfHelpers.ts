@@ -159,37 +159,53 @@ export function addLabel(
     doc.addPage([100, 30]);
   }
 
-  const margin = 5;
-  const contentWidth = 100 - (2 * margin);
-  const contentHeight = 30 - (2 * margin);
+  const marginX = 3;
+  const marginTop = 2;
+  const pageW = 100;
+  const pageH = 30;
+  const contentWidth = pageW - 2 * marginX;
 
-  // Black text, no border
   doc.setTextColor(0, 0, 0);
+
+  if (lines.length === 0) return;
+
+  // First line = series info (small, normal weight, top)
+  const seriesLine = lines[0];
+  const mainLines = lines.slice(1);
+
+  // Draw series line - small font at top
+  doc.setFont("Roboto", "normal");
+  let seriesFontSize = 7;
+  doc.setFontSize(seriesFontSize);
+  while (doc.getTextWidth(seriesLine) > contentWidth && seriesFontSize > 5) {
+    seriesFontSize -= 0.5;
+    doc.setFontSize(seriesFontSize);
+  }
+  doc.text(seriesLine, pageW / 2, marginTop + seriesFontSize * 0.35, { align: "center" });
+
+  // Main lines - bold, larger font, vertically centered in remaining space
+  if (mainLines.length === 0) return;
+
+  const topZone = marginTop + seriesFontSize * 0.35 + 1.5; // after series line
+  const availableHeight = pageH - topZone - marginTop;
+
   doc.setFont("Roboto", "bold");
-
-  // Calculate optimal font size based on available space
-  const maxLineHeight = contentHeight / lines.length;
-  // Start with a larger size and scale down if needed
-  let fontSize = Math.min(12, maxLineHeight * 1.8);
-
-  // Check if all lines fit width-wise, reduce font if needed
+  // Start with large font and scale down
+  let mainFontSize = Math.min(14, availableHeight / mainLines.length * 2);
   let fits = false;
-  while (!fits && fontSize > 6) {
-    doc.setFontSize(fontSize);
-    fits = lines.every(line => doc.getTextWidth(line) <= contentWidth);
-    if (!fits) fontSize -= 0.5;
+  while (!fits && mainFontSize > 7) {
+    doc.setFontSize(mainFontSize);
+    fits = mainLines.every(line => doc.getTextWidth(line) <= contentWidth);
+    if (!fits) mainFontSize -= 0.5;
   }
 
-  doc.setFontSize(fontSize);
-  const lineHeight = fontSize * 0.5;
-  const totalTextHeight = lines.length * lineHeight;
-  let startY = margin + (contentHeight - totalTextHeight) / 2 + lineHeight * 0.7;
-  if (startY < margin + lineHeight * 0.7) startY = margin + lineHeight * 0.7;
+  doc.setFontSize(mainFontSize);
+  const lineHeight = mainFontSize * 0.45;
+  const totalTextHeight = mainLines.length * lineHeight;
+  const startY = topZone + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
 
-  lines.forEach((line, i) => {
-    const textWidth = doc.getTextWidth(line);
-    const x = (100 - textWidth) / 2;
-    doc.text(line, Math.max(margin, x), startY + i * lineHeight);
+  mainLines.forEach((line, i) => {
+    doc.text(line, pageW / 2, startY + i * lineHeight, { align: "center" });
   });
 }
 
