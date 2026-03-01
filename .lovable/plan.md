@@ -1,82 +1,21 @@
 
 
-## Utworzenie Edge Function `fetch-shopify-order`
+## Plan: Rotated series info on left side of label
 
-### Problem
-Frontend wywoluje `supabase.functions.invoke("fetch-shopify-order")`, ale ta funkcja nie istnieje -- brak katalogu `supabase/functions/fetch-shopify-order/` i brak wpisu w `config.toml`. Stad blad "Failed to send a request to the Edge Function".
+The user wants the series info (e.g. "S1 [Sofa Viena]") displayed vertically on the left edge of the label, rotated 90 degrees — as shown in the red box on the screenshot. The current series line at the top center would be replaced by this rotated text on the left.
 
-### Rozwiazanie
+### Changes to `src/utils/pdfHelpers.ts` — `addLabel` function:
 
-Utworzenie nowej edge function ktora:
-1. Przyjmuje `{ order_number: string }` w body
-2. Uwierzytelnia sie w Shopify (Client Credentials Grant -- ten sam wzorzec co `get-variant-image`)
-3. Pobiera zamowienie z Shopify REST Admin API (`GET /admin/api/{version}/orders.json?name={order_number}`)
-4. Mapuje line items na format `ShopifyOrderResponse` (SKU, title, variant_title, quantity, image_url, product_id, shortcode, is_mmq_product, properties)
-5. Zwraca dane do frontendu
+1. **Remove** the current centered series line at the top
+2. **Add rotated text** on the left side:
+   - Rotate text 90° counterclockwise using `doc.text(text, x, y, { angle: 90 })`
+   - Position at ~3mm from left edge, vertically centered
+   - Use bold font, ~9-10pt size, auto-scale to fit label height
+3. **Shift main content zone** to the right (e.g. start at ~18-20mm instead of 3mm) to make room for the rotated text
+4. **Main lines** remain bold, centered in the remaining horizontal space
 
-### Nowe pliki
+### Changes to `src/utils/pdfGenerators/labels.ts`:
 
-**`supabase/functions/fetch-shopify-order/index.ts`**
-- CORS headers (identyczne jak w get-variant-image)
-- OPTIONS handler
-- JWT verification (autoryzacja uzytkownika)
-- Shopify auth: `POST https://{storeDomain}/admin/oauth/access_token` z client_credentials grant (uzywa istniejacych sekretow SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, SHOPIFY_STORE_DOMAIN)
-- Fetch zamowienia: `GET https://{storeDomain}/admin/api/{version}/orders.json?name={orderNumber}&status=any`
-- Mapowanie line_items:
-  - `line_item_id` = line_item.id
-  - `sku` = line_item.sku
-  - `title` = line_item.title
-  - `variant_title` = line_item.variant_title
-  - `quantity` = line_item.quantity
-  - `image_url` = line_item.image?.src (zdjecie produktu z Shopify)
-  - `product_id` = line_item.product_id
-  - `shortcode` = wyciagniete z properties (jesli istnieje klucz np. "_mmq_shortcode" lub "shortcode")
-  - `is_mmq_product` = true jesli shortcode znaleziony
-  - `properties` = line_item.properties jako Record
-- Logi diagnostyczne (console.log) na kazdym etapie
-
-### Zmienione pliki
-
-**`supabase/config.toml`** -- dodanie wpisu:
-```text
-[functions.fetch-shopify-order]
-verify_jwt = false
-```
-
-### Sekrety
-Wszystkie potrzebne sekrety juz istnieja: SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, SHOPIFY_STORE_DOMAIN, SHOPIFY_API_VERSION.
-
-### Szczegoly techniczne
-
-Struktura odpowiedzi edge function:
-```text
-{
-  "success": true,
-  "order_name": "#1001",
-  "line_items": [
-    {
-      "line_item_id": 123,
-      "sku": "S01-PLMJIOE-...",
-      "title": "Sofa 3-osobowa",
-      "variant_title": "Szary / Nogi dab",
-      "quantity": 1,
-      "image_url": "https://cdn.shopify.com/...",
-      "product_id": 456,
-      "shortcode": "PLMJIOE",
-      "is_mmq_product": true,
-      "properties": { "kolor": "szary" }
-    }
-  ]
-}
-```
-
-W przypadku bledu:
-```text
-{
-  "success": false,
-  "order_name": null,
-  "line_items": [],
-  "error": "Order not found"
-}
-```
+- Update the `seriesLine()` helper to produce a shorter format suitable for vertical display, e.g. `"S1 [Sofa Viena]"` instead of `"[S1 - Sofa Mar [Viena]]"`
+- Or keep existing format and let auto-scaling handle it
 
