@@ -159,38 +159,42 @@ export function addLabel(
     doc.addPage([100, 30]);
   }
 
-  const marginX = 3;
-  const marginTop = 2;
   const pageW = 100;
   const pageH = 30;
-  const contentWidth = pageW - 2 * marginX;
+  const marginY = 2;
 
   doc.setTextColor(0, 0, 0);
-
   if (lines.length === 0) return;
 
-  // First line = series info (small, normal weight, top)
-  const seriesLine = lines[0];
+  const seriesText = lines[0];
   const mainLines = lines.slice(1);
 
-  // Draw series line - small font at top
-  doc.setFont("Roboto", "normal");
-  let seriesFontSize = 7;
+  // --- Left rotated series info ---
+  const leftZoneWidth = 12; // mm reserved for rotated text
+  doc.setFont("Roboto", "bold");
+  let seriesFontSize = 9;
   doc.setFontSize(seriesFontSize);
-  while (doc.getTextWidth(seriesLine) > contentWidth && seriesFontSize > 5) {
+  const maxSeriesLen = pageH - 2 * marginY;
+  while (doc.getTextWidth(seriesText) > maxSeriesLen && seriesFontSize > 5) {
     seriesFontSize -= 0.5;
     doc.setFontSize(seriesFontSize);
   }
-  doc.text(seriesLine, pageW / 2, marginTop + seriesFontSize * 0.35, { align: "center" });
+  doc.setFontSize(seriesFontSize);
+  // Position: x near left edge, y centered vertically, rotated 90° CCW
+  const seriesX = seriesFontSize * 0.35 + 1.5;
+  const seriesY = pageH / 2 + doc.getTextWidth(seriesText) / 2;
+  doc.text(seriesText, seriesX, seriesY, { angle: 90 });
 
-  // Main lines - bold, larger font, vertically centered in remaining space
+  // --- Main content (shifted right) ---
   if (mainLines.length === 0) return;
 
-  const topZone = marginTop + seriesFontSize * 0.35 + 1.5; // after series line
-  const availableHeight = pageH - topZone - marginTop;
+  const contentLeft = leftZoneWidth;
+  const contentRight = pageW - 3;
+  const contentWidth = contentRight - contentLeft;
+  const contentCenterX = contentLeft + contentWidth / 2;
 
   doc.setFont("Roboto", "bold");
-  // Start with large font and scale down
+  const availableHeight = pageH - 2 * marginY;
   let mainFontSize = Math.min(14, availableHeight / mainLines.length * 2);
   let fits = false;
   while (!fits && mainFontSize > 7) {
@@ -202,10 +206,10 @@ export function addLabel(
   doc.setFontSize(mainFontSize);
   const lineHeight = mainFontSize * 0.45;
   const totalTextHeight = mainLines.length * lineHeight;
-  const startY = topZone + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
+  const startY = marginY + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
 
   mainLines.forEach((line, i) => {
-    doc.text(line, pageW / 2, startY + i * lineHeight, { align: "center" });
+    doc.text(line, contentCenterX, startY + i * lineHeight, { align: "center" });
   });
 }
 
