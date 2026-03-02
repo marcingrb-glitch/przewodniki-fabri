@@ -11,7 +11,6 @@ const sharedLinks = [
   { to: "/admin/series", label: "Serie" },
   { to: "/admin/fabrics", label: "Tkaniny" },
   { to: "/admin/chests", label: "Skrzynie" },
-  { to: "/admin/automats", label: "Automaty" },
   { to: "/admin/pillows", label: "Poduszki" },
   { to: "/admin/jaskis", label: "Jaśki" },
   { to: "/admin/waleks", label: "Wałki" },
@@ -20,6 +19,7 @@ const sharedLinks = [
 ];
 
 const seriesLinks = [
+  { to: "/admin/automats", label: "Automaty" },
   { to: "/admin/seats-sofa", label: "Siedziska Sofa" },
   { to: "/admin/seats-pufa", label: "Siedziska Pufa" },
   { to: "/admin/backrests", label: "Oparcia" },
