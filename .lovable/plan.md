@@ -1,39 +1,30 @@
 
 
-## Plan: Konfigurowalne nóżki pod siedziskiem sofy
+## Plan: Konsolidacja automatów per seria
 
-### Krok 1: Migracja SQL — nowe kolumny
+### Krok 1: Migracja SQL
 
-**Tabela `series`** — 3 nowe kolumny:
-- `seat_leg_default` (boolean, default false)
-- `seat_leg_height_cm` (numeric, nullable)
-- `seat_leg_count` (integer, nullable)
-
-Dane: S1 → false, S2 → true/2.5/2
-
-**Tabela `automats`** — 2 nowe kolumny:
-- `seat_leg_height_cm` (numeric, default 0)
-- `seat_leg_count` (integer, default 0)
-
-Dane: AT1 → 16/2, AT2 → 0/0
+Jedna migracja:
+1. Dodaj `series_id` (UUID, FK → series) do `automats`
+2. Przypisz istniejące automaty do S1
+3. Wstaw automaty S2 (AT1/AT2 oba z `has_seat_legs=true`, 2.5cm, 2szt)
+4. Upewnij się o poprawne wartości S1 AT1 (16/2) i AT2 (0/0)
+5. Ustaw `series_id NOT NULL`
+6. Usuń stary unique constraint na `code`, dodaj `UNIQUE(code, series_id)`
+7. Usuń kolumny `seat_leg_default`, `seat_leg_height_cm`, `seat_leg_count` z tabeli `series`
 
 ### Krok 2: `skuDecoder.ts` — 3 zmiany
 
-1. **Fetch series** — dodać `seat_leg_default, seat_leg_height_cm, seat_leg_count` do select (linia z series query)
-2. **Fetch automats** — dodać `seat_leg_height_cm, seat_leg_count` do select; zmienić `const` na `let` dla `automatSeatLegHeight`/`automatSeatLegCount` i nadpisać z DB (linie 274-281)
-3. **Logika sofaSeatLeg** (linie 317-319) — zamienić na dwupoziomową:
-   - Priorytet 1: `seriesRes.data?.seat_leg_default` → stałe nóżki serii (N4, height/count z serii)
-   - Priorytet 2: `automatSeatLegs && legsDecoded` → nóżki z automatu (obecna logika)
+1. **Fetch automats** — dodać `.eq("series_id", seriesId)` i wymagać `seriesId` (linia 154-157)
+2. **Fetch series** — usunąć `seat_leg_default, seat_leg_height_cm, seat_leg_count` z select (linia 135)
+3. **Logika sofaSeatLeg** (linie 319-336) — usunąć priorytet 1 (seria), zastąpić uproszczoną logiką:
+   - Jeśli `automatSeatLegs && automatSeatLegHeight > 0`:
+     - Gdy `legsDecoded` → nóżki z SKU (S1)
+     - Gdy brak → domyślne N4 (S2)
 
 ### Krok 3: Panel admina
 
-**`Series.tsx`** — dodać 3 kolumny i 3 pola formularza (wbudowane nóżki, wysokość, ilość)
-
-**`Automats.tsx`** — dodać 2 kolumny i 2 pola formularza (wysokość nóżek, ilość nóżek)
-
-### Szczegóły techniczne
-
-Zmiana w dekoderze nie wymaga modyfikacji typu `DecodedSKU` — `legHeights.sofa_seat` już ma odpowiednią strukturę `{ leg: string; height: number; count: number } | null`.
-
-Statyczne fallbacki w `AUTOMATS` mappingu nadal działają dla `seatLegHeight`/`seatLegCount` gdy DB nie zwraca danych.
+1. **`AdminLayout.tsx`** — przenieść `{ to: "/admin/automats", label: "Automaty" }` z `sharedLinks` do `seriesLinks`
+2. **`Automats.tsx`** — dodać `useOutletContext`, filtrowanie po `series_id`, wstrzykiwanie `series_id` przy submit
+3. **`Series.tsx`** — usunąć 3 kolumny/pola `seat_leg_*`, zostawić kod/nazwa/kolekcja
 
