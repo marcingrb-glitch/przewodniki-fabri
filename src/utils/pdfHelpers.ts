@@ -169,18 +169,19 @@ export function addLabel(
   const seriesText = lines[0];
   const mainLines = lines.slice(1);
 
-  // --- Left rotated series info (two-part: large code + smaller name) ---
+  // --- Left rotated series info (three-part: code, name, collection) ---
   const leftZoneWidth = 16; // mm reserved for rotated text
   const maxSeriesLen = pageH - 2 * marginY;
 
-  // Split series text: "S1 [Sofa Mar Viena]" → code="S1", desc="Sofa Mar [Viena]"
-  const spaceIdx = seriesText.indexOf(" ");
-  const seriesCode = spaceIdx > 0 ? seriesText.substring(0, spaceIdx) : seriesText;
-  const seriesDesc = spaceIdx > 0 ? seriesText.substring(spaceIdx + 1) : "";
+  // Split series text: "S1|Sofa Mar|Viena" → code="S1", name="Sofa Mar", collection="Viena"
+  const parts = seriesText.split("|");
+  const seriesCode = parts[0] || "";
+  const seriesName = parts[1] || "";
+  const seriesCollection = parts[2] ? `[${parts[2]}]` : "";
 
   // Draw large series code (e.g. "S1") rotated 90° CCW
   doc.setFont("Roboto", "bold");
-  let codeFontSize = 16;
+  let codeFontSize = 18;
   doc.setFontSize(codeFontSize);
   while (doc.getTextWidth(seriesCode) > maxSeriesLen && codeFontSize > 8) {
     codeFontSize -= 0.5;
@@ -190,18 +191,32 @@ export function addLabel(
   const codeY = pageH / 2 + doc.getTextWidth(seriesCode) / 2;
   doc.text(seriesCode, codeX, codeY, { angle: 90 });
 
-  // Draw smaller description (e.g. "Sofa Mar [Viena]") rotated 90° CCW, next to code
-  if (seriesDesc) {
-    doc.setFont("Roboto", "normal");
-    let descFontSize = 7;
-    doc.setFontSize(descFontSize);
-    while (doc.getTextWidth(seriesDesc) > maxSeriesLen && descFontSize > 4) {
-      descFontSize -= 0.5;
-      doc.setFontSize(descFontSize);
+  // Draw name (e.g. "Sofa Mar") rotated 90° CCW
+  let nextX = codeX + codeFontSize * 0.35 + 1;
+  if (seriesName) {
+    doc.setFont("Roboto", "bold");
+    let nameFontSize = 9;
+    doc.setFontSize(nameFontSize);
+    while (doc.getTextWidth(seriesName) > maxSeriesLen && nameFontSize > 4) {
+      nameFontSize -= 0.5;
+      doc.setFontSize(nameFontSize);
     }
-    const descX = codeX + codeFontSize * 0.35 + 1.5;
-    const descY = pageH / 2 + doc.getTextWidth(seriesDesc) / 2;
-    doc.text(seriesDesc, descX, descY, { angle: 90 });
+    const nameY = pageH / 2 + doc.getTextWidth(seriesName) / 2;
+    doc.text(seriesName, nextX, nameY, { angle: 90 });
+    nextX += nameFontSize * 0.35 + 0.8;
+  }
+
+  // Draw collection (e.g. "[Viena]") rotated 90° CCW
+  if (seriesCollection) {
+    doc.setFont("Roboto", "normal");
+    let collFontSize = 7;
+    doc.setFontSize(collFontSize);
+    while (doc.getTextWidth(seriesCollection) > maxSeriesLen && collFontSize > 4) {
+      collFontSize -= 0.5;
+      doc.setFontSize(collFontSize);
+    }
+    const collY = pageH / 2 + doc.getTextWidth(seriesCollection) / 2;
+    doc.text(seriesCollection, nextX, collY, { angle: 90 });
   }
 
   // --- Main content (shifted right) ---

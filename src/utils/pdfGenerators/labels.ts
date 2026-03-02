@@ -3,7 +3,7 @@ import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
 import { SEATS_PUFA } from "@/data/mappings";
 
 function seriesLine(decoded: DecodedSKU): string {
-  return `${decoded.series.code} [${decoded.series.name} ${decoded.series.collection}]`;
+  return `${decoded.series.code}|${decoded.series.name}|${decoded.series.collection}`;
 }
 
 export async function generateSofaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
