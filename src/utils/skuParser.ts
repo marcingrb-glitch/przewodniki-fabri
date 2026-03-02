@@ -4,15 +4,10 @@ import { ParsedSKU } from "@/types";
  * Parse SKU string into structured components.
  * Format: S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF
  */
-// Side (boczek) exception map for legacy Shopify SKUs — applied before regex parsing
-const SIDE_EXCEPTIONS: Record<string, Record<string, string>> = {
-  S1: {
-    B6WD: "B6WC",
-    B6D: "B6C",
-  },
-};
+// LEGACY: Side exceptions moved to DB table `side_exceptions`
+// parseSKU() now accepts optional sideExceptions parameter from DB
 
-export function parseSKU(sku: string): ParsedSKU {
+export function parseSKU(sku: string, sideExceptions?: Record<string, string>): ParsedSKU {
   const parts = sku.trim().toUpperCase().split("-");
 
   const result: ParsedSKU = {
@@ -50,11 +45,10 @@ export function parseSKU(sku: string): ParsedSKU {
       continue;
     }
 
-    // Side/Boczek: B8C, B1A — with exception pre-processing
-    const seriesExceptions = result.series ? SIDE_EXCEPTIONS[result.series] : undefined;
-    if (seriesExceptions && seriesExceptions[part]) {
+    // Side/Boczek: B8C, B1A — with exception pre-processing (from DB)
+    if (sideExceptions && sideExceptions[part]) {
       const original = part;
-      const mapped = seriesExceptions[part];
+      const mapped = sideExceptions[part];
       result.sideException = `Zamieniono ${original} → ${mapped} (wyjątek Shopify)`;
       console.log(`[SKU Parser] Side exception: ${original} → ${mapped}`);
       // Parse the mapped value instead

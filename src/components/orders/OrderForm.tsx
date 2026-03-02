@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { parseSKU } from "@/utils/skuParser";
 import { validateSKU } from "@/utils/skuValidator";
-import { decodeSKU } from "@/utils/skuDecoder";
+import { decodeSKU, fetchSideExceptions } from "@/utils/skuDecoder";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder, checkOrderNumberExists } from "@/utils/supabaseQueries";
 import { uploadVariantImage } from "@/utils/variantImageUpload";
@@ -168,8 +168,10 @@ const OrderForm = () => {
         validation.warnings.forEach(w => toast.warning(`⚠️ ${w}`));
       }
 
-      // 2. Parse
-      const parsed = parseSKU(sku);
+      // 2. Parse (with DB-sourced side exceptions)
+      const seriesCode = sku.trim().toUpperCase().split("-")[0] || "";
+      const sideExceptions = await fetchSideExceptions(seriesCode);
+      const parsed = parseSKU(sku, sideExceptions);
 
       // 3. Validate finishes against DB
       try {

@@ -16,6 +16,7 @@ const sharedLinks = [
   { to: "/admin/jaskis", label: "Jaśki" },
   { to: "/admin/waleks", label: "Wałki" },
   { to: "/admin/finishes", label: "Wykończenia" },
+  { to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" },
 ];
 
 const seriesLinks = [

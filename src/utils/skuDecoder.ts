@@ -2,8 +2,8 @@ import { ParsedSKU, DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveSeriesId } from "@/utils/supabaseQueries";
 import {
-  SERIES, FABRICS, SEAT_TYPES, SEATS_SOFA_S1, BACKRESTS, SIDES,
-  CHESTS, AUTOMATS, LEGS, PILLOWS, JASKI, WALKI, EXTRAS,
+  SERIES, FABRICS, SEAT_TYPES as STATIC_SEAT_TYPES, SEATS_SOFA_S1, BACKRESTS, SIDES,
+  CHESTS, AUTOMATS, LEGS, PILLOWS, JASKI, WALKI, EXTRAS as STATIC_EXTRAS,
   FINISHES, DEFAULT_FINISHES,
 } from "@/data/mappings";
 
@@ -11,7 +11,7 @@ import {
  * Resolve a raw seat segment against the database.
  * Tries the full rawSegment as a code first, then strips the last letter as finish.
  */
-async function findSeatInDB(code: string, seriesId: string): Promise<string | null> {
+async function findSeatInDB(code: string, seriesId: string, zeroPadded?: boolean): Promise<string | null> {
   // Try exact match
   const { data: exact } = await supabase
     .from("seats_sofa")
@@ -21,16 +21,18 @@ async function findSeatInDB(code: string, seriesId: string): Promise<string | nu
     .maybeSingle();
   if (exact) return exact.code;
 
-  // Try zero-padded variant (SD2N → SD02N)
-  const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
-  if (withZero !== code) {
-    const { data: padded } = await supabase
-      .from("seats_sofa")
-      .select("code")
-      .eq("code", withZero)
-      .eq("series_id", seriesId)
-      .maybeSingle();
-    if (padded) return padded.code;
+  // Try zero-padded variant (SD2N → SD02N) only if zeroPadded is not explicitly false
+  if (zeroPadded !== false) {
+    const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
+    if (withZero !== code) {
+      const { data: padded } = await supabase
+        .from("seats_sofa")
+        .select("code")
+        .eq("code", withZero)
+        .eq("series_id", seriesId)
+        .maybeSingle();
+      if (padded) return padded.code;
+    }
   }
 
   return null;
@@ -39,16 +41,17 @@ async function findSeatInDB(code: string, seriesId: string): Promise<string | nu
 async function resolveSeatCode(
   rawSegment: string,
   parsedFinish: string | undefined,
-  seriesId: string
+  seriesId: string,
+  zeroPadded?: boolean
 ): Promise<{ code: string; finish?: string }> {
   // If parser already extracted a finish, try rawSegment as code
   if (parsedFinish) {
-    const found = await findSeatInDB(rawSegment, seriesId);
+    const found = await findSeatInDB(rawSegment, seriesId, zeroPadded);
     if (found) return { code: found, finish: parsedFinish };
   }
 
   // Try full rawSegment as code (no finish)
-  const fullMatch = await findSeatInDB(rawSegment, seriesId);
+  const fullMatch = await findSeatInDB(rawSegment, seriesId, zeroPadded);
   if (fullMatch) return { code: fullMatch, finish: parsedFinish };
 
   // Try stripping last letter as finish (only if A-D)
@@ -56,7 +59,7 @@ async function resolveSeatCode(
     const possibleFinish = rawSegment.slice(-1);
     const possibleCode = rawSegment.slice(0, -1);
     if (/^[A-D]$/.test(possibleFinish)) {
-      const codeMatch = await findSeatInDB(possibleCode, seriesId);
+      const codeMatch = await findSeatInDB(possibleCode, seriesId, zeroPadded);
       if (codeMatch) return { code: codeMatch, finish: possibleFinish };
     }
   }
@@ -69,9 +72,55 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // Resolve series UUID for DB queries
   const seriesId = await resolveSeriesId(parsed.series);
 
-  // Resolve seat code against database
+  // Fetch SKU config from DB (side_exceptions, parse_rules, seat_types, extras) in parallel
+  const [sideExceptionsRes, parseRulesRes, seatTypesRes, extrasDbRes] = await Promise.all([
+    seriesId
+      ? supabase.from("side_exceptions" as any).select("original_code, mapped_code").eq("series_id", seriesId).eq("active", true)
+      : Promise.resolve({ data: null }),
+    seriesId
+      ? supabase.from("sku_parse_rules" as any).select("component_type, zero_padded").eq("series_id", seriesId)
+      : Promise.resolve({ data: null }),
+    supabase.from("seat_types" as any).select("code, name"),
+    seriesId
+      ? supabase.from("extras").select("code, name, type").eq("series_id", seriesId)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // Build side exceptions map from DB
+  const sideExceptions: Record<string, string> = {};
+  if (sideExceptionsRes.data) {
+    for (const e of sideExceptionsRes.data as any[]) {
+      sideExceptions[e.original_code] = e.mapped_code;
+    }
+  }
+
+  // Get zero_padded rule for seats
+  const seatZeroPadded = (parseRulesRes.data as any[])?.find(
+    (r: any) => r.component_type === 'seat'
+  )?.zero_padded ?? true;
+
+  // Build seat types map from DB (fallback to static)
+  const SEAT_TYPES: Record<string, string> = { ...STATIC_SEAT_TYPES };
+  if (seatTypesRes.data) {
+    for (const st of seatTypesRes.data as any[]) {
+      SEAT_TYPES[st.code] = st.name;
+    }
+  }
+
+  // Build extras map from DB (fallback to static)
+  const EXTRAS: Record<string, { name: string; type: string }> = { ...STATIC_EXTRAS };
+  if (extrasDbRes.data) {
+    for (const ex of extrasDbRes.data as any[]) {
+      EXTRAS[ex.code] = { name: ex.name, type: ex.type || "" };
+    }
+  }
+
+  // Note: sideExceptions should be passed to parseSKU() by the caller before calling decodeSKU().
+  // The decoder exports a helper to fetch them: fetchSideExceptions()
+
+  // Resolve seat code against database with zeroPadded rule
   const seatResolved = seriesId
-    ? await resolveSeatCode(parsed.seat.rawSegment, parsed.seat.finish, seriesId)
+    ? await resolveSeatCode(parsed.seat.rawSegment, parsed.seat.finish, seriesId, seatZeroPadded)
     : { code: parsed.seat.rawSegment, finish: parsed.seat.finish };
 
   const seatCode = seatResolved.code;
@@ -342,4 +391,22 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     pufaSKU,
     fotelSKU,
   };
+}
+
+/**
+ * Fetch side exceptions from DB for a given series code.
+ * Returns a map of original_code → mapped_code for use with parseSKU().
+ */
+export async function fetchSideExceptions(seriesCode: string): Promise<Record<string, string>> {
+  const seriesId = await resolveSeriesId(seriesCode);
+  if (!seriesId) return {};
+  
+  const { data } = await supabase
+    .from("side_exceptions" as any)
+    .select("original_code, mapped_code")
+    .eq("series_id", seriesId)
+    .eq("active", true);
+  
+  if (!data) return {};
+  return Object.fromEntries((data as any[]).map(e => [e.original_code, e.mapped_code]));
 }

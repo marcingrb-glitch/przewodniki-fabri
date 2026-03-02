@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrders, deleteOrder } from "@/utils/supabaseQueries";
 import { parseSKU } from "@/utils/skuParser";
-import { decodeSKU } from "@/utils/skuDecoder";
+import { decodeSKU, fetchSideExceptions } from "@/utils/skuDecoder";
 import { generateSofaGuidePDF } from "@/utils/pdfGenerators/sofaGuide";
 import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
 import { generateFotelGuidePDF } from "@/utils/pdfGenerators/fotelGuide";
@@ -113,7 +113,9 @@ const OrderHistoryPage = () => {
   const handleRegenerate = async (order: any) => {
     setRegeneratingId(order.id);
     try {
-      const parsed = parseSKU(order.sku);
+      const seriesCode = order.sku.trim().toUpperCase().split("-")[0] || "";
+      const sideExceptions = await fetchSideExceptions(seriesCode);
+      const parsed = parseSKU(order.sku, sideExceptions);
       const decoded = await decodeSKU(parsed);
       decoded.orderNumber = order.order_number;
       decoded.orderDate = format(new Date(order.order_date), "dd.MM.yyyy");

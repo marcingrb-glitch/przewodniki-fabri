@@ -391,6 +391,27 @@ export type Database = {
         }
         Relationships: []
       }
+      seat_types: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       seats_pufa: {
         Row: {
           base_foam: string | null
@@ -506,6 +527,44 @@ export type Database = {
         }
         Relationships: []
       }
+      side_exceptions: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          description: string | null
+          id: string
+          mapped_code: string
+          original_code: string
+          series_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          mapped_code: string
+          original_code: string
+          series_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          mapped_code?: string
+          original_code?: string
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "side_exceptions_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sides: {
         Row: {
           allowed_finishes: string[] | null
@@ -540,6 +599,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sides_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sku_parse_rules: {
+        Row: {
+          code_format: string | null
+          component_type: string
+          created_at: string
+          id: string
+          notes: string | null
+          series_id: string
+          zero_padded: boolean | null
+        }
+        Insert: {
+          code_format?: string | null
+          component_type: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          series_id: string
+          zero_padded?: boolean | null
+        }
+        Update: {
+          code_format?: string | null
+          component_type?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          series_id?: string
+          zero_padded?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sku_parse_rules_series_id_fkey"
             columns: ["series_id"]
             isOneToOne: false
             referencedRelation: "series"

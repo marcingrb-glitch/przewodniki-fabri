@@ -1,4 +1,5 @@
-// Component mappings from KNOWLEDGE.md
+// LEGACY FALLBACK — główne dane w Supabase (tabele: series, fabrics, seats_sofa, etc.)
+// Te mappingi są używane TYLKO gdy baza jest niedostępna lub brakuje wpisu.
 
 export const SERIES: Record<string, { name: string; collection: string }> = {
   S1: { name: "Sofa Mar", collection: "Viena" },
@@ -21,6 +22,7 @@ export const FABRICS: Record<string, { name: string; group: number; colors: Reco
   T13: { name: "Zoom 1", group: 1, colors: { A: "Cream", B: "Mink", C: "Toffee", D: "Winter Moss", E: "Dove", F: "Ash" } },
 };
 
+// LEGACY FALLBACK — główne dane w tabeli seat_types
 export const SEAT_TYPES: Record<string, string> = {
   N: "Niskie",
   ND: "Niskie dzielone",
@@ -105,6 +107,7 @@ export const WALKI: Record<string, { name: string }> = {
   W1: { name: "Wałek" },
 };
 
+// LEGACY FALLBACK — główne dane w tabeli extras (per seria)
 export const EXTRAS: Record<string, { name: string; type: string }> = {
   PF: { name: "Pufa normalna", type: "pufa" },
   PFO: { name: "Pufa otwierana", type: "pufa" },
@@ -118,6 +121,7 @@ export const FINISHES: Record<string, string> = {
   D: "Zwykły",
 };
 
+// LEGACY FALLBACK — główne dane w seats_sofa.default_finish
 export const DEFAULT_FINISHES: Record<string, string> = {
   "SD01N": "A",
   "SD01ND": "A",
