@@ -161,15 +161,15 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       : Promise.resolve({ data: null }),
     // Pillows (no series_id)
     parsed.pillow
-      ? supabase.from("pillows").select("code, name").eq("code", parsed.pillow).maybeSingle()
+      ? supabase.from("pillows").select("code, name, default_finish, allowed_finishes").eq("code", parsed.pillow.code).maybeSingle()
       : Promise.resolve({ data: null }),
     // Jaskis (no series_id)
     parsed.jaski
-      ? supabase.from("jaskis").select("code, name").eq("code", parsed.jaski).maybeSingle()
+      ? supabase.from("jaskis").select("code, name").eq("code", parsed.jaski.code).maybeSingle()
       : Promise.resolve({ data: null }),
     // Waleks (no series_id)
     parsed.walek
-      ? supabase.from("waleks").select("code, name").eq("code", parsed.walek).maybeSingle()
+      ? supabase.from("waleks").select("code, name").eq("code", parsed.walek.code).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -321,25 +321,34 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // ---- PILLOW (fallback to static) ----
   let pillowDecoded: DecodedSKU["pillow"] = undefined;
   if (parsed.pillow) {
-    const staticPillow = PILLOWS[parsed.pillow] || { name: "?" };
+    const pillowCode = parsed.pillow.code;
+    const staticPillow = PILLOWS[pillowCode] || { name: "?" };
     const pillowName = pillowsRes.data?.name || staticPillow.name;
-    pillowDecoded = { code: parsed.pillow, name: pillowName, finish: seatFinish, finishName: seatFinishName };
+    const pillowFinish = parsed.pillow.finish || pillowsRes.data?.default_finish || seatFinish;
+    const pillowFinishName = FINISHES[pillowFinish] || pillowFinish;
+    pillowDecoded = { code: pillowCode, name: pillowName, finish: pillowFinish, finishName: pillowFinishName };
   }
 
   // ---- JASKI (fallback to static) ----
   let jaskiDecoded: DecodedSKU["jaski"] = undefined;
   if (parsed.jaski) {
-    const staticJaski = JASKI[parsed.jaski] || { name: "?" };
+    const jaskiCode = parsed.jaski.code;
+    const staticJaski = JASKI[jaskiCode] || { name: "?" };
     const jaskiName = jaskisRes.data?.name || staticJaski.name;
-    jaskiDecoded = { code: parsed.jaski, name: jaskiName, finish: seatFinish, finishName: seatFinishName };
+    const jaskiFinish = parsed.jaski.finish || seatFinish;
+    const jaskiFinishName = FINISHES[jaskiFinish] || jaskiFinish;
+    jaskiDecoded = { code: jaskiCode, name: jaskiName, finish: jaskiFinish, finishName: jaskiFinishName };
   }
 
   // ---- WALEK (fallback to static) ----
   let walekDecoded: DecodedSKU["walek"] = undefined;
   if (parsed.walek) {
-    const staticWalek = WALKI[parsed.walek] || { name: "?" };
+    const walekCode = parsed.walek.code;
+    const staticWalek = WALKI[walekCode] || { name: "?" };
     const walekName = waleksRes.data?.name || staticWalek.name;
-    walekDecoded = { code: parsed.walek, name: walekName, finish: seatFinish, finishName: seatFinishName };
+    const walekFinish = parsed.walek.finish || seatFinish;
+    const walekFinishName = FINISHES[walekFinish] || walekFinish;
+    walekDecoded = { code: walekCode, name: walekName, finish: walekFinish, finishName: walekFinishName };
   }
 
   // ---- EXTRAS (static only — no series_id needed) ----
@@ -360,7 +369,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let fotelSKU: string | undefined;
   const hasFotel = parsed.extras.includes("FT");
   if (hasFotel && parsed.legs) {
-    const jaskiPart = parsed.jaski ? `-${parsed.jaski}` : "";
+    const jaskiPart = parsed.jaski ? `-${parsed.jaski.code}${parsed.jaski.finish || ""}` : "";
     fotelSKU = `FT-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.side.code}${parsed.side.finish}${jaskiPart}-${parsed.legs.code}${parsed.legs.color || ""}`;
   }
 
