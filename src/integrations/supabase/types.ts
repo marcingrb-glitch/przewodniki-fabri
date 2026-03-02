@@ -21,6 +21,8 @@ export type Database = {
           has_seat_legs: boolean
           id: string
           name: string
+          seat_leg_count: number | null
+          seat_leg_height_cm: number | null
           type: string | null
         }
         Insert: {
@@ -29,6 +31,8 @@ export type Database = {
           has_seat_legs?: boolean
           id?: string
           name: string
+          seat_leg_count?: number | null
+          seat_leg_height_cm?: number | null
           type?: string | null
         }
         Update: {
@@ -37,6 +41,8 @@ export type Database = {
           has_seat_legs?: boolean
           id?: string
           name?: string
+          seat_leg_count?: number | null
+          seat_leg_height_cm?: number | null
           type?: string | null
         }
         Relationships: []
@@ -510,6 +516,9 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          seat_leg_count: number | null
+          seat_leg_default: boolean | null
+          seat_leg_height_cm: number | null
         }
         Insert: {
           code: string
@@ -517,6 +526,9 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          seat_leg_count?: number | null
+          seat_leg_default?: boolean | null
+          seat_leg_height_cm?: number | null
         }
         Update: {
           code?: string
@@ -524,6 +536,9 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          seat_leg_count?: number | null
+          seat_leg_default?: boolean | null
+          seat_leg_height_cm?: number | null
         }
         Relationships: []
       }
