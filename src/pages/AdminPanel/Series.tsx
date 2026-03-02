@@ -6,18 +6,12 @@ const columns = [
   { key: "code", label: "Kod" },
   { key: "name", label: "Nazwa" },
   { key: "collection", label: "Kolekcja" },
-  { key: "seat_leg_default", label: "Wbudowane nóżki", render: (v: boolean) => v ? "Tak" : "Nie" },
-  { key: "seat_leg_height_cm", label: "Wys. nóżek (cm)" },
-  { key: "seat_leg_count", label: "Ilość nóżek" },
 ];
 
 const fields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
   { name: "name", label: "Nazwa", type: "text", required: true },
   { name: "collection", label: "Kolekcja", type: "text" },
-  { name: "seat_leg_default", label: "Wbudowane nóżki pod siedziskiem", type: "boolean" },
-  { name: "seat_leg_height_cm", label: "Wysokość nóżek pod siedziskiem (cm)", type: "number" },
-  { name: "seat_leg_count", label: "Ilość nóżek pod siedziskiem", type: "number" },
 ];
 
 export default function Series() {

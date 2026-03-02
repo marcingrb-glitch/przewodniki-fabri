@@ -1,3 +1,4 @@
+import { useOutletContext } from "react-router-dom";
 import DataTable from "@/components/admin/DataTable";
 import ComponentForm, { FieldDefinition } from "@/components/admin/ComponentForm";
 import { useAdminCrud } from "@/hooks/useAdminCrud";
@@ -21,12 +22,28 @@ const fields: FieldDefinition[] = [
 ];
 
 export default function Automats() {
-  const crud = useAdminCrud({ table: "automats", queryKey: "admin-automats", labelSingular: "Automat" });
+  const { selectedSeriesId } = useOutletContext<{ selectedSeriesId: string }>();
+
+  const crud = useAdminCrud({
+    table: "automats",
+    queryKey: "admin-automats",
+    labelSingular: "Automat",
+    filterColumn: "series_id",
+    filterValue: selectedSeriesId,
+  });
+
+  const handleSubmit = async (formData: any) => {
+    await crud.handleSubmit({ ...formData, series_id: selectedSeriesId });
+  };
+
+  if (!selectedSeriesId) {
+    return <p className="text-muted-foreground p-4">Wybierz serię w sidebarze, aby zobaczyć automaty.</p>;
+  }
 
   return (
     <>
       <DataTable title="Automaty" columns={columns} data={crud.data} onAdd={crud.handleAdd} onEdit={crud.handleEdit} onDelete={crud.handleDelete} onBulkDelete={crud.handleBulkDelete} onDuplicate={crud.handleDuplicate} isLoading={crud.isLoading} />
-      <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj automat" : "Dodaj automat"} fields={fields} initialData={crud.editingItem} onSubmit={crud.handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
+      <ComponentForm open={crud.formOpen} title={crud.editingItem ? "Edytuj automat" : "Dodaj automat"} fields={fields} initialData={crud.editingItem} onSubmit={handleSubmit} onCancel={crud.handleCancel} isLoading={crud.submitting} />
     </>
   );
 }

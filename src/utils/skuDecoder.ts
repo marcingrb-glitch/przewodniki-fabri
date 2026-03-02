@@ -132,7 +132,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     chestsRes, automatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
   ] = await Promise.all([
     // Series
-    supabase.from("series").select("code, name, collection, seat_leg_default, seat_leg_height_cm, seat_leg_count").eq("code", parsed.series).maybeSingle(),
+    supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
     // Fabrics
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
     // Seats sofa (series-specific)
@@ -151,9 +151,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     parsed.chest
       ? supabase.from("chests").select("code, name, leg_height_cm").eq("code", parsed.chest).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Automats (no series_id)
-    parsed.automat
-      ? supabase.from("automats").select("code, name, type, has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("code", parsed.automat).maybeSingle()
+    // Automats (series-specific)
+    seriesId && parsed.automat
+      ? supabase.from("automats").select("code, name, type, has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("code", parsed.automat).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     // Legs (series-specific)
     seriesId && parsed.legs
@@ -318,21 +318,22 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   let sofaSeatLeg: { leg: string; height: number; count: number } | null = null;
 
-  // Priority 1: Series has built-in seat legs (e.g. S2 Elma — plastic 2.5cm)
-  if ((seriesRes.data as any)?.seat_leg_default && (seriesRes.data as any)?.seat_leg_height_cm != null) {
-    sofaSeatLeg = {
-      leg: "N4",
-      height: (seriesRes.data as any).seat_leg_height_cm,
-      count: (seriesRes.data as any).seat_leg_count || 2,
-    };
-  }
-  // Priority 2: Automat determines seat legs (e.g. S1 with AT1 — legs from SKU, 16cm)
-  else if (automatSeatLegs && legsDecoded) {
-    sofaSeatLeg = {
-      leg: `${legsDecoded.code}${legsDecoded.color || ""}`,
-      height: automatSeatLegHeight,
-      count: automatSeatLegCount,
-    };
+  if (automatSeatLegs && automatSeatLegHeight > 0) {
+    if (legsDecoded) {
+      // Nóżki z SKU — typ nóżki z segmentu N (model S1 z AT1)
+      sofaSeatLeg = {
+        leg: `${legsDecoded.code}${legsDecoded.color || ""}`,
+        height: automatSeatLegHeight,
+        count: automatSeatLegCount,
+      };
+    } else {
+      // Wbudowane plastikowe — brak N w SKU (model S2)
+      sofaSeatLeg = {
+        leg: "N4",
+        height: automatSeatLegHeight,
+        count: automatSeatLegCount,
+      };
+    }
   }
 
   // ---- PILLOW (fallback to static) ----

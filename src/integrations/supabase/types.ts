@@ -23,6 +23,7 @@ export type Database = {
           name: string
           seat_leg_count: number | null
           seat_leg_height_cm: number | null
+          series_id: string
           type: string | null
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           name: string
           seat_leg_count?: number | null
           seat_leg_height_cm?: number | null
+          series_id: string
           type?: string | null
         }
         Update: {
@@ -43,9 +45,18 @@ export type Database = {
           name?: string
           seat_leg_count?: number | null
           seat_leg_height_cm?: number | null
+          series_id?: string
           type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "automats_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       backrests: {
         Row: {
@@ -516,9 +527,6 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          seat_leg_count: number | null
-          seat_leg_default: boolean | null
-          seat_leg_height_cm: number | null
         }
         Insert: {
           code: string
@@ -526,9 +534,6 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          seat_leg_count?: number | null
-          seat_leg_default?: boolean | null
-          seat_leg_height_cm?: number | null
         }
         Update: {
           code?: string
@@ -536,9 +541,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          seat_leg_count?: number | null
-          seat_leg_default?: boolean | null
-          seat_leg_height_cm?: number | null
         }
         Relationships: []
       }
