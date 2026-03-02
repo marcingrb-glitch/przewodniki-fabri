@@ -85,7 +85,7 @@ export async function validateFinishesFromDB(parsed: ParsedSKU): Promise<FinishV
       ? supabase.from("backrests").select("code, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : null,
     parsed.pillow
-      ? supabase.from("pillows").select("code, allowed_finishes, default_finish").eq("code", parsed.pillow).maybeSingle()
+      ? supabase.from("pillows").select("code, allowed_finishes, default_finish").eq("code", parsed.pillow.code).maybeSingle()
       : null,
   ]);
 
@@ -134,12 +134,13 @@ export async function validateFinishesFromDB(parsed: ParsedSKU): Promise<FinishV
     }
   }
 
-  // --- PILLOW (inherits seat finish, no series_id) ---
+  // --- PILLOW (uses own finish if specified, otherwise inherits seat finish) ---
   const effectiveSeatFinish = seatFinish || defaults.seat;
-  if (parsed.pillow && effectiveSeatFinish && pillowsRes?.data) {
+  const pillowFinish = parsed.pillow?.finish || effectiveSeatFinish;
+  if (parsed.pillow && pillowFinish && pillowsRes?.data) {
     const allowed = (pillowsRes.data.allowed_finishes as string[]) || [];
-    if (allowed.length > 0 && !allowed.includes(effectiveSeatFinish)) {
-      warnings.push({ component: "Poduszka", code: parsed.pillow, finish: effectiveSeatFinish, allowed });
+    if (allowed.length > 0 && !allowed.includes(pillowFinish)) {
+      warnings.push({ component: "Poduszka", code: parsed.pillow.code, finish: pillowFinish, allowed });
     }
   }
 

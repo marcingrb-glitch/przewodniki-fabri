@@ -19,9 +19,9 @@ export interface ParsedSKU {
   chest: string;
   automat: string;
   legs?: { code: string; color?: string };
-  pillow?: string;
-  jaski?: string;
-  walek?: string;
+  pillow?: { code: string; finish?: string };
+  jaski?: { code: string; finish?: string };
+  walek?: { code: string; finish?: string };
   extras: string[];
   sideException?: string; // e.g. "Zamieniono B6wD → B6wC (wyjątek Shopify)"
 }

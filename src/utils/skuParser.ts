@@ -99,21 +99,24 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
       continue;
     }
 
-    // Pillow: P1, P2
-    if (/^P[12]$/.test(part)) {
-      result.pillow = part;
+    // Pillow: P1, P2, P3A, P1C etc.
+    const pillowMatch = part.match(/^(P\d+)([A-D])?$/);
+    if (pillowMatch && !result.pillow) {
+      result.pillow = { code: pillowMatch[1], finish: pillowMatch[2] || undefined };
       continue;
     }
 
-    // Jaski: J1, J2
-    if (/^J[12]$/.test(part)) {
-      result.jaski = part;
+    // Jaski: J1, J2, J1A, J3B etc.
+    const jaskiMatch = part.match(/^(J\d+)([A-D])?$/);
+    if (jaskiMatch && !result.jaski) {
+      result.jaski = { code: jaskiMatch[1], finish: jaskiMatch[2] || undefined };
       continue;
     }
 
-    // Walek: W1
-    if (part === "W1") {
-      result.walek = part;
+    // Walek: W1, W1A, W2B etc.
+    const walekMatch = part.match(/^(W\d+)([A-D])?$/);
+    if (walekMatch && !result.walek) {
+      result.walek = { code: walekMatch[1], finish: walekMatch[2] || undefined };
       continue;
     }
 
