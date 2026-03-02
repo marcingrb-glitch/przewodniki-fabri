@@ -7,6 +7,8 @@ const columns = [
   { key: "name", label: "Nazwa" },
   { key: "type", label: "Typ" },
   { key: "has_seat_legs", label: "Nóżki pod siedziskiem", render: (v: boolean) => v ? "Tak" : "Nie" },
+  { key: "seat_leg_height_cm", label: "Wys. nóżek (cm)" },
+  { key: "seat_leg_count", label: "Ilość nóżek" },
 ];
 
 const fields: FieldDefinition[] = [
@@ -14,6 +16,8 @@ const fields: FieldDefinition[] = [
   { name: "name", label: "Nazwa", type: "text", required: true },
   { name: "type", label: "Typ", type: "text" },
   { name: "has_seat_legs", label: "Nóżki pod siedziskiem", type: "boolean" },
+  { name: "seat_leg_height_cm", label: "Wysokość nóżek pod siedziskiem (cm)", type: "number" },
+  { name: "seat_leg_count", label: "Ilość nóżek pod siedziskiem", type: "number" },
 ];
 
 export default function Automats() {

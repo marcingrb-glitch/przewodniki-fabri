@@ -132,7 +132,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     chestsRes, automatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
   ] = await Promise.all([
     // Series
-    supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
+    supabase.from("series").select("code, name, collection, seat_leg_default, seat_leg_height_cm, seat_leg_count").eq("code", parsed.series).maybeSingle(),
     // Fabrics
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
     // Seats sofa (series-specific)
@@ -153,7 +153,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       : Promise.resolve({ data: null }),
     // Automats (no series_id)
     parsed.automat
-      ? supabase.from("automats").select("code, name, type, has_seat_legs").eq("code", parsed.automat).maybeSingle()
+      ? supabase.from("automats").select("code, name, type, has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("code", parsed.automat).maybeSingle()
       : Promise.resolve({ data: null }),
     // Legs (series-specific)
     seriesId && parsed.legs
@@ -271,13 +271,15 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let automatName = staticAutomat.name;
   let automatType = staticAutomat.type;
   let automatSeatLegs = staticAutomat.seatLegs;
-  const automatSeatLegHeight = staticAutomat.seatLegHeight;
-  const automatSeatLegCount = staticAutomat.seatLegCount;
+  let automatSeatLegHeight = staticAutomat.seatLegHeight;
+  let automatSeatLegCount = staticAutomat.seatLegCount;
 
   if (automatsRes.data) {
     automatName = automatsRes.data.name ?? "";
     automatType = automatsRes.data.type ?? "";
     automatSeatLegs = automatsRes.data.has_seat_legs ?? false;
+    automatSeatLegHeight = (automatsRes.data as any).seat_leg_height_cm ?? automatSeatLegHeight;
+    automatSeatLegCount = (automatsRes.data as any).seat_leg_count ?? automatSeatLegCount;
   }
 
   // ---- LEGS (fallback to static) ----
@@ -314,9 +316,24 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: chestLegHeight, count: chestLegCount }
       : null;
 
-  const sofaSeatLeg = automatSeatLegs && legsDecoded
-    ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: automatSeatLegHeight, count: automatSeatLegCount }
-    : null;
+  let sofaSeatLeg: { leg: string; height: number; count: number } | null = null;
+
+  // Priority 1: Series has built-in seat legs (e.g. S2 Elma — plastic 2.5cm)
+  if ((seriesRes.data as any)?.seat_leg_default && (seriesRes.data as any)?.seat_leg_height_cm != null) {
+    sofaSeatLeg = {
+      leg: "N4",
+      height: (seriesRes.data as any).seat_leg_height_cm,
+      count: (seriesRes.data as any).seat_leg_count || 2,
+    };
+  }
+  // Priority 2: Automat determines seat legs (e.g. S1 with AT1 — legs from SKU, 16cm)
+  else if (automatSeatLegs && legsDecoded) {
+    sofaSeatLeg = {
+      leg: `${legsDecoded.code}${legsDecoded.color || ""}`,
+      height: automatSeatLegHeight,
+      count: automatSeatLegCount,
+    };
+  }
 
   // ---- PILLOW (fallback to static) ----
   let pillowDecoded: DecodedSKU["pillow"] = undefined;
