@@ -10,9 +10,10 @@ interface UseAdminCrudOptions {
   labelSingular: string;
   filterColumn?: string;
   filterValue?: string;
+  orderBy?: string;
 }
 
-export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, filterValue }: UseAdminCrudOptions) {
+export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, filterValue, orderBy = "code" }: UseAdminCrudOptions) {
   const queryClient = useQueryClient();
   const [editingItem, setEditingItem] = useState<any>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -22,7 +23,7 @@ export function useAdminCrud({ table, queryKey, labelSingular, filterColumn, fil
   const { data = [], isLoading } = useQuery({
     queryKey: fullKey,
     queryFn: async () => {
-      let q = supabase.from(table as any).select("*").order("code", { ascending: true });
+      let q = supabase.from(table as any).select("*").order(orderBy, { ascending: true });
       if (filterColumn && filterValue) {
         q = q.eq(filterColumn, filterValue);
       }

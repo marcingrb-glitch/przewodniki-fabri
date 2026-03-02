@@ -65,6 +65,7 @@ function ParseRulesTab({ seriesId }: { seriesId: string }) {
     labelSingular: "Reguła parsowania",
     filterColumn: "series_id",
     filterValue: seriesId,
+    orderBy: "component_type",
   });
 
   const handleSubmit = async (formData: any) => {
@@ -104,6 +105,7 @@ function SideExceptionsTab({ seriesId }: { seriesId: string }) {
     labelSingular: "Wyjątek boczka",
     filterColumn: "series_id",
     filterValue: seriesId,
+    orderBy: "original_code",
   });
 
   const handleSubmit = async (formData: any) => {
