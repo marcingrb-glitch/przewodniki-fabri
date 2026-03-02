@@ -169,21 +169,40 @@ export function addLabel(
   const seriesText = lines[0];
   const mainLines = lines.slice(1);
 
-  // --- Left rotated series info ---
-  const leftZoneWidth = 12; // mm reserved for rotated text
-  doc.setFont("Roboto", "bold");
-  let seriesFontSize = 9;
-  doc.setFontSize(seriesFontSize);
+  // --- Left rotated series info (two-part: large code + smaller name) ---
+  const leftZoneWidth = 16; // mm reserved for rotated text
   const maxSeriesLen = pageH - 2 * marginY;
-  while (doc.getTextWidth(seriesText) > maxSeriesLen && seriesFontSize > 5) {
-    seriesFontSize -= 0.5;
-    doc.setFontSize(seriesFontSize);
+
+  // Split series text: "S1 [Sofa Mar Viena]" → code="S1", desc="Sofa Mar [Viena]"
+  const spaceIdx = seriesText.indexOf(" ");
+  const seriesCode = spaceIdx > 0 ? seriesText.substring(0, spaceIdx) : seriesText;
+  const seriesDesc = spaceIdx > 0 ? seriesText.substring(spaceIdx + 1) : "";
+
+  // Draw large series code (e.g. "S1") rotated 90° CCW
+  doc.setFont("Roboto", "bold");
+  let codeFontSize = 16;
+  doc.setFontSize(codeFontSize);
+  while (doc.getTextWidth(seriesCode) > maxSeriesLen && codeFontSize > 8) {
+    codeFontSize -= 0.5;
+    doc.setFontSize(codeFontSize);
   }
-  doc.setFontSize(seriesFontSize);
-  // Position: x near left edge, y centered vertically, rotated 90° CCW
-  const seriesX = seriesFontSize * 0.35 + 1.5;
-  const seriesY = pageH / 2 + doc.getTextWidth(seriesText) / 2;
-  doc.text(seriesText, seriesX, seriesY, { angle: 90 });
+  const codeX = codeFontSize * 0.35 + 1;
+  const codeY = pageH / 2 + doc.getTextWidth(seriesCode) / 2;
+  doc.text(seriesCode, codeX, codeY, { angle: 90 });
+
+  // Draw smaller description (e.g. "Sofa Mar [Viena]") rotated 90° CCW, next to code
+  if (seriesDesc) {
+    doc.setFont("Roboto", "normal");
+    let descFontSize = 7;
+    doc.setFontSize(descFontSize);
+    while (doc.getTextWidth(seriesDesc) > maxSeriesLen && descFontSize > 4) {
+      descFontSize -= 0.5;
+      doc.setFontSize(descFontSize);
+    }
+    const descX = codeX + codeFontSize * 0.35 + 1.5;
+    const descY = pageH / 2 + doc.getTextWidth(seriesDesc) / 2;
+    doc.text(seriesDesc, descX, descY, { angle: 90 });
+  }
 
   // --- Main content (shifted right) ---
   if (mainLines.length === 0) return;
