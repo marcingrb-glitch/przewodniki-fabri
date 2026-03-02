@@ -1,50 +1,39 @@
 
 
-## Plan: Naprawienie parsowania SKU dla S2 i nowych poduszek
+## Plan: Konfigurowalne nóżki pod siedziskiem sofy
 
-### Problem
+### Krok 1: Migracja SQL — nowe kolumny
 
-SKU `S2-T12A-SD2A-B3A-OP68A-SK22-AT1-P3A` nie jest rozpoznawany. Główna przyczyna: **regex poduszek w parserze jest za restrykcyjny**.
+**Tabela `series`** — 3 nowe kolumny:
+- `seat_leg_default` (boolean, default false)
+- `seat_leg_height_cm` (numeric, nullable)
+- `seat_leg_count` (integer, nullable)
 
-Aktualny regex: `/^P[12]$/` — dopuszcza tylko P1 i P2, bez litery wykończenia.  
-Segment `P3A` nie pasuje do żadnego wzorca i jest ignorowany.
+Dane: S1 → false, S2 → true/2.5/2
 
-Dodatkowy problem: nawet `P1A` czy `P2C` nie pasują do tego regexa (brak obsługi litery finish), więc **poduszki z wykończeniem w SKU nigdy nie były poprawnie parsowane**.
+**Tabela `automats`** — 2 nowe kolumny:
+- `seat_leg_height_cm` (numeric, default 0)
+- `seat_leg_count` (integer, default 0)
 
-### Zmiany
+Dane: AT1 → 16/2, AT2 → 0/0
 
-**1. `src/utils/skuParser.ts`** — rozszerzenie regexa poduszek:
+### Krok 2: `skuDecoder.ts` — 3 zmiany
 
-Zmiana z:
-```
-if (/^P[12]$/.test(part))
-```
-na regex z capture group:
-```
-const pillowMatch = part.match(/^(P\d+)([A-D])?$/);
-```
-Zapisanie `pillowMatch[1]` jako kodu i `pillowMatch[2]` jako opcjonalnego finish.
+1. **Fetch series** — dodać `seat_leg_default, seat_leg_height_cm, seat_leg_count` do select (linia z series query)
+2. **Fetch automats** — dodać `seat_leg_height_cm, seat_leg_count` do select; zmienić `const` na `let` dla `automatSeatLegHeight`/`automatSeatLegCount` i nadpisać z DB (linie 274-281)
+3. **Logika sofaSeatLeg** (linie 317-319) — zamienić na dwupoziomową:
+   - Priorytet 1: `seriesRes.data?.seat_leg_default` → stałe nóżki serii (N4, height/count z serii)
+   - Priorytet 2: `automatSeatLegs && legsDecoded` → nóżki z automatu (obecna logika)
 
-**2. `src/types/index.ts`** — zmiana typu `pillow` w `ParsedSKU`:
+### Krok 3: Panel admina
 
-Z `pillow?: string` na `pillow?: { code: string; finish?: string }` — aby parser mógł przekazać finish do dekodera.
+**`Series.tsx`** — dodać 3 kolumny i 3 pola formularza (wbudowane nóżki, wysokość, ilość)
 
-**3. `src/utils/skuDecoder.ts`** — dostosowanie do nowej struktury pillow:
-
-Zmiana odwołań z `parsed.pillow` (string) na `parsed.pillow.code` i użycie `parsed.pillow.finish` zamiast seatFinish gdy dostępny.
-
-**4. `src/utils/skuValidator.ts`** — dostosowanie walidacji do nowej struktury pillow (jeśli używa `parsed.pillow`).
-
-### Analogicznie: jaski i walek
-
-Regexy `/^J[12]$/` i `part === "W1"` też są zbyt restrykcyjne. Zmienię je na:
-- Jaski: `/^(J\d+)([A-D])?$/`
-- Walek: `/^(W\d+)([A-D])?$/`
-
-I odpowiednio zaktualizuję typy w `ParsedSKU` (`jaski?: { code: string; finish?: string }`, `walek?: { code: string; finish?: string }`).
+**`Automats.tsx`** — dodać 2 kolumny i 2 pola formularza (wysokość nóżek, ilość nóżek)
 
 ### Szczegóły techniczne
 
-- Zmiana typów `pillow`, `jaski`, `walek` w `ParsedSKU` z `string` na `{ code: string; finish?: string }` wymaga aktualizacji **wszystkich miejsc** odwołujących się do tych pól (dekoder, walidator, ewentualnie formularze zamówień).
-- W dekoderze: jeśli `parsed.pillow.finish` jest ustawiony, użyj go; w przeciwnym razie fallback na `seatFinish` (obecne zachowanie).
+Zmiana w dekoderze nie wymaga modyfikacji typu `DecodedSKU` — `legHeights.sofa_seat` już ma odpowiednią strukturę `{ leg: string; height: number; count: number } | null`.
+
+Statyczne fallbacki w `AUTOMATS` mappingu nadal działają dla `seatLegHeight`/`seatLegCount` gdy DB nie zwraca danych.
 
