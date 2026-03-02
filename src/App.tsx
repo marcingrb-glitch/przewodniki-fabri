@@ -27,6 +27,7 @@ import Sides from "@/pages/AdminPanel/Sides";
 import Legs from "@/pages/AdminPanel/Legs";
 import Extras from "@/pages/AdminPanel/Extras";
 import Users from "@/pages/AdminPanel/Users";
+import SKUConfig from "@/pages/AdminPanel/SKUConfig";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
                   <Route path="legs" element={<Legs />} />
                   <Route path="extras" element={<Extras />} />
                   <Route path="users" element={<Users />} />
+                  <Route path="sku-config" element={<SKUConfig />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
