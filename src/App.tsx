@@ -27,7 +27,8 @@ import Sides from "@/pages/AdminPanel/Sides";
 import Legs from "@/pages/AdminPanel/Legs";
 import Extras from "@/pages/AdminPanel/Extras";
 import Users from "@/pages/AdminPanel/Users";
-import SKUConfig from "@/pages/AdminPanel/SKUConfig";
+import ParseRules from "@/pages/AdminPanel/ParseRules";
+import SideExceptions from "@/pages/AdminPanel/SideExceptions";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,7 +64,8 @@ const App = () => (
                   <Route path="legs" element={<Legs />} />
                   <Route path="extras" element={<Extras />} />
                   <Route path="users" element={<Users />} />
-                  <Route path="sku-config" element={<SKUConfig />} />
+                  <Route path="parse-rules" element={<ParseRules />} />
+                  <Route path="side-exceptions" element={<SideExceptions />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

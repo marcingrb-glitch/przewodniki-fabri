@@ -483,6 +483,7 @@ export type Database = {
           id: string
           series_id: string
           type: string | null
+          type_name: string | null
         }
         Insert: {
           allowed_finishes?: string[] | null
@@ -496,6 +497,7 @@ export type Database = {
           id?: string
           series_id: string
           type?: string | null
+          type_name?: string | null
         }
         Update: {
           allowed_finishes?: string[] | null
@@ -509,6 +511,7 @@ export type Database = {
           id?: string
           series_id?: string
           type?: string | null
+          type_name?: string | null
         }
         Relationships: [
           {

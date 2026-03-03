@@ -80,7 +80,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seriesId
       ? supabase.from("sku_parse_rules" as any).select("component_type, zero_padded").eq("series_id", seriesId)
       : Promise.resolve({ data: null }),
-    supabase.from("seat_types" as any).select("code, name"),
+    Promise.resolve({ data: null }),
     seriesId
       ? supabase.from("extras").select("code, name, type").eq("series_id", seriesId)
       : Promise.resolve({ data: null }),
@@ -99,13 +99,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     (r: any) => r.component_type === 'seat'
   )?.zero_padded ?? true;
 
-  // Build seat types map from DB (fallback to static)
   const SEAT_TYPES: Record<string, string> = { ...STATIC_SEAT_TYPES };
-  if (seatTypesRes.data) {
-    for (const st of seatTypesRes.data as any[]) {
-      SEAT_TYPES[st.code] = st.name;
-    }
-  }
 
   // Build extras map from DB (fallback to static)
   const EXTRAS: Record<string, { name: string; type: string }> = { ...STATIC_EXTRAS };
@@ -137,7 +131,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
     // Seats sofa (series-specific)
     seriesId
-      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type, type_name").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     // Sides (series-specific)
     seriesId && parsed.side.code
@@ -211,21 +205,14 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatMidStrip = seatSofaRes.data.center_strip ?? false;
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
     seatType = seatSofaRes.data.type ?? "";
-    seatTypeName = seatSofaRes.data.type ?? "";
+    seatTypeName = (seatSofaRes.data as any).type_name || SEAT_TYPES[seatType] || seatType;
   } else {
-    // Extract type from static mappings for S1 format
+    // Fallback: extract type from static mappings for S1 format
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {
       seatType = typeMatch[1] || "";
       seatTypeName = SEAT_TYPES[seatType] || seatType;
     }
-  }
-
-  // If DB provided a type but no typeName from static, use DB type directly
-  if (seatTypeName && !SEAT_TYPES[seatTypeName]) {
-    // seatTypeName is already the descriptive name from DB
-  } else if (seatType) {
-    seatTypeName = SEAT_TYPES[seatType] || seatType;
   }
 
   const seatFinish = seatFinishFromSKU || seatDefaultFinish;

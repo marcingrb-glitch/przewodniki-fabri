@@ -15,7 +15,6 @@ const sharedLinks = [
   { to: "/admin/jaskis", label: "Jaśki" },
   { to: "/admin/waleks", label: "Wałki" },
   { to: "/admin/finishes", label: "Wykończenia" },
-  { to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" },
 ];
 
 const seriesLinks = [
@@ -26,6 +25,8 @@ const seriesLinks = [
   { to: "/admin/sides", label: "Boczki" },
   { to: "/admin/legs", label: "Nóżki" },
   { to: "/admin/extras", label: "Dodatki" },
+  { to: "/admin/parse-rules", label: "Reguły parsowania" },
+  { to: "/admin/side-exceptions", label: "Wyjątki boczków" },
 ];
 
 export default function AdminLayout() {
