@@ -5,7 +5,8 @@ import { useAdminCrud } from "@/hooks/useAdminCrud";
 
 const columns = [
   { key: "code", label: "Kod" },
-  { key: "type", label: "Typ" },
+  { key: "type", label: "Typ (kod)" },
+  { key: "type_name", label: "Typ (nazwa)" },
   { key: "frame", label: "Stelaż" },
   { key: "foam", label: "Pianka" },
   { key: "front", label: "Front" },
@@ -15,7 +16,8 @@ const columns = [
 
 const fields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
-  { name: "type", label: "Typ", type: "text" },
+  { name: "type", label: "Typ (kod np. N, ND, W)", type: "text" },
+  { name: "type_name", label: "Typ (nazwa np. Niskie, Wysokie)", type: "text" },
   { name: "frame", label: "Stelaż", type: "text" },
   { name: "foam", label: "Pianka", type: "text" },
   { name: "front", label: "Front", type: "text" },
