@@ -392,7 +392,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       front: seatFront,
       midStrip: seatMidStrip,
     },
-    side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish, finishName: FINISHES[parsed.side.finish] || parsed.side.finish },
+    side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish || (sidesRes.data?.default_finish ?? ""), finishName: FINISHES[parsed.side.finish || (sidesRes.data?.default_finish ?? "")] || parsed.side.finish },
     backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: backrestFoam, top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish },
     chest: { code: parsed.chest, name: chestName, legHeight: chestLegHeight, legCount: chestLegCount },
     automat: { code: parsed.automat, name: automatName, type: automatType, seatLegs: automatSeatLegs, seatLegHeight: automatSeatLegHeight, seatLegCount: automatSeatLegCount },
