@@ -227,7 +227,8 @@ const OrderForm = () => {
         created_by: user?.id,
         visible_to_workers: isAdmin ? visibleToWorkers : false,
         variant_image_url: !variantImage && autoImageUrl ? autoImageUrl : undefined,
-        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined
+        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined,
+        shopify_order_name: shopifyOrderName.trim() || undefined
       });
 
       // 6. Upload variant image if provided (manual upload takes priority)
