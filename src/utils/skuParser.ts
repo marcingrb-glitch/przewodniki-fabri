@@ -62,7 +62,7 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
       continue;
     }
 
-    const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])$/);
+    const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])?$/);
     if (sideMatch) {
       const rawCode = sideMatch[1];
       let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
