@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 const OrderForm = () => {
   const [orderNumber, setOrderNumber] = useState("");
+  const [shopifyOrderName, setShopifyOrderName] = useState("");
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [sku, setSku] = useState("");
   const [loading, setLoading] = useState(false);
