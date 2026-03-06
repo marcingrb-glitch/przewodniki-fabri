@@ -57,7 +57,7 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
         const rawCode = mappedMatch[1];
         let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
         if (code === "6") code = "6s";
-        result.side = { code: `B${code}`, finish: mappedMatch[2] };
+        result.side = { code: `B${code}`, finish: mappedMatch[2] || "" };
       }
       continue;
     }
