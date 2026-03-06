@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 const OrderForm = () => {
   const [orderNumber, setOrderNumber] = useState("");
+  const [shopifyOrderName, setShopifyOrderName] = useState("");
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [sku, setSku] = useState("");
   const [loading, setLoading] = useState(false);
@@ -226,7 +227,8 @@ const OrderForm = () => {
         created_by: user?.id,
         visible_to_workers: isAdmin ? visibleToWorkers : false,
         variant_image_url: !variantImage && autoImageUrl ? autoImageUrl : undefined,
-        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined
+        mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined,
+        shopify_order_name: shopifyOrderName.trim() || undefined
       });
 
       // 6. Upload variant image if provided (manual upload takes priority)
@@ -294,6 +296,11 @@ const OrderForm = () => {
               clearError("orderNumber");
             }} placeholder="np. 30654114" required disabled={loading} className={errors.orderNumber ? "border-destructive" : ""} />
               {errors.orderNumber && <p className="text-xs text-destructive">{errors.orderNumber}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="shopifyOrderName">Numer Shopify (opcjonalne)</Label>
+              <Input id="shopifyOrderName" value={shopifyOrderName} onChange={e => setShopifyOrderName(e.target.value)} placeholder="np. #1251" disabled={loading} />
             </div>
 
             <div className="space-y-2">
