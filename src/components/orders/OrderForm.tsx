@@ -298,6 +298,11 @@ const OrderForm = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="shopifyOrderName">Numer Shopify (opcjonalne)</Label>
+              <Input id="shopifyOrderName" value={shopifyOrderName} onChange={e => setShopifyOrderName(e.target.value)} placeholder="np. #1251" disabled={loading} />
+            </div>
+
+            <div className="space-y-2">
               <Label>Data zamówienia</Label>
               <Popover>
                 <PopoverTrigger asChild>
