@@ -52,22 +52,22 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
       result.sideException = `Zamieniono ${original} → ${mapped} (wyjątek Shopify)`;
       console.log(`[SKU Parser] Side exception: ${original} → ${mapped}`);
       // Parse the mapped value instead
-      const mappedMatch = mapped.match(/^B(\d+(?:S|W)?)([A-C])$/);
+      const mappedMatch = mapped.match(/^B(\d+(?:S|W)?)([A-C])?$/);
       if (mappedMatch) {
         const rawCode = mappedMatch[1];
         let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
         if (code === "6") code = "6s";
-        result.side = { code: `B${code}`, finish: mappedMatch[2] };
+        result.side = { code: `B${code}`, finish: mappedMatch[2] || "" };
       }
       continue;
     }
 
-    const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])$/);
+    const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])?$/);
     if (sideMatch) {
       const rawCode = sideMatch[1];
       let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
       if (code === "6") code = "6s";
-      result.side = { code: `B${code}`, finish: sideMatch[2] };
+      result.side = { code: `B${code}`, finish: sideMatch[2] || "" };
       continue;
     }
 
