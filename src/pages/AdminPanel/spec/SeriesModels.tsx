@@ -201,7 +201,6 @@ export default function SeriesModels({ seriesId }: Props) {
             <div className="flex gap-4 flex-wrap">
               <span>Model: <InlineEditCell value={seat.model_name} onSave={(v) => updateSeatField(seat.id, "model_name", v)} /></span>
               <span>Typ: <InlineEditCell value={seat.type} onSave={(v) => updateSeatField(seat.id, "type", v)} /></span>
-              <span>Nazwa typu: <InlineEditCell value={seat.type_name} onSave={(v) => updateSeatField(seat.id, "type_name", v)} /></span>
               <span>Sprężyna: <InlineEditCell value={seat.spring_type} onSave={(v) => updateSeatField(seat.id, "spring_type", v)} /></span>
             </div>
             {seat.allowed_finishes && <div>Wykończenia: {seat.allowed_finishes.join(", ")} {seat.default_finish && `(domyślne: ${seat.default_finish})`}</div>}
