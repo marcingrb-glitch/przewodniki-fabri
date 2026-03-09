@@ -151,10 +151,6 @@ export default function SeriesModels({ seriesId }: Props) {
               <InlineEditCell value={seat.code} onSave={(v) => updateSeatField(seat.id, "code", v)} />
               {seat.type && <Badge variant="secondary">{seat.type_name || seat.type}</Badge>}
               {seat.spring_type && <Badge variant="outline">Sprężyna: {seat.spring_type}</Badge>}
-              <div className="flex items-center gap-1 ml-2">
-                <Checkbox checked={seat.center_strip} onCheckedChange={() => toggleCenterStrip(seat.id, seat.center_strip)} />
-                <span className="text-xs text-muted-foreground">Środkowy pas</span>
-              </div>
             </CardTitle>
             <div className="flex gap-1">
               <Button variant="ghost" size="icon" onClick={() => handleEditSeat(seat)}>
@@ -177,71 +173,100 @@ export default function SeriesModels({ seriesId }: Props) {
               </AlertDialog>
             </div>
           </div>
+          {/* Info identyfikacyjne */}
           <div className="text-sm text-muted-foreground space-y-0.5 mt-1">
             <div className="flex gap-4 flex-wrap">
               <span>Model: <InlineEditCell value={seat.model_name} onSave={(v) => updateSeatField(seat.id, "model_name", v)} /></span>
               <span>Typ: <InlineEditCell value={seat.type} onSave={(v) => updateSeatField(seat.id, "type", v)} /></span>
               <span>Nazwa typu: <InlineEditCell value={seat.type_name} onSave={(v) => updateSeatField(seat.id, "type_name", v)} /></span>
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              <span>Stelaż: <InlineEditCell value={seat.frame} onSave={(v) => updateSeatField(seat.id, "frame", v)} /></span>
-              <span>Pianka: <InlineEditCell value={seat.foam} onSave={(v) => updateSeatField(seat.id, "foam", v)} /></span>
-              <span>Przód: <InlineEditCell value={seat.front} onSave={(v) => updateSeatField(seat.id, "front", v)} /></span>
               <span>Sprężyna: <InlineEditCell value={seat.spring_type} onSave={(v) => updateSeatField(seat.id, "spring_type", v)} /></span>
             </div>
-            {seat.frame_modification && <div>Modyfikacja stelaża: <InlineEditCell value={seat.frame_modification} onSave={(v) => updateSeatField(seat.id, "frame_modification", v)} /></div>}
             {seat.allowed_finishes && <div>Wykończenia: {seat.allowed_finishes.join(", ")} {seat.default_finish && `(domyślne: ${seat.default_finish})`}</div>}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Dane techniczne */}
+          <div className="rounded-md border p-4 space-y-2">
+            <h4 className="text-sm font-semibold mb-2">Dane techniczne</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-36 shrink-0">Stelaż:</span>
+                <InlineEditCell value={seat.frame} onSave={(v) => updateSeatField(seat.id, "frame", v)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-36 shrink-0">Pianka:</span>
+                <InlineEditCell value={seat.foam} onSave={(v) => updateSeatField(seat.id, "foam", v)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-36 shrink-0">Front:</span>
+                <InlineEditCell value={seat.front} onSave={(v) => updateSeatField(seat.id, "front", v)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-36 shrink-0">Pasek środek:</span>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox checked={seat.center_strip} onCheckedChange={() => toggleCenterStrip(seat.id, seat.center_strip)} />
+                  <span className="text-xs">{seat.center_strip ? "TAK" : "NIE"}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:col-span-2">
+                <span className="font-medium text-muted-foreground w-36 shrink-0">Modyfikacja stelaża:</span>
+                <InlineEditCell value={seat.frame_modification} onSave={(v) => updateSeatField(seat.id, "frame_modification", v)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Pianki szczegółowe */}
           {seatFoams.length > 0 && (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">Poz.</TableHead>
-                    <TableHead>Nazwa</TableHead>
-                    <TableHead className="w-[70px]">Wys.</TableHead>
-                    <TableHead className="w-[70px]">Szer.</TableHead>
-                    <TableHead className="w-[70px]">Dł.</TableHead>
-                    <TableHead className="w-[100px]">Materiał</TableHead>
-                    <TableHead className="w-[50px]">Ilość</TableHead>
-                    <TableHead>Uwagi</TableHead>
-                    <TableHead className="w-[40px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {seatFoams.map((foam) => (
-                    <TableRow key={foam.id}>
-                      <TableCell><InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.height} type="number" onSave={(v) => updateFoam(foam.id, "height", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.width} type="number" onSave={(v) => updateFoam(foam.id, "width", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.length} type="number" onSave={(v) => updateFoam(foam.id, "length", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.material} onSave={(v) => updateFoam(foam.id, "material", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.quantity} type="number" onSave={(v) => updateFoam(foam.id, "quantity", v)} /></TableCell>
-                      <TableCell><InlineEditCell value={foam.notes} onSave={(v) => updateFoam(foam.id, "notes", v)} /></TableCell>
-                      <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Usunąć piankę?</AlertDialogTitle>
-                              <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteFoam(foam.id)}>Usuń</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
+            <div>
+              <h4 className="text-sm font-semibold mb-2">Pianki szczegółowe</h4>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">Poz.</TableHead>
+                      <TableHead>Nazwa</TableHead>
+                      <TableHead className="w-[70px]">Wys.</TableHead>
+                      <TableHead className="w-[70px]">Szer.</TableHead>
+                      <TableHead className="w-[70px]">Dł.</TableHead>
+                      <TableHead className="w-[100px]">Materiał</TableHead>
+                      <TableHead className="w-[50px]">Ilość</TableHead>
+                      <TableHead>Uwagi</TableHead>
+                      <TableHead className="w-[40px]"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {seatFoams.map((foam) => (
+                      <TableRow key={foam.id}>
+                        <TableCell><InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.height} type="number" onSave={(v) => updateFoam(foam.id, "height", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.width} type="number" onSave={(v) => updateFoam(foam.id, "width", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.length} type="number" onSave={(v) => updateFoam(foam.id, "length", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.material} onSave={(v) => updateFoam(foam.id, "material", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.quantity} type="number" onSave={(v) => updateFoam(foam.id, "quantity", v)} /></TableCell>
+                        <TableCell><InlineEditCell value={foam.notes} onSave={(v) => updateFoam(foam.id, "notes", v)} /></TableCell>
+                        <TableCell>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Usunąć piankę?</AlertDialogTitle>
+                                <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteFoam(foam.id)}>Usuń</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
           <Button variant="outline" size="sm" onClick={() => addFoam(seat.code)}>
