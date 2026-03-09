@@ -76,6 +76,18 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
     },
   });
 
+  const availableChests: string[] = (config as any)?.available_chests ?? [];
+
+  const { data: chests = [] } = useQuery({
+    queryKey: ["cheat-chests-kier", availableChests],
+    queryFn: async () => {
+      if (availableChests.length === 0) return [];
+      const { data } = await supabase.from("chests").select("*").in("code", availableChests).order("code");
+      return data ?? [];
+    },
+    enabled: availableChests.length > 0,
+  });
+
   const springExceptions = (config?.spring_exceptions as Array<{ model: string; spring: string }>) ?? [];
 
   return (
@@ -95,10 +107,36 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
             <div><span className="text-muted-foreground">Stały automat:</span> <strong>{config.fixed_automat ?? "brak"}</strong></div>
             <div><span className="text-muted-foreground">Stałe oparcie:</span> <strong>{config.fixed_backrest ?? "brak"}</strong></div>
             <div><span className="text-muted-foreground">Stała skrzynia:</span> <strong>{config.fixed_chest ?? "brak"}</strong></div>
+            <div><span className="text-muted-foreground">Dostępne skrzynie:</span> <strong>{availableChests.join(", ") || "—"}</strong></div>
             {config.notes && <div className="col-span-2"><span className="text-muted-foreground">Notatki:</span> {config.notes}</div>}
           </div>
         )}
       </section>
+
+      {/* Skrzynie */}
+      {chests.length > 0 && (
+        <section>
+          <h2 className="text-lg font-bold mb-2">📦 Skrzynie ({chests.length})</h2>
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-1 py-1 text-left">Kod</th>
+                <th className="border border-border px-1 py-1 text-left">Nazwa</th>
+                <th className="border border-border px-1 py-1 text-left">Wys. nóżek</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chests.map(c => (
+                <tr key={c.id}>
+                  <td className="border border-border px-1 py-0.5 font-mono">{c.code}</td>
+                  <td className="border border-border px-1 py-0.5">{c.name}</td>
+                  <td className="border border-border px-1 py-0.5">{c.leg_height_cm} cm</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {/* Siedziska sofa */}
       <section className="page-break">

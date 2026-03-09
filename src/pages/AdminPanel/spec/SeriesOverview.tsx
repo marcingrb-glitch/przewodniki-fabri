@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
@@ -21,6 +22,16 @@ const LEG_TYPE_LABELS: Record<string, string> = {
 export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Props) {
   const [notes, setNotes] = useState(config?.notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [chests, setChests] = useState<Tables<"chests">[]>([]);
+
+  const availableChests: string[] = (config as any)?.available_chests ?? [];
+
+  useEffect(() => {
+    if (availableChests.length > 0) {
+      supabase.from("chests").select("*").in("code", availableChests).order("code")
+        .then(({ data }) => setChests(data ?? []));
+    }
+  }, [seriesId, config]);
 
   if (!config) {
     return (
@@ -89,6 +100,45 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
         <CardContent className="space-y-2 text-sm">
           <div><span className="font-medium">Typ:</span> {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</div>
           <div><span className="font-medium">Wysokość:</span> {config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—"}</div>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader><CardTitle className="text-lg">Skrzynie dostępne w serii</CardTitle></CardHeader>
+        <CardContent>
+          {chests.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Brak skrzyń przypisanych do serii</p>
+          ) : (
+            <>
+              {config.fixed_chest && (
+                <p className="text-sm mb-3 font-medium">
+                  Skrzynia: zawsze {config.fixed_chest}
+                  {config.fixed_chest === "SK23" && " (alias SK22 → SK23)"}
+                  . Nóżki plastikowe N4 H2.5cm.
+                </p>
+              )}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kod</TableHead>
+                      <TableHead>Nazwa</TableHead>
+                      <TableHead>Wys. nóżek</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chests.map(c => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium">{c.code}</TableCell>
+                        <TableCell>{c.name}</TableCell>
+                        <TableCell>{c.leg_height_cm} cm</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

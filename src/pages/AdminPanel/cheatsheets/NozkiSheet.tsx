@@ -29,12 +29,16 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
     },
   });
 
+  const availableChests: string[] = (config as any)?.available_chests ?? [];
+
   const { data: chests = [] } = useQuery({
-    queryKey: ["cheat-chests"],
+    queryKey: ["cheat-chests", availableChests],
     queryFn: async () => {
-      const { data } = await supabase.from("chests").select("*").order("code");
+      if (availableChests.length === 0) return [];
+      const { data } = await supabase.from("chests").select("*").in("code", availableChests).order("code");
       return data ?? [];
     },
+    enabled: availableChests.length > 0,
   });
 
   const { data: automats = [] } = useQuery({
@@ -49,8 +53,6 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
   const pufaLegType = config?.pufa_leg_type ?? "from_sku";
   const seatLegH = config?.seat_leg_height_cm;
   const pufaLegH = config?.pufa_leg_height_cm;
-  const fixedChest = config?.fixed_chest;
-  const chest = chests.find(c => c.code === fixedChest);
 
   return (
     <div className="space-y-8">
@@ -63,22 +65,23 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
         <h2 className="text-xl font-bold mb-3 text-green-700 dark:text-green-400">🟢 CO KOMPLETOWAĆ</h2>
         {!config ? <NoData label="konfiguracja serii" /> : (
           <div className="space-y-2 text-sm">
-            {chest && (
-              <div className="border border-border p-2 rounded">
-                <strong>Pod skrzynią {chest.code} ({chest.name}):</strong>{" "}
-                {seatLegType === "plastic" ? "plastikowe" : `N z SKU, H${chest.leg_height_cm}cm`}
+            {chests.filter(c => c.leg_height_cm > 0).map(c => (
+              <div key={c.id} className="border border-border p-2 rounded">
+                <strong>Pod skrzynią {c.code} ({c.name}):</strong>{" "}
+                N z SKU, H{c.leg_height_cm}cm, 4szt
               </div>
-            )}
+            ))}
             {automats.filter(a => a.has_seat_legs).map(a => (
               <div key={a.id} className="border border-border p-2 rounded">
                 <strong>Pod siedziskiem {a.code} ({a.name}):</strong>{" "}
-                {seatLegType === "plastic" ? "plastikowe" : `N z SKU, H${a.seat_leg_height_cm ?? seatLegH}cm, ${a.seat_leg_count ?? 2}szt`}
+                {seatLegType === "built_in_plastic" ? "plastikowe (wbudowane)" : `N z SKU, H${a.seat_leg_height_cm ?? seatLegH}cm, ${a.seat_leg_count ?? 2}szt`}
               </div>
             ))}
-            <div className="border border-border p-2 rounded">
-              <strong>Pufa:</strong>{" "}
-              {pufaLegType === "plastic" ? "plastikowe" : `N z SKU, H${pufaLegH ?? "?"}cm, 4szt`}
-            </div>
+            {pufaLegType !== "plastic_2_5" && pufaLegType !== "built_in_plastic" && (
+              <div className="border border-border p-2 rounded">
+                <strong>Pufa:</strong> N z SKU, H{pufaLegH ?? "?"}cm, 4szt
+              </div>
+            )}
             <div className="border border-border p-2 rounded">
               <strong>Fotel:</strong> N z SKU, H{seatLegH ?? pufaLegH ?? "?"}cm, 4szt
             </div>
@@ -92,14 +95,14 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
           <h2 className="text-2xl font-black mb-3 text-red-700 dark:text-red-400">🔴 CZEGO NIE KOMPLETOWAĆ!</h2>
           <div className="space-y-2 text-lg font-bold">
             <p className="warning underline text-xl">❌ Nóżki plastikowe 2.5cm — NIGDY nie kompletować!</p>
-            {seatLegType === "plastic" && (
+            {seatLegType === "built_in_plastic" && (
               <>
                 <p>❌ {seriesCode}: Pod skrzynią = plastikowe → NIE kompletować</p>
-                <p>❌ {seriesCode}: Pod siedziskiem = plastikowe → NIE kompletować</p>
+                <p>❌ {seriesCode}: Pod siedziskiem = plastikowe wbudowane → NIE kompletować</p>
               </>
             )}
-            {pufaLegType === "plastic" && (
-              <p>❌ {seriesCode}: Pufa = plastikowe → NIE kompletować</p>
+            {pufaLegType === "plastic_2_5" && (
+              <p>❌ {seriesCode}: Pufa = plastikowe 2.5cm → NIE kompletować</p>
             )}
             {chests.filter(c => c.leg_height_cm === 0).map(c => (
               <p key={c.id}>❌ {c.code} ({c.name}) = plastikowe → NIE kompletować</p>

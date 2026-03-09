@@ -18,12 +18,25 @@ const LEG_TYPE_LABELS: Record<string, string> = {
 
 export default function SeriesLegs({ seriesId, config }: Props) {
   const [legs, setLegs] = useState<Tables<"legs">[]>([]);
+  const [chests, setChests] = useState<Tables<"chests">[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const availableChests: string[] = (config as any)?.available_chests ?? [];
+
   useEffect(() => {
-    supabase.from("legs").select("*").eq("series_id", seriesId).order("code")
-      .then(({ data }) => { setLegs(data ?? []); setLoading(false); });
-  }, [seriesId]);
+    const fetchData = async () => {
+      const [legsRes, chestsRes] = await Promise.all([
+        supabase.from("legs").select("*").eq("series_id", seriesId).order("code"),
+        availableChests.length > 0
+          ? supabase.from("chests").select("*").in("code", availableChests).order("code")
+          : Promise.resolve({ data: [] as Tables<"chests">[] }),
+      ]);
+      setLegs(legsRes.data ?? []);
+      setChests(chestsRes.data ?? []);
+      setLoading(false);
+    };
+    fetchData();
+  }, [seriesId, config]);
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
@@ -33,10 +46,15 @@ export default function SeriesLegs({ seriesId, config }: Props) {
   };
 
   const mountInfo = [
-    { label: "Pod skrzynią", type: "from_sku", height: "z SKU", who: "Dziewczyny od nóżek" },
+    ...chests.map(c => ({
+      label: `Pod skrzynią ${c.code} (${c.name})`,
+      type: "from_sku",
+      height: `${c.leg_height_cm}`,
+      who: c.leg_height_cm === 0 ? "Plastikowe — NIE kompletować" : "Dziewczyny od nóżek",
+    })),
     { label: "Pod siedziskiem", type: config?.seat_leg_type, height: config?.seat_leg_height_cm, who: config?.seat_leg_type === "built_in_plastic" ? "Nie kompletowane (wbudowane)" : "Dziewczyny od nóżek" },
     { label: "Pufa", type: config?.pufa_leg_type, height: config?.pufa_leg_height_cm, who: config?.pufa_leg_type === "plastic_2_5" ? "Nie kompletowane (plastikowe 2.5cm)" : "Dziewczyny od nóżek" },
-    { label: "Fotel", type: "from_sku", height: "15 cm", who: "Dziewczyny od nóżek (4 szt, segment N)" },
+    { label: "Fotel", type: "from_sku", height: "15", who: "Dziewczyny od nóżek (4 szt, segment N)" },
   ];
 
   return (
