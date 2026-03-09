@@ -30,6 +30,7 @@ import Users from "@/pages/AdminPanel/Users";
 import ParseRules from "@/pages/AdminPanel/ParseRules";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
 import SeriesSpecification from "@/pages/AdminPanel/SeriesSpecification";
+import Cheatsheets from "@/pages/AdminPanel/Cheatsheets";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
                   <Route path="parse-rules" element={<ParseRules />} />
                   <Route path="side-exceptions" element={<SideExceptions />} />
                   <Route path="spec/:seriesCode" element={<SeriesSpecification />} />
+                  <Route path="cheatsheets" element={<Cheatsheets />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
