@@ -191,12 +191,11 @@ const ShopifyOrderForm = () => {
         decoded.rawSKU = correctedSku;
 
         // 4b. Apply fabric override
-        let finalSku = normalizedSku;
+        let finalSku = correctedSku;
         if (fabricChange && fabricName.trim() && fabricColor.trim()) {
           const overrideName = fabricName.trim().toUpperCase().replace(/\s+/g, "_");
           const overrideColor = fabricColor.trim().toUpperCase().replace(/\s+/g, "_");
-          // Replace fabric segment in SKU (T... segment between first and second dash after series)
-          finalSku = normalizedSku.replace(/-[A-Z]\d+[A-Z0-9]*-/, `-${overrideName}_${overrideColor}-`);
+          finalSku = correctedSku.replace(/-[A-Z]\d+[A-Z0-9]*-/, `-${overrideName}_${overrideColor}-`);
           decoded.fabric = {
             ...decoded.fabric,
             code: overrideName,
