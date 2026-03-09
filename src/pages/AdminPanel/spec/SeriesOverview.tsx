@@ -99,8 +99,9 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Nóżki pufy</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Typ:</span> {config.pufa_leg_type ?? "—"}</div>
+          <div><span className="font-medium">Typ:</span> {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</div>
           <div><span className="font-medium">Wysokość:</span> {config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—"}</div>
+          <div><span className="font-medium">Kompletacja:</span> {LEG_COMPLETION_LABELS[config.pufa_leg_type ?? "from_sku"] ?? "—"}</div>
         </CardContent>
       </Card>
 
