@@ -72,7 +72,7 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
     }
 
     // Backrest: OP62A, OP68C
-    const backrestMatch = part.match(/^OP(\d{2})([A-C])$/);
+    const backrestMatch = part.match(/^OP(\d{2})([A-D])$/);
     if (backrestMatch) {
       result.backrest = { code: `OP${backrestMatch[1]}`, finish: backrestMatch[2] };
       continue;
