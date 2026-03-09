@@ -31,9 +31,6 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       }
     };
     fetchData();
-      setSeats(seatsRes.data ?? []);
-      setChests(chestsRes?.data ?? []);
-    });
   }, [seriesId, config]);
 
   if (!config) {
