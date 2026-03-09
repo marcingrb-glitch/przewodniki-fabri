@@ -22,13 +22,15 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
   useEffect(() => {
-    const promises: Promise<any>[] = [
-      supabase.from("seats_sofa").select("code, spring_type").eq("series_id", seriesId).order("code"),
-    ];
-    if (availableChests.length > 0) {
-      promises.push(supabase.from("chests").select("*").in("code", availableChests).order("code"));
-    }
-    Promise.all(promises).then(([seatsRes, chestsRes]) => {
+    const fetchData = async () => {
+      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type").eq("series_id", seriesId).order("code");
+      setSeats(seatsRes.data ?? []);
+      if (availableChests.length > 0) {
+        const chestsRes = await supabase.from("chests").select("*").in("code", availableChests).order("code");
+        setChests(chestsRes.data ?? []);
+      }
+    };
+    fetchData().then(() => {}).catch(() => {
       setSeats(seatsRes.data ?? []);
       setChests(chestsRes?.data ?? []);
     });
