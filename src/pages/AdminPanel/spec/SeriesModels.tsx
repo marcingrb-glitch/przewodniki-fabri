@@ -232,7 +232,10 @@ export default function SeriesModels({ seriesId }: Props) {
           {/* Pianki szczegółowe */}
           {seatFoams.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold mb-2">Pianki szczegółowe</h4>
+              <h4 className="text-sm font-semibold mb-2">
+                Pianki szczegółowe
+                {foamSource && <span className="font-normal text-muted-foreground ml-2">(Pianki jak {foamSource} + pasek środkowy)</span>}
+              </h4>
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
