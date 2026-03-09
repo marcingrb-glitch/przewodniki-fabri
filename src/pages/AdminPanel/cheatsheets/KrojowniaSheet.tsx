@@ -1,0 +1,176 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Props {
+  seriesId: string;
+  seriesCode: string;
+  seriesName: string;
+}
+
+function NoData({ label }: { label: string }) {
+  return <p className="text-destructive font-bold py-2">⚠️ BRAK DANYCH — {label} — uzupełnij w specyfikacji</p>;
+}
+
+export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Props) {
+  const { data: seats = [] } = useQuery({
+    queryKey: ["cheat-seats", seriesId],
+    queryFn: async () => {
+      const { data } = await supabase.from("seats_sofa").select("*").eq("series_id", seriesId).order("code");
+      return data ?? [];
+    },
+  });
+
+  const { data: sides = [] } = useQuery({
+    queryKey: ["cheat-sides", seriesId],
+    queryFn: async () => {
+      const { data } = await supabase.from("sides").select("*").eq("series_id", seriesId).order("code");
+      return data ?? [];
+    },
+  });
+
+  const { data: backrests = [] } = useQuery({
+    queryKey: ["cheat-backrests", seriesId],
+    queryFn: async () => {
+      const { data } = await supabase.from("backrests").select("*").eq("series_id", seriesId).order("code");
+      return data ?? [];
+    },
+  });
+
+  const { data: pillowMappings = [] } = useQuery({
+    queryKey: ["cheat-pillow-map", seriesId],
+    queryFn: async () => {
+      const { data } = await supabase.from("seat_pillow_mapping").select("*").eq("series_id", seriesId);
+      return data ?? [];
+    },
+  });
+
+  return (
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">
+        ŚCIĄGAWKA — Krojownia — {seriesCode} {seriesName}
+      </h1>
+
+      {/* Pułapki */}
+      <section>
+        <h2 className="text-lg font-bold mb-2">⚠️ PUŁAPKI — PRZECZYTAJ UWAŻNIE!</h2>
+        <div className="space-y-2">
+          <p className="warning font-bold underline text-lg">
+            Wykończenie poduszek / jaśków / wałków = DZIEDZICZONE od siedziska!
+          </p>
+          {seats.filter(s => {
+            const finishes = s.allowed_finishes ?? [];
+            return finishes.length > 1;
+          }).map(s => (
+            <p key={s.id} className="warning font-bold underline">
+              {s.code} ({s.model_name ?? s.type_name ?? "—"}) — dozwolone: {(s.allowed_finishes ?? []).join(", ")} — uwaga na różne rysunki!
+            </p>
+          ))}
+        </div>
+      </section>
+
+      {/* Dozwolone wykończenia - siedziska */}
+      <section className="page-break">
+        <h2 className="text-lg font-bold mb-2">✂️ Wykończenia siedzisk</h2>
+        {seats.length === 0 ? <NoData label="siedziska" /> : (
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-2 py-1 text-left">Kod</th>
+                <th className="border border-border px-2 py-1 text-left">Model</th>
+                <th className="border border-border px-2 py-1 text-left">Dozwolone</th>
+                <th className="border border-border px-2 py-1 text-left">Domyślne</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seats.map(s => (
+                <tr key={s.id}>
+                  <td className="border border-border px-2 py-1 font-mono">{s.code}</td>
+                  <td className="border border-border px-2 py-1">{s.model_name ?? s.type_name ?? "—"}</td>
+                  <td className="border border-border px-2 py-1">{(s.allowed_finishes ?? []).join(", ") || "—"}</td>
+                  <td className="border border-border px-2 py-1 font-bold">{s.default_finish ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      {/* Wykończenia boczków */}
+      <section className="page-break">
+        <h2 className="text-lg font-bold mb-2">📐 Wykończenia boczków</h2>
+        {sides.length === 0 ? <NoData label="boczki" /> : (
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-2 py-1 text-left">Kod</th>
+                <th className="border border-border px-2 py-1 text-left">Nazwa</th>
+                <th className="border border-border px-2 py-1 text-left">Dozwolone</th>
+                <th className="border border-border px-2 py-1 text-left">Domyślne</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sides.map(s => (
+                <tr key={s.id}>
+                  <td className="border border-border px-2 py-1 font-mono">{s.code}</td>
+                  <td className="border border-border px-2 py-1">{s.name}</td>
+                  <td className="border border-border px-2 py-1">{(s.allowed_finishes ?? []).join(", ") || "—"}</td>
+                  <td className="border border-border px-2 py-1 font-bold">{s.default_finish ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      {/* Wykończenia oparć */}
+      <section className="page-break">
+        <h2 className="text-lg font-bold mb-2">🛋️ Wykończenia oparć</h2>
+        {backrests.length === 0 ? <NoData label="oparcia" /> : (
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-2 py-1 text-left">Kod</th>
+                <th className="border border-border px-2 py-1 text-left">Dozwolone</th>
+                <th className="border border-border px-2 py-1 text-left">Domyślne</th>
+              </tr>
+            </thead>
+            <tbody>
+              {backrests.map(b => (
+                <tr key={b.id}>
+                  <td className="border border-border px-2 py-1 font-mono">{b.code}</td>
+                  <td className="border border-border px-2 py-1">{(b.allowed_finishes ?? []).join(", ") || "—"}</td>
+                  <td className="border border-border px-2 py-1 font-bold">{b.default_finish ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      {/* Mapowanie poduszek */}
+      {pillowMappings.length > 0 && (
+        <section className="page-break">
+          <h2 className="text-lg font-bold mb-2">🛏️ Poduszki per siedzisko</h2>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-2 py-1 text-left">Siedzisko</th>
+                <th className="border border-border px-2 py-1 text-left">Poduszka</th>
+                <th className="border border-border px-2 py-1 text-left">Wykończenie</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pillowMappings.map(m => (
+                <tr key={m.id}>
+                  <td className="border border-border px-2 py-1 font-mono">{m.seat_code}</td>
+                  <td className="border border-border px-2 py-1">{m.pillow_code}</td>
+                  <td className="border border-border px-2 py-1">{m.pillow_finish ?? "dziedziczone"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+    </div>
+  );
+}
