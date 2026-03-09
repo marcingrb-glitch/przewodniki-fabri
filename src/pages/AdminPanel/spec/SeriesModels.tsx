@@ -216,14 +216,6 @@ export default function SeriesModels({ seriesId }: Props) {
                 <InlineEditCell value={seat.frame} onSave={(v) => updateSeatField(seat.id, "frame", v)} />
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-muted-foreground w-36 shrink-0">Pianka:</span>
-                <InlineEditCell value={seat.foam} onSave={(v) => updateSeatField(seat.id, "foam", v)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-muted-foreground w-36 shrink-0">Front:</span>
-                <InlineEditCell value={seat.front} onSave={(v) => updateSeatField(seat.id, "front", v)} />
-              </div>
-              <div className="flex items-center gap-2">
                 <span className="font-medium text-muted-foreground w-36 shrink-0">Pasek środek:</span>
                 <div className="flex items-center gap-1.5">
                   <Checkbox checked={seat.center_strip} onCheckedChange={() => toggleCenterStrip(seat.id, seat.center_strip)} />
