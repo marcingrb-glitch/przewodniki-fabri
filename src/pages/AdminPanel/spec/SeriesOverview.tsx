@@ -17,7 +17,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
   const [notes, setNotes] = useState(config?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [chests, setChests] = useState<Tables<"chests">[]>([]);
-  const [seats, setSeats] = useState<Tables<"seats_sofa">[]>([]);
+  const [seats, setSeats] = useState<{ code: string; spring_type: string | null }[]>([]);
 
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
@@ -30,7 +30,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
         setChests(chestsRes.data ?? []);
       }
     };
-    fetchData().then(() => {}).catch(() => {
+    fetchData();
       setSeats(seatsRes.data ?? []);
       setChests(chestsRes?.data ?? []);
     });
