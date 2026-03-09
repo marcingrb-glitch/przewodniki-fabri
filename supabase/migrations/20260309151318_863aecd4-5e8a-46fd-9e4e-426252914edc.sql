@@ -1,0 +1,1 @@
+ALTER TABLE public.series_config ADD COLUMN IF NOT EXISTS available_chests TEXT[] DEFAULT ARRAY['SK15','SK17','SK23'];
