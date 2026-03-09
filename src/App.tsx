@@ -29,6 +29,7 @@ import Extras from "@/pages/AdminPanel/Extras";
 import Users from "@/pages/AdminPanel/Users";
 import ParseRules from "@/pages/AdminPanel/ParseRules";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
+import SeriesSpecification from "@/pages/AdminPanel/SeriesSpecification";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
