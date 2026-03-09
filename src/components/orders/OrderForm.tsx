@@ -199,6 +199,19 @@ const OrderForm = () => {
       decoded.orderNumber = orderNumber;
       decoded.orderDate = format(orderDate, "dd.MM.yyyy");
       let finalSku = sku.trim().toUpperCase();
+
+      // 4c. Apply side exception to SKU string
+      if (parsed.sideException && sideExceptions) {
+        for (const [original, mapped] of Object.entries(sideExceptions)) {
+          finalSku = finalSku.replace(`-${original}-`, `-${mapped}-`);
+          // Handle if it's the last segment (no trailing dash)
+          if (finalSku.endsWith(`-${original}`)) {
+            finalSku = finalSku.slice(0, -original.length) + mapped;
+          }
+        }
+        console.log("[OrderForm] SKU after side exception:", finalSku);
+      }
+
       decoded.rawSKU = finalSku;
 
       // 4b. Apply fabric override
