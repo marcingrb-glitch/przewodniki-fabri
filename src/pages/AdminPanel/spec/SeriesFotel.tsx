@@ -25,7 +25,7 @@ export default function SeriesFotel() {
             <Badge variant="outline">Zawsze z segmentu N w SKU</Badge>
             <Badge variant="outline">Wysokość: 15 cm</Badge>
             <Badge variant="outline">Ilość: 4 szt</Badge>
-            <Badge variant="outline">Montaż: Dziewczyny od nóżek</Badge>
+            <Badge variant="outline">Kompletacja: Dziewczyny od nóżek (kompletacja do worka)</Badge>
           </div>
         </CardContent>
       </Card>

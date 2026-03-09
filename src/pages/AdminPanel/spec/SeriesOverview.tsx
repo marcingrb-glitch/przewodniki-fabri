@@ -13,24 +13,24 @@ interface Props {
   onConfigUpdate: () => void;
 }
 
-const LEG_TYPE_LABELS: Record<string, string> = {
-  from_sku: "Z kodu SKU (drewniane)",
-  built_in_plastic: "Wbudowane plastikowe",
-  plastic_2_5: "Plastikowe 2.5cm",
-};
-
 export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Props) {
   const [notes, setNotes] = useState(config?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [chests, setChests] = useState<Tables<"chests">[]>([]);
+  const [seats, setSeats] = useState<{ code: string; spring_type: string | null }[]>([]);
 
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
   useEffect(() => {
-    if (availableChests.length > 0) {
-      supabase.from("chests").select("*").in("code", availableChests).order("code")
-        .then(({ data }) => setChests(data ?? []));
-    }
+    const fetchData = async () => {
+      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type").eq("series_id", seriesId).order("code");
+      setSeats(seatsRes.data ?? []);
+      if (availableChests.length > 0) {
+        const chestsRes = await supabase.from("chests").select("*").in("code", availableChests).order("code");
+        setChests(chestsRes.data ?? []);
+      }
+    };
+    fetchData();
   }, [seriesId, config]);
 
   if (!config) {
@@ -43,20 +43,17 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
     );
   }
 
-  const springExceptions = (config.spring_exceptions as Array<{ seat_code: string; spring: string }>) ?? [];
+  // Derive spring summary from seats_sofa
+  const springTypes = [...new Set(seats.map((s) => s.spring_type).filter(Boolean))];
+  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (config.default_spring ?? "—");
+  const springExceptions = seats.filter((s) => s.spring_type && s.spring_type !== defaultSpring);
 
   const saveNotes = async () => {
     setSaving(true);
-    const { error } = await supabase
-      .from("series_config")
-      .update({ notes })
-      .eq("id", config.id);
+    const { error } = await supabase.from("series_config").update({ notes }).eq("id", config.id);
     setSaving(false);
     if (error) toast.error("Błąd zapisu notatek");
-    else {
-      toast.success("Notatki zapisane");
-      onConfigUpdate();
-    }
+    else { toast.success("Notatki zapisane"); onConfigUpdate(); }
   };
 
   return (
@@ -73,13 +70,13 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Sprężyna</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Domyślna:</span> {config.default_spring ?? "—"}</div>
+          <div><span className="font-medium">Domyślna:</span> {defaultSpring ?? "—"}</div>
           {springExceptions.length > 0 && (
             <div>
               <span className="font-medium">Wyjątki:</span>
               <ul className="ml-4 list-disc">
-                {springExceptions.map((ex, i) => (
-                  <li key={i}>{ex.seat_code} → {ex.spring}</li>
+                {springExceptions.map((s) => (
+                  <li key={s.code}>{s.code} → {s.spring_type}</li>
                 ))}
               </ul>
             </div>
@@ -88,17 +85,9 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-lg">Nóżki pod siedziskiem</CardTitle></CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Typ:</span> {LEG_TYPE_LABELS[config.seat_leg_type ?? ""] ?? config.seat_leg_type ?? "—"}</div>
-          <div><span className="font-medium">Wysokość:</span> {config.seat_leg_height_cm != null ? `${config.seat_leg_height_cm} cm` : "—"}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader><CardTitle className="text-lg">Nóżki pufy</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Typ:</span> {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</div>
+          <div><span className="font-medium">Typ:</span> {config.pufa_leg_type ?? "—"}</div>
           <div><span className="font-medium">Wysokość:</span> {config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—"}</div>
         </CardContent>
       </Card>
@@ -145,15 +134,8 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card className="md:col-span-2">
         <CardHeader><CardTitle className="text-lg">Notatki</CardTitle></CardHeader>
         <CardContent className="space-y-2">
-          <Textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Dodaj notatki do tej serii..."
-            rows={4}
-          />
-          <Button size="sm" onClick={saveNotes} disabled={saving}>
-            {saving ? "Zapisywanie..." : "Zapisz notatki"}
-          </Button>
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Dodaj notatki do tej serii..." rows={4} />
+          <Button size="sm" onClick={saveNotes} disabled={saving}>{saving ? "Zapisywanie..." : "Zapisz notatki"}</Button>
         </CardContent>
       </Card>
     </div>
