@@ -69,6 +69,8 @@ export type Database = {
           height_cm: string | null
           id: string
           series_id: string
+          sewing_notes: string | null
+          spring_type: string | null
           top: string | null
         }
         Insert: {
@@ -81,6 +83,8 @@ export type Database = {
           height_cm?: string | null
           id?: string
           series_id: string
+          sewing_notes?: string | null
+          spring_type?: string | null
           top?: string | null
         }
         Update: {
@@ -93,6 +97,8 @@ export type Database = {
           height_cm?: string | null
           id?: string
           series_id?: string
+          sewing_notes?: string | null
+          spring_type?: string | null
           top?: string | null
         }
         Relationships: [
@@ -358,6 +364,7 @@ export type Database = {
         Row: {
           allowed_finishes: string[] | null
           code: string
+          construction_type: string | null
           created_at: string
           default_finish: string | null
           id: string
@@ -366,6 +373,7 @@ export type Database = {
         Insert: {
           allowed_finishes?: string[] | null
           code: string
+          construction_type?: string | null
           created_at?: string
           default_finish?: string | null
           id?: string
@@ -374,6 +382,7 @@ export type Database = {
         Update: {
           allowed_finishes?: string[] | null
           code?: string
+          construction_type?: string | null
           created_at?: string
           default_finish?: string | null
           id?: string

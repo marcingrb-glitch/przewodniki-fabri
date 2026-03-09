@@ -13,17 +13,29 @@ interface Props {
   onConfigUpdate: () => void;
 }
 
+const LEG_TYPE_LABELS: Record<string, string> = {
+  from_sku: "Z kodu SKU (drewniane)",
+  built_in_plastic: "Wbudowane plastikowe",
+  plastic_2_5: "Plastikowe N4",
+};
+
+const LEG_COMPLETION_LABELS: Record<string, string> = {
+  from_sku: "Dziewczyny od nóżek (kompletacja do worka)",
+  built_in_plastic: "Tapicer (wbudowane)",
+  plastic_2_5: "Tapicer (na stanowisku)",
+};
+
 export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Props) {
   const [notes, setNotes] = useState(config?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [chests, setChests] = useState<Tables<"chests">[]>([]);
-  const [seats, setSeats] = useState<{ code: string; spring_type: string | null }[]>([]);
+  const [seats, setSeats] = useState<{ code: string; spring_type: string | null; model_name: string | null }[]>([]);
 
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
   useEffect(() => {
     const fetchData = async () => {
-      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type").eq("series_id", seriesId).order("code");
+      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type, model_name").eq("series_id", seriesId).order("code");
       setSeats(seatsRes.data ?? []);
       if (availableChests.length > 0) {
         const chestsRes = await supabase.from("chests").select("*").in("code", availableChests).order("code");
@@ -45,8 +57,18 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
 
   // Derive spring summary from seats_sofa
   const springTypes = [...new Set(seats.map((s) => s.spring_type).filter(Boolean))];
-  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (config.default_spring ?? "—");
+  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (springTypes[0] ?? config.default_spring ?? "—");
   const springExceptions = seats.filter((s) => s.spring_type && s.spring_type !== defaultSpring);
+  
+  // Build spring summary string
+  let springSummary = defaultSpring ?? "—";
+  if (springExceptions.length > 0) {
+    const exceptionTexts = springExceptions.map((s) => {
+      const label = s.model_name ? `${s.model_name} (${s.code})` : s.code;
+      return `${label} = ${s.spring_type}`;
+    });
+    springSummary += ` (wyjątek: ${exceptionTexts.join(", ")})`;
+  }
 
   const saveNotes = async () => {
     setSaving(true);
@@ -70,25 +92,16 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Sprężyna</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Domyślna:</span> {defaultSpring ?? "—"}</div>
-          {springExceptions.length > 0 && (
-            <div>
-              <span className="font-medium">Wyjątki:</span>
-              <ul className="ml-4 list-disc">
-                {springExceptions.map((s) => (
-                  <li key={s.code}>{s.code} → {s.spring_type}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div>{springSummary}</div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-lg">Nóżki pufy</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Typ:</span> {config.pufa_leg_type ?? "—"}</div>
+          <div><span className="font-medium">Typ:</span> {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</div>
           <div><span className="font-medium">Wysokość:</span> {config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—"}</div>
+          <div><span className="font-medium">Kompletacja:</span> {LEG_COMPLETION_LABELS[config.pufa_leg_type ?? "from_sku"] ?? "—"}</div>
         </CardContent>
       </Card>
 
@@ -101,9 +114,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
             <>
               {config.fixed_chest && (
                 <p className="text-sm mb-3 font-medium">
-                  Skrzynia: zawsze {config.fixed_chest}
-                  {config.fixed_chest === "SK23" && " (alias SK22 → SK23)"}
-                  . Nóżki plastikowe N4 H2.5cm.
+                  Skrzynia: zawsze {config.fixed_chest}. Nóżki plastikowe N4 H2.5cm.
                 </p>
               )}
               <div className="rounded-md border">

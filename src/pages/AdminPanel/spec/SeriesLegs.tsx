@@ -14,6 +14,7 @@ import ComponentForm, { FieldDefinition } from "@/components/admin/ComponentForm
 interface Props {
   seriesId: string;
   config: Tables<"series_config"> | null;
+  seriesCode?: string;
 }
 
 const LEG_TYPE_LABELS: Record<string, string> = {
@@ -39,7 +40,7 @@ const legFields: FieldDefinition[] = [
   { name: "colors", label: "Kolory", type: "colors" },
 ];
 
-export default function SeriesLegs({ seriesId, config }: Props) {
+export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
   const [legs, setLegs] = useState<Tables<"legs">[]>([]);
   const [chests, setChests] = useState<Tables<"chests">[]>([]);
   const [automats, setAutomats] = useState<Tables<"automats">[]>([]);
@@ -103,18 +104,31 @@ export default function SeriesLegs({ seriesId, config }: Props) {
   const mountRows: MountRow[] = [];
 
   for (const c of chests) {
-    if (c.leg_height_cm > 0) {
-      mountRows.push({ element: "Pod skrzynią", detail: `${c.code} (${c.name})`, type: "N z SKU", height: `${c.leg_height_cm} cm`, count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
+    if (c.code === "SK23") {
+      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N4 plastikowe", height: "2.5 cm", count: "4 szt", who: "Tapicer (na stanowisku)" });
+    } else if (c.code === "SK15") {
+      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N z SKU", height: "10 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
+    } else if (c.code === "SK17") {
+      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N z SKU", height: "8 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
+    } else if (c.leg_height_cm > 0) {
+      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N z SKU", height: `${c.leg_height_cm} cm`, count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
     } else {
-      mountRows.push({ element: "Pod skrzynią", detail: `${c.code} (${c.name})`, type: "N4 plastikowe", height: "2.5 cm", count: "4 szt", who: "Nie kompletowane — przy stanowisku" });
+      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N4 plastikowe", height: "2.5 cm", count: "4 szt", who: "Tapicer (na stanowisku)" });
     }
   }
 
   for (const a of automats) {
     if (a.has_seat_legs) {
       const seatType = config?.seat_leg_type ?? "from_sku";
-      const who = seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)";
-      mountRows.push({ element: "Pod siedziskiem", detail: a.code, type: seatType === "built_in_plastic" ? "Wbudowane plastikowe" : "N z SKU", height: seatType === "built_in_plastic" ? `${config?.seat_leg_height_cm ?? 2.5} cm` : `${a.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`, count: `${a.seat_leg_count ?? 2} szt`, who });
+      const isPlastic = seatType === "plastic_2_5";
+      mountRows.push({
+        element: "Pod siedziskiem",
+        detail: a.code,
+        type: isPlastic ? "N4 plastikowe" : seatType === "built_in_plastic" ? "Wbudowane plastikowe" : "N z SKU",
+        height: isPlastic ? "2.5 cm" : `${a.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`,
+        count: `${a.seat_leg_count ?? 2} szt`,
+        who: isPlastic ? "Tapicer (na stanowisku)" : seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+      });
     } else {
       mountRows.push({ element: "Pod siedziskiem", detail: a.code, type: "BRAK", height: "—", count: "—", who: "—" });
     }
@@ -122,17 +136,32 @@ export default function SeriesLegs({ seriesId, config }: Props) {
 
   if (automats.length === 0 && config) {
     const seatType = config.seat_leg_type ?? "from_sku";
-    const who = seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : seatType === "plastic_2_5" ? "Nie kompletowane — przy stanowisku" : "Dziewczyny od nóżek (kompletacja do worka)";
-    mountRows.push({ element: "Pod siedziskiem", detail: "", type: LEG_TYPE_LABELS[seatType] ?? seatType ?? "—", height: config.seat_leg_height_cm != null ? `${config.seat_leg_height_cm} cm` : "—", count: "—", who });
+    const isPlastic = seatType === "plastic_2_5";
+    mountRows.push({
+      element: "Pod siedziskiem", detail: "",
+      type: LEG_TYPE_LABELS[seatType] ?? seatType ?? "—",
+      height: config.seat_leg_height_cm != null ? `${config.seat_leg_height_cm} cm` : "—",
+      count: "—",
+      who: isPlastic ? "Tapicer (na stanowisku)" : seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+    });
   }
 
   if (config) {
     const pufaType = config.pufa_leg_type ?? "from_sku";
-    const who = pufaType === "plastic_2_5" ? "Nie kompletowane — przy stanowisku" : pufaType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)";
-    mountRows.push({ element: "Pufa", detail: "", type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—", height: config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—", count: "4 szt", who });
+    const isPlastic = pufaType === "plastic_2_5";
+    mountRows.push({
+      element: "Pufa", detail: "",
+      type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—",
+      height: config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—",
+      count: "4 szt",
+      who: isPlastic ? "Tapicer (na stanowisku)" : pufaType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+    });
   }
 
-  mountRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: "15 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
+  // Don't add Fotel row for S2
+  if (seriesCode !== "S2") {
+    mountRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: "15 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
+  }
 
   return (
     <div className="space-y-6">

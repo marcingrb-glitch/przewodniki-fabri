@@ -139,8 +139,31 @@ export default function SeriesModels({ seriesId }: Props) {
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
+  const getBaseSeatCode = (code: string): string | null => {
+    if (code.endsWith("D")) {
+      const base = code.slice(0, -1);
+      // SD01ND → SD01N
+      return base;
+    }
+    return null;
+  };
+
   const renderSeatCard = (seat: Seat) => {
-    const seatFoams = foams.filter((f) => f.seat_code === seat.code);
+    // Filter out backrest foams (component !== 'oparcie')
+    let seatFoams = foams.filter((f) => f.seat_code === seat.code && f.component !== "oparcie");
+    let foamSource: string | null = null;
+
+    // Split seat foam sharing logic
+    if (seatFoams.length === 0) {
+      const baseCode = getBaseSeatCode(seat.code);
+      if (baseCode) {
+        seatFoams = foams.filter((f) => f.seat_code === baseCode && f.component !== "oparcie");
+        if (seatFoams.length > 0) {
+          foamSource = baseCode;
+        }
+      }
+    }
+
     const pillow = pillows.find((p) => p.seat_code === seat.code);
 
     return (
@@ -178,7 +201,6 @@ export default function SeriesModels({ seriesId }: Props) {
             <div className="flex gap-4 flex-wrap">
               <span>Model: <InlineEditCell value={seat.model_name} onSave={(v) => updateSeatField(seat.id, "model_name", v)} /></span>
               <span>Typ: <InlineEditCell value={seat.type} onSave={(v) => updateSeatField(seat.id, "type", v)} /></span>
-              <span>Nazwa typu: <InlineEditCell value={seat.type_name} onSave={(v) => updateSeatField(seat.id, "type_name", v)} /></span>
               <span>Sprężyna: <InlineEditCell value={seat.spring_type} onSave={(v) => updateSeatField(seat.id, "spring_type", v)} /></span>
             </div>
             {seat.allowed_finishes && <div>Wykończenia: {seat.allowed_finishes.join(", ")} {seat.default_finish && `(domyślne: ${seat.default_finish})`}</div>}
@@ -192,14 +214,6 @@ export default function SeriesModels({ seriesId }: Props) {
               <div className="flex items-center gap-2">
                 <span className="font-medium text-muted-foreground w-36 shrink-0">Stelaż:</span>
                 <InlineEditCell value={seat.frame} onSave={(v) => updateSeatField(seat.id, "frame", v)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-muted-foreground w-36 shrink-0">Pianka:</span>
-                <InlineEditCell value={seat.foam} onSave={(v) => updateSeatField(seat.id, "foam", v)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-muted-foreground w-36 shrink-0">Front:</span>
-                <InlineEditCell value={seat.front} onSave={(v) => updateSeatField(seat.id, "front", v)} />
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-muted-foreground w-36 shrink-0">Pasek środek:</span>
@@ -218,7 +232,10 @@ export default function SeriesModels({ seriesId }: Props) {
           {/* Pianki szczegółowe */}
           {seatFoams.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold mb-2">Pianki szczegółowe</h4>
+              <h4 className="text-sm font-semibold mb-2">
+                Pianki szczegółowe
+                {foamSource && <span className="font-normal text-muted-foreground ml-2">(Pianki jak {foamSource} + pasek środkowy)</span>}
+              </h4>
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>

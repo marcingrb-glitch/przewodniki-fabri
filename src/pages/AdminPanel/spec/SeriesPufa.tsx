@@ -82,9 +82,12 @@ export default function SeriesPufa({ seriesId, config }: Props) {
       {config && (
         <Card>
           <CardContent className="py-4">
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-4 text-sm flex-wrap">
               <Badge variant="outline">Nóżki: {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</Badge>
               {config.pufa_leg_height_cm != null && <Badge variant="outline">Wysokość: {config.pufa_leg_height_cm} cm</Badge>}
+              <Badge variant="secondary">
+                Kompletacja: {config.pufa_leg_type === "plastic_2_5" ? "Tapicer (na stanowisku)" : config.pufa_leg_type === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)"}
+              </Badge>
             </div>
           </CardContent>
         </Card>

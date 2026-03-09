@@ -65,7 +65,7 @@ export default function SeriesSpecification() {
           <TabsTrigger value="backrests">Oparcia</TabsTrigger>
           <TabsTrigger value="legs">Nóżki & Montaż</TabsTrigger>
           <TabsTrigger value="pufa">Pufa</TabsTrigger>
-          <TabsTrigger value="fotel">Fotel</TabsTrigger>
+          {seriesCode !== "S2" && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview">
@@ -81,14 +81,16 @@ export default function SeriesSpecification() {
           <SeriesBackrests seriesId={series.id} />
         </TabsContent>
         <TabsContent value="legs">
-          <SeriesLegs seriesId={series.id} config={config} />
+          <SeriesLegs seriesId={series.id} config={config} seriesCode={seriesCode} />
         </TabsContent>
         <TabsContent value="pufa">
           <SeriesPufa seriesId={series.id} config={config} />
         </TabsContent>
-        <TabsContent value="fotel">
-          <SeriesFotel />
-        </TabsContent>
+        {seriesCode !== "S2" && (
+          <TabsContent value="fotel">
+            <SeriesFotel />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
