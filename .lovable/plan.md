@@ -1,38 +1,61 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Rozbudowa panelu specyfikacji o inline editing, CRUD i dane z istniejących tabel
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Wszystkie taby specyfikacji już czytają z poprawnych tabel (seats_sofa, sides, backrests, legs, automats, seats_pufa, chests). Główne zmiany to: dodanie inline editing do wszystkich komórek, dodanie przycisków Dodaj/Edytuj/Usuń per wiersz, oraz uproszczenie taba Przegląd.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Pliki do zmiany
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+#### 1. `SeriesModels.tsx` — dodaj inline editing pól siedziska
+- Każde pole siedziska (code, type, type_name, frame, foam, front, spring_type, model_name, frame_modification) edytowalne inline przez `InlineEditCell`
+- center_strip jako Checkbox inline
+- allowed_finishes/default_finish — edytowalne przez klik → dialog ComponentForm
+- Dodaj przycisk "Dodaj siedzisko" (insert do seats_sofa z series_id)
+- Dodaj ikonki Edit (otwiera ComponentForm) i Delete (AlertDialog) per siedzisko
+- Puste pola: szare tło + "uzupełnij" (już obsłużone przez InlineEditCell)
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+#### 2. `SeriesSides.tsx` — inline editing + CRUD
+- Każde pole (code, name, frame) edytowalne inline
+- allowed_finishes, default_finish — renderuj jako tekst, edit przez ComponentForm dialog
+- Dodaj przycisk "Dodaj boczek" + ikony Edit/Delete per wiersz
+- useAdminCrud lub bezpośredni supabase.update/insert/delete z fetchAll() po zmianach
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+#### 3. `SeriesBackrests.tsx` — inline editing + CRUD
+- Każde pole (code, height_cm, frame, foam, top) edytowalne inline
+- allowed_finishes/default_finish — edit przez dialog
+- Przycisk "Dodaj oparcie" + Edit/Delete per wiersz
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+#### 4. `SeriesLegs.tsx` — inline editing nóżek + CRUD
+- Tabela nóżek: code, name, material edytowalne inline
+- colors — renderuj jako `A=Buk, B=...`, edit przez ComponentForm z type "colors"
+- Przycisk "Dodaj nóżkę" + Edit/Delete per wiersz
+- Tabela "Kto co kompletuje" — pozostaje read-only (wyliczana dynamicznie)
 
-### Krok 4: App.tsx — routing
+#### 5. `SeriesPufa.tsx` — inline editing + CRUD
+- Każde pole (code, front_back, sides, base_foam, box_height) edytowalne inline
+- Przycisk "Dodaj siedzisko pufy" + Edit/Delete per wiersz
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+#### 6. `SeriesOverview.tsx` — uprość
+- Usuń kartę "Nóżki pod siedziskiem" (dane są w automats, widoczne w tabie Nóżki)
+- Sprężyna: pobierz z seats_sofa.spring_type, wyświetl podsumowanie np. "Sprężyna B (wyjątek: SD5 = A)"
+- Reszta bez zmian (stałe elementy, skrzynie, notatki)
 
-### Krok 5: skuDecoder.ts — uprość seat types
+#### 7. `SeriesFotel.tsx` — popraw Badge "Montaż"
+- Zmień "Montaż: Dziewczyny od nóżek" → "Kompletacja: Dziewczyny od nóżek (kompletacja do worka)"
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+### Wzorzec edycji
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+Dla prostych pól tekstowych/numerycznych: `InlineEditCell` (już istnieje) → `supabase.from(table).update({field: value}).eq("id", id)` → toast → refetch.
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
+Dla złożonych pól (allowed_finishes, colors): ikona Edit → `ComponentForm` dialog z odpowiednimi `FieldDefinition[]` → submit → refetch.
 
-### Krok 7: Usuń SKUConfig.tsx
+Dla dodawania: przycisk "Dodaj" → `ComponentForm` z pustymi danymi → insert z `series_id` → refetch.
 
-Plik nie jest już potrzebny.
+Dla usuwania: ikona Trash → `AlertDialog` potwierdzenie → delete → refetch.
+
+### Kluczowe zasady
+- NIE modyfikujemy skuParser.ts, skuDecoder.ts, pdfGenerators
+- NIE tworzymy nowych tabel
+- Toast po każdym zapisie
+- Puste pola: szare tło + "uzupełnij" (InlineEditCell)
 
