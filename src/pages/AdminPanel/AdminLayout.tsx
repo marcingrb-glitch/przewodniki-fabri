@@ -9,6 +9,7 @@ const sharedLinks = [
   { to: "/admin/users", label: "👥 Użytkownicy" },
   { to: "/admin/fabrics", label: "Tkaniny" },
   { to: "/admin/finishes", label: "Wykończenia" },
+  { to: "/admin/chests", label: "Skrzynie" },
   { to: "/admin/pillows", label: "Poduszki" },
   { to: "/admin/jaskis", label: "Jaśki" },
   { to: "/admin/waleks", label: "Wałki" },
@@ -17,7 +18,6 @@ const sharedLinks = [
 const skuConfigLinks = [
   { to: "/admin/parse-rules", label: "Reguły parsowania" },
   { to: "/admin/side-exceptions", label: "Wyjątki boczków" },
-  { to: "/admin/chests", label: "Skrzynie" },
 ];
 
 export default function AdminLayout() {
