@@ -381,6 +381,65 @@ export type Database = {
         }
         Relationships: []
       }
+      product_foams: {
+        Row: {
+          component: string
+          created_at: string
+          height: number | null
+          id: string
+          length: number | null
+          material: string | null
+          name: string | null
+          notes: string | null
+          position_number: number | null
+          quantity: number | null
+          seat_code: string
+          series_id: string
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          height?: number | null
+          id?: string
+          length?: number | null
+          material?: string | null
+          name?: string | null
+          notes?: string | null
+          position_number?: number | null
+          quantity?: number | null
+          seat_code: string
+          series_id: string
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          height?: number | null
+          id?: string
+          length?: number | null
+          material?: string | null
+          name?: string | null
+          notes?: string | null
+          position_number?: number | null
+          quantity?: number | null
+          seat_code?: string
+          series_id?: string
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_foams_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -407,6 +466,76 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      seat_pillow_mapping: {
+        Row: {
+          created_at: string
+          id: string
+          pillow_code: string
+          pillow_finish: string | null
+          seat_code: string
+          series_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pillow_code: string
+          pillow_finish?: string | null
+          seat_code: string
+          series_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pillow_code?: string
+          pillow_finish?: string | null
+          seat_code?: string
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_pillow_mapping_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seat_side_compatibility: {
+        Row: {
+          compatible: boolean
+          created_at: string
+          id: string
+          seat_code: string
+          series_id: string
+          side_code: string
+        }
+        Insert: {
+          compatible?: boolean
+          created_at?: string
+          id?: string
+          seat_code: string
+          series_id: string
+          side_code: string
+        }
+        Update: {
+          compatible?: boolean
+          created_at?: string
+          id?: string
+          seat_code?: string
+          series_id?: string
+          side_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_side_compatibility_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seat_types: {
         Row: {
@@ -479,9 +608,12 @@ export type Database = {
           default_finish: string | null
           foam: string | null
           frame: string | null
+          frame_modification: string | null
           front: string | null
           id: string
+          model_name: string | null
           series_id: string
+          spring_type: string | null
           type: string | null
           type_name: string | null
         }
@@ -493,9 +625,12 @@ export type Database = {
           default_finish?: string | null
           foam?: string | null
           frame?: string | null
+          frame_modification?: string | null
           front?: string | null
           id?: string
+          model_name?: string | null
           series_id: string
+          spring_type?: string | null
           type?: string | null
           type_name?: string | null
         }
@@ -507,9 +642,12 @@ export type Database = {
           default_finish?: string | null
           foam?: string | null
           frame?: string | null
+          frame_modification?: string | null
           front?: string | null
           id?: string
+          model_name?: string | null
           series_id?: string
+          spring_type?: string | null
           type?: string | null
           type_name?: string | null
         }
@@ -546,6 +684,62 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      series_config: {
+        Row: {
+          created_at: string
+          default_spring: string | null
+          fixed_automat: string | null
+          fixed_backrest: string | null
+          fixed_chest: string | null
+          id: string
+          notes: string | null
+          pufa_leg_height_cm: number | null
+          pufa_leg_type: string | null
+          seat_leg_height_cm: number | null
+          seat_leg_type: string | null
+          series_id: string
+          spring_exceptions: Json | null
+        }
+        Insert: {
+          created_at?: string
+          default_spring?: string | null
+          fixed_automat?: string | null
+          fixed_backrest?: string | null
+          fixed_chest?: string | null
+          id?: string
+          notes?: string | null
+          pufa_leg_height_cm?: number | null
+          pufa_leg_type?: string | null
+          seat_leg_height_cm?: number | null
+          seat_leg_type?: string | null
+          series_id: string
+          spring_exceptions?: Json | null
+        }
+        Update: {
+          created_at?: string
+          default_spring?: string | null
+          fixed_automat?: string | null
+          fixed_backrest?: string | null
+          fixed_chest?: string | null
+          id?: string
+          notes?: string | null
+          pufa_leg_height_cm?: number | null
+          pufa_leg_type?: string | null
+          seat_leg_height_cm?: number | null
+          seat_leg_type?: string | null
+          series_id?: string
+          spring_exceptions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_config_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: true
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       side_exceptions: {
         Row: {
