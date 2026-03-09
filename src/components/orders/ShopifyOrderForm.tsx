@@ -176,15 +176,26 @@ const ShopifyOrderForm = () => {
         const decoded = await decodeSKU(parsed);
         decoded.orderNumber = itemOrderNumber;
         decoded.orderDate = format(new Date(), "dd.MM.yyyy");
-        decoded.rawSKU = normalizedSku;
+
+        // Apply side exception to SKU string
+        let correctedSku = normalizedSku;
+        if (parsed.sideException && sideExceptions) {
+          for (const [original, mapped] of Object.entries(sideExceptions)) {
+            correctedSku = correctedSku.replace(`-${original}-`, `-${mapped}-`);
+            if (correctedSku.endsWith(`-${original}`)) {
+              correctedSku = correctedSku.slice(0, -original.length) + mapped;
+            }
+          }
+          console.log("[ShopifyFlow] SKU after side exception:", correctedSku);
+        }
+        decoded.rawSKU = correctedSku;
 
         // 4b. Apply fabric override
-        let finalSku = normalizedSku;
+        let finalSku = correctedSku;
         if (fabricChange && fabricName.trim() && fabricColor.trim()) {
           const overrideName = fabricName.trim().toUpperCase().replace(/\s+/g, "_");
           const overrideColor = fabricColor.trim().toUpperCase().replace(/\s+/g, "_");
-          // Replace fabric segment in SKU (T... segment between first and second dash after series)
-          finalSku = normalizedSku.replace(/-[A-Z]\d+[A-Z0-9]*-/, `-${overrideName}_${overrideColor}-`);
+          finalSku = correctedSku.replace(/-[A-Z]\d+[A-Z0-9]*-/, `-${overrideName}_${overrideColor}-`);
           decoded.fabric = {
             ...decoded.fabric,
             code: overrideName,
