@@ -1,25 +1,38 @@
 
 
-## Etap 3: Przebudowa Sidebaru AdminLayout
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Zmiany w `src/pages/AdminPanel/AdminLayout.tsx`
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-1. **Nowe grupy linków**:
-   - **Wspólne**: Użytkownicy, Tkaniny, Wykończenia, Poduszki, Jaśki, Wałki (usunięte: Serie, Skrzynie)
-   - **Specyfikacje produktów**: dynamicznie z `seriesList` → `/admin/spec/S1`, `/admin/spec/S2`
-   - **Konfiguracja SKU**: Reguły parsowania, Wyjątki boczków, Skrzynie
-   - **Ściągawki**: Generator ściągawek → `/admin/cheatsheets` (placeholder, Etap 4)
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-2. **Usunięte z sidebaru**: dropdown selektor serii, linki do Automaty, Siedziska Sofa/Pufa, Oparcia, Boczki, Nóżki, Dodatki
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-3. **Zachowane**: `selectedSeriesId` w state + `Outlet context` (dla starych stron po URL), `Select` import usunięty
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-4. **Default redirect**: `/admin` → `/admin/spec/S1` (zamiast `/admin/series`)
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-5. **Active state**: NavItem sprawdza `location.pathname.startsWith(to)` dla spec linków (bo mają sub-routes)
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Bez zmian
-- `App.tsx` — wszystkie Route elementy zostają
-- Pliki starych stron — bez zmian
-- `SeriesSpecification.tsx` — bez zmian
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
