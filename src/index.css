@@ -135,3 +135,51 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  header, aside, .no-print, .toaster, [data-sonner-toaster] {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .print-area {
+    width: 100% !important;
+  }
+  * {
+    color: black !important;
+    border-color: black !important;
+  }
+  table {
+    border-collapse: collapse !important;
+  }
+  td, th {
+    border: 1px solid black !important;
+    padding: 3px 6px !important;
+  }
+  .bg-muted, .bg-red-100, .bg-red-50 {
+    background: #f0f0f0 !important;
+  }
+  .bg-red-100, .bg-red-50 {
+    background: #fdd !important;
+  }
+  .warning {
+    font-weight: bold !important;
+    text-decoration: underline !important;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  .border-4 {
+    border-width: 3px !important;
+    border-color: black !important;
+  }
+}

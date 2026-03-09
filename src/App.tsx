@@ -69,6 +69,7 @@ const App = () => (
                   <Route path="parse-rules" element={<ParseRules />} />
                   <Route path="side-exceptions" element={<SideExceptions />} />
                   <Route path="spec/:seriesCode" element={<SeriesSpecification />} />
+                  <Route path="cheatsheets" element={<Cheatsheets />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
