@@ -92,17 +92,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Sprężyna</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Domyślna:</span> {defaultSpring ?? "—"}</div>
-          {springExceptions.length > 0 && (
-            <div>
-              <span className="font-medium">Wyjątki:</span>
-              <ul className="ml-4 list-disc">
-                {springExceptions.map((s) => (
-                  <li key={s.code}>{s.code} → {s.spring_type}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div>{springSummary}</div>
         </CardContent>
       </Card>
 
