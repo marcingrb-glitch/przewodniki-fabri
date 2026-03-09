@@ -114,9 +114,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
             <>
               {config.fixed_chest && (
                 <p className="text-sm mb-3 font-medium">
-                  Skrzynia: zawsze {config.fixed_chest}
-                  {config.fixed_chest === "SK23" && " (alias SK22 → SK23)"}
-                  . Nóżki plastikowe N4 H2.5cm.
+                  Skrzynia: zawsze {config.fixed_chest}. Nóżki plastikowe N4 H2.5cm.
                 </p>
               )}
               <div className="rounded-md border">
