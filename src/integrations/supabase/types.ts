@@ -69,7 +69,6 @@ export type Database = {
           height_cm: string | null
           id: string
           series_id: string
-          sewing_notes: string | null
           spring_type: string | null
           top: string | null
         }
@@ -83,7 +82,6 @@ export type Database = {
           height_cm?: string | null
           id?: string
           series_id: string
-          sewing_notes?: string | null
           spring_type?: string | null
           top?: string | null
         }
@@ -97,7 +95,6 @@ export type Database = {
           height_cm?: string | null
           id?: string
           series_id?: string
-          sewing_notes?: string | null
           spring_type?: string | null
           top?: string | null
         }
@@ -748,6 +745,47 @@ export type Database = {
             foreignKeyName: "series_config_series_id_fkey"
             columns: ["series_id"]
             isOneToOne: true
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sewing_variants: {
+        Row: {
+          component_code: string
+          component_type: string
+          created_at: string
+          description: string | null
+          id: string
+          models: string[]
+          series_id: string
+          variant_name: string
+        }
+        Insert: {
+          component_code: string
+          component_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          models: string[]
+          series_id: string
+          variant_name: string
+        }
+        Update: {
+          component_code?: string
+          component_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          models?: string[]
+          series_id?: string
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sewing_variants_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
             referencedRelation: "series"
             referencedColumns: ["id"]
           },
