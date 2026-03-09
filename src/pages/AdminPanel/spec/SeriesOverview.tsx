@@ -13,11 +13,23 @@ interface Props {
   onConfigUpdate: () => void;
 }
 
+const LEG_TYPE_LABELS: Record<string, string> = {
+  from_sku: "Z kodu SKU (drewniane)",
+  built_in_plastic: "Wbudowane plastikowe",
+  plastic_2_5: "Plastikowe N4",
+};
+
+const LEG_COMPLETION_LABELS: Record<string, string> = {
+  from_sku: "Dziewczyny od nóżek (kompletacja do worka)",
+  built_in_plastic: "Tapicer (wbudowane)",
+  plastic_2_5: "Tapicer (na stanowisku)",
+};
+
 export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Props) {
   const [notes, setNotes] = useState(config?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [chests, setChests] = useState<Tables<"chests">[]>([]);
-  const [seats, setSeats] = useState<{ code: string; spring_type: string | null }[]>([]);
+  const [seats, setSeats] = useState<{ code: string; spring_type: string | null; model_name: string | null }[]>([]);
 
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
