@@ -52,7 +52,7 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
       result.sideException = `Zamieniono ${original} → ${mapped} (wyjątek Shopify)`;
       console.log(`[SKU Parser] Side exception: ${original} → ${mapped}`);
       // Parse the mapped value instead
-      const mappedMatch = mapped.match(/^B(\d+(?:S|W)?)([A-C])?$/);
+      const mappedMatch = mapped.match(/^B(\d+(?:S|W)?)([A-D])?$/);
       if (mappedMatch) {
         const rawCode = mappedMatch[1];
         let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
@@ -62,7 +62,7 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
       continue;
     }
 
-    const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-C])?$/);
+    const sideMatch = part.match(/^B(\d+(?:S|W)?)([A-D])?$/);
     if (sideMatch) {
       const rawCode = sideMatch[1];
       let code = rawCode.replace(/([SW])$/, (m) => m.toLowerCase());
@@ -72,7 +72,7 @@ export function parseSKU(sku: string, sideExceptions?: Record<string, string>): 
     }
 
     // Backrest: OP62A, OP68C
-    const backrestMatch = part.match(/^OP(\d{2})([A-C])$/);
+    const backrestMatch = part.match(/^OP(\d{2})([A-D])$/);
     if (backrestMatch) {
       result.backrest = { code: `OP${backrestMatch[1]}`, finish: backrestMatch[2] };
       continue;
