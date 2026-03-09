@@ -126,7 +126,9 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
             </thead>
             <tbody>
               {legs.map(l => {
-                const colors = Array.isArray(l.colors) ? (l.colors as string[]).join(", ") : "—";
+                const colors = (l.colors && typeof l.colors === "object" && !Array.isArray(l.colors))
+                  ? Object.entries(l.colors).map(([k, v]) => `${k}=${v}`).join(", ")
+                  : Array.isArray(l.colors) ? (l.colors as string[]).join(", ") : "—";
                 return (
                   <tr key={l.id}>
                     <td className="border border-border px-2 py-1 font-mono font-bold">{l.code}</td>

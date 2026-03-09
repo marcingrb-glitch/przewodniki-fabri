@@ -254,7 +254,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                   <td className="border border-border px-1 py-0.5 font-mono">{l.code}</td>
                   <td className="border border-border px-1 py-0.5">{l.name}</td>
                   <td className="border border-border px-1 py-0.5">{l.material ?? "—"}</td>
-                  <td className="border border-border px-1 py-0.5">{Array.isArray(l.colors) ? (l.colors as string[]).join(", ") : "—"}</td>
+                  <td className="border border-border px-1 py-0.5">{(l.colors && typeof l.colors === "object" && !Array.isArray(l.colors)) ? Object.entries(l.colors).map(([k, v]) => `${k}=${v}`).join(", ") : Array.isArray(l.colors) ? (l.colors as string[]).join(", ") : "—"}</td>
                 </tr>
               ))}
             </tbody>
