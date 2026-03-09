@@ -687,6 +687,7 @@ export type Database = {
       }
       series_config: {
         Row: {
+          available_chests: string[] | null
           created_at: string
           default_spring: string | null
           fixed_automat: string | null
@@ -702,6 +703,7 @@ export type Database = {
           spring_exceptions: Json | null
         }
         Insert: {
+          available_chests?: string[] | null
           created_at?: string
           default_spring?: string | null
           fixed_automat?: string | null
@@ -717,6 +719,7 @@ export type Database = {
           spring_exceptions?: Json | null
         }
         Update: {
+          available_chests?: string[] | null
           created_at?: string
           default_spring?: string | null
           fixed_automat?: string | null
