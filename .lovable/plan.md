@@ -1,30 +1,38 @@
 
 
-## Plan: Przebudowa karty siedziska — wydzielona sekcja "Dane techniczne"
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-Plik do zmiany: `src/pages/AdminPanel/spec/SeriesModels.tsx`
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiana w `renderSeatCard`
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-Obecny layout karty ma nagłówek z kodem + badge'ami, a pod spodem w `text-muted-foreground` wymieszane dane identyfikacyjne (model, typ) z technicznymi (stelaż, pianka, przód). Trzeba to rozdzielić.
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-**Nowy layout karty:**
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-1. **Nagłówek** (CardHeader): Kod (edytowalny) + Badge typ + Badge sprężyna + Edit/Delete buttons
-2. **Info identyfikacyjne** (pod nagłówkiem): Model, Typ, Nazwa typu — jako inline edit
-3. **Wykończenia**: allowed_finishes + default_finish (jak teraz)
-4. **Sekcja "Dane techniczne"** (CardContent, nowa wydzielona sekcja z nagłówkiem):
-   - Stelaż: `seat.frame` — InlineEditCell
-   - Pianka: `seat.foam` — InlineEditCell  
-   - Front: `seat.front` — InlineEditCell
-   - Pasek środek: `seat.center_strip` — Checkbox + label "TAK"/"NIE"
-   - Modyfikacja stelaża: `seat.frame_modification` — InlineEditCell (zawsze widoczne, nie tylko gdy niepuste)
-5. **Sekcja "Pianki szczegółowe"** (tabela product_foams — jak teraz)
-6. **Poduszka** (jak teraz)
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Kluczowe zmiany w kodzie (linie 142-258):
-- Przenieść stelaż/pianka/front/center_strip/frame_modification z CardHeader do CardContent w nowym `div` z nagłówkiem "Dane techniczne"
-- Checkbox center_strip przenieść z nagłówka do sekcji dane techniczne, wyświetlać "TAK"/"NIE" obok
-- `frame_modification` wyświetlać zawsze (nie tylko gdy niepuste) — puste pokaże "uzupełnij"
-- Sprężyna zostaje jako Badge w nagłówku (szybka identyfikacja) + edytowalna w info identyfikacyjnych
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
