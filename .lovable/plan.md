@@ -1,38 +1,21 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Problem
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+SKU `S1-T4B-SD4-B6D-OP62A-SK15-AT1-N1A-P1D` fails with "Brak boczka (B1-B9)".
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+The side regex in the parser is `^B(\d+(?:S|W)?)([A-C])?$` -- finish letter is limited to A-C. `B6D` has finish `D` (Zwykły), which doesn't match `[A-C]`, so the entire segment is skipped and side is never parsed.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+Note: `B6D` is also a side exception for S1 (mapped to B6C), but the **validator** calls `parseSKU()` without sideExceptions, so the exception path isn't triggered during validation.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+## Fix
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+In `src/utils/skuParser.ts`, expand all side-related regexes from `[A-C]` to `[A-D]`:
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+1. **Line 55** (mapped side exception regex): `[A-C]` to `[A-D]`
+2. **Line 65** (main side regex): `[A-C]` to `[A-D]`
 
-### Krok 4: App.tsx — routing
+The backrest regex on line 75 `^OP(\d{2})([A-C])$` should also be expanded to `[A-D]` for consistency, since finish D exists in the system.
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+This is a one-line-per-location fix in `skuParser.ts`. No other files need changes.
 
