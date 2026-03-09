@@ -139,8 +139,31 @@ export default function SeriesModels({ seriesId }: Props) {
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
+  const getBaseSeatCode = (code: string): string | null => {
+    if (code.endsWith("D")) {
+      const base = code.slice(0, -1);
+      // SD01ND → SD01N
+      return base;
+    }
+    return null;
+  };
+
   const renderSeatCard = (seat: Seat) => {
-    const seatFoams = foams.filter((f) => f.seat_code === seat.code);
+    // Filter out backrest foams (component !== 'oparcie')
+    let seatFoams = foams.filter((f) => f.seat_code === seat.code && f.component !== "oparcie");
+    let foamSource: string | null = null;
+
+    // Split seat foam sharing logic
+    if (seatFoams.length === 0) {
+      const baseCode = getBaseSeatCode(seat.code);
+      if (baseCode) {
+        seatFoams = foams.filter((f) => f.seat_code === baseCode && f.component !== "oparcie");
+        if (seatFoams.length > 0) {
+          foamSource = baseCode;
+        }
+      }
+    }
+
     const pillow = pillows.find((p) => p.seat_code === seat.code);
 
     return (
