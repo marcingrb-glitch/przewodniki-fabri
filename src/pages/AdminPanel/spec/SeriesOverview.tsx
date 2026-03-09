@@ -35,7 +35,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
 
   useEffect(() => {
     const fetchData = async () => {
-      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type").eq("series_id", seriesId).order("code");
+      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type, model_name").eq("series_id", seriesId).order("code");
       setSeats(seatsRes.data ?? []);
       if (availableChests.length > 0) {
         const chestsRes = await supabase.from("chests").select("*").in("code", availableChests).order("code");
