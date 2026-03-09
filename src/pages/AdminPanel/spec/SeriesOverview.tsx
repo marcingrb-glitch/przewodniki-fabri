@@ -57,8 +57,18 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
 
   // Derive spring summary from seats_sofa
   const springTypes = [...new Set(seats.map((s) => s.spring_type).filter(Boolean))];
-  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (config.default_spring ?? "—");
+  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (springTypes[0] ?? config.default_spring ?? "—");
   const springExceptions = seats.filter((s) => s.spring_type && s.spring_type !== defaultSpring);
+  
+  // Build spring summary string
+  let springSummary = defaultSpring ?? "—";
+  if (springExceptions.length > 0) {
+    const exceptionTexts = springExceptions.map((s) => {
+      const label = s.model_name ? `${s.model_name} (${s.code})` : s.code;
+      return `${label} = ${s.spring_type}`;
+    });
+    springSummary += ` (wyjątek: ${exceptionTexts.join(", ")})`;
+  }
 
   const saveNotes = async () => {
     setSaving(true);
