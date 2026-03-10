@@ -32,7 +32,7 @@ function useExampleData() {
     queryKey: ["guide-preview-example-data"],
     queryFn: async () => {
       const [seatRes, sideRes, backrestRes, chestRes, automatRes, seriesRes, legRes, pufaSeatRes, pillowRes, finishRes, jaskiRes, walekRes] = await Promise.all([
-        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip, model_name").limit(1).maybeSingle(),
+        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip, model_name, frame_modification").limit(1).maybeSingle(),
         supabase.from("sides").select("code, name, frame").limit(1).maybeSingle(),
         supabase.from("backrests").select("code, height_cm, frame, top, spring_type").limit(1).maybeSingle(),
         supabase.from("chests").select("code, name, leg_height_cm, leg_count").limit(1).maybeSingle(),
