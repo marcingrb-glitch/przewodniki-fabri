@@ -1,60 +1,124 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
+import { supabase } from "@/integrations/supabase/client";
 
 function seriesLine(decoded: DecodedSKU): string {
   return `${decoded.series.code}|${decoded.series.name}|${decoded.series.collection}`;
 }
 
-export async function generateSofaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
-  const doc = await createDoc("landscape", [100, 30]);
+/** Resolve a dotted path like "seat.code" from DecodedSKU */
+function resolveField(decoded: DecodedSKU, path: string): string {
+  const parts = path.split(".");
+  let current: unknown = decoded;
+  for (const part of parts) {
+    if (current == null || typeof current !== "object") return "-";
+    current = (current as Record<string, unknown>)[part];
+  }
+  if (current == null) return "-";
+  if (typeof current === "boolean") return current ? "Tak" : "Nie";
+  return String(current);
+}
+
+interface LabelTemplate {
+  label_name: string;
+  component: string;
+  display_fields: string[];
+  quantity: number;
+  sort_order: number;
+  is_conditional: boolean;
+  condition_field: string | null;
+}
+
+async function fetchTemplates(
+  productType: string,
+  seriesCode?: string
+): Promise<LabelTemplate[]> {
+  // Try series-specific first
+  let seriesId: string | null = null;
+  if (seriesCode) {
+    const { data: series } = await supabase
+      .from("series")
+      .select("id")
+      .eq("code", seriesCode)
+      .maybeSingle();
+    seriesId = series?.id ?? null;
+  }
+
+  if (seriesId) {
+    const { data } = await supabase
+      .from("label_templates")
+      .select("label_name, component, display_fields, quantity, sort_order, is_conditional, condition_field")
+      .eq("product_type", productType)
+      .eq("series_id", seriesId)
+      .order("sort_order");
+    if (data && data.length > 0) return data as LabelTemplate[];
+  }
+
+  // Fall back to global templates
+  const { data } = await supabase
+    .from("label_templates")
+    .select("label_name, component, display_fields, quantity, sort_order, is_conditional, condition_field")
+    .eq("product_type", productType)
+    .is("series_id", null)
+    .order("sort_order");
+
+  return (data as LabelTemplate[]) || [];
+}
+
+function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
+  if (!tpl.is_conditional || !tpl.condition_field) return true;
+  const val = resolveField(decoded, tpl.condition_field);
+  return val !== "-" && val !== "" && val !== "null" && val !== "undefined";
+}
+
+function buildLabelLines(decoded: DecodedSKU, tpl: LabelTemplate, productType: string): string[] {
   const s = seriesLine(decoded);
-  const header = `SOFA | Zam: ${decoded.orderNumber || ""}`;
-  const chestLeg = decoded.legHeights.sofa_chest;
-  const seatLeg = decoded.legHeights.sofa_seat;
+  const typeLabel = productType.toUpperCase();
+  const header = `${typeLabel} | Zam: ${decoded.orderNumber || ""}`;
 
-  addLabel(doc, [s, header, `Siedzisko: ${decoded.seat.code}`, `Automat: ${decoded.automat.code}`], true);
-  addLabel(doc, [s, header, `Oparcie: ${decoded.backrest.code}${decoded.backrest.finish}`], false);
-  addLabel(doc, [s, header, `Boczek: ${decoded.side.code}${decoded.side.finish}`], false);
-  addLabel(doc, [s, header, `Boczek: ${decoded.side.code}${decoded.side.finish}`], false);
-  addLabel(doc, [s, header, `Skrzynia: ${decoded.chest.code}`, `Automat: ${decoded.automat.code}`], false);
+  const fields = (tpl.display_fields || [])
+    .map((f) => resolveField(decoded, f))
+    .filter((v) => v !== "-");
 
-  const chestLegStr = chestLeg ? `${chestLeg.leg} H=${chestLeg.height}cm` : "N4 H=2.5cm";
-  addLabel(doc, [s, header, `Noga skrzynia: ${chestLegStr}`, `Ilość: ${chestLeg?.count || 4} szt`], false);
+  const fieldLine = fields.length > 0 ? `${tpl.label_name}: ${fields.join(" ")}` : tpl.label_name;
 
-  if (seatLeg) {
-    addLabel(doc, [s, header, `Noga siedzisko: ${seatLeg.leg} H=${seatLeg.height}cm`, `Ilość: ${seatLeg.count} szt`], false);
+  return [s, header, fieldLine];
+}
+
+export async function generateLabelsPDF(
+  decoded: DecodedSKU,
+  productType: "sofa" | "pufa" | "fotel"
+): Promise<Blob> {
+  const templates = await fetchTemplates(productType, decoded.series.code);
+  const doc = await createDoc("landscape", [100, 30]);
+
+  let isFirst = true;
+  for (const tpl of templates) {
+    if (!shouldShow(decoded, tpl)) continue;
+    const lines = buildLabelLines(decoded, tpl, productType);
+    for (let i = 0; i < tpl.quantity; i++) {
+      addLabel(doc, lines, isFirst);
+      isFirst = false;
+    }
+  }
+
+  // Fallback if no templates found — generate at least one empty label
+  if (isFirst) {
+    addLabel(doc, [seriesLine(decoded), `${productType.toUpperCase()} | Zam: ${decoded.orderNumber || ""}`, "Brak szablonów etykiet"], true);
   }
 
   return toBlob(doc);
+}
+
+// Legacy wrappers for backward compatibility
+export async function generateSofaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
+  return generateLabelsPDF(decoded, "sofa");
 }
 
 export async function generatePufaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
-  const doc = await createDoc("landscape", [100, 30]);
-  const s = seriesLine(decoded);
-  const header = `PUFA | Zam: ${decoded.orderNumber || ""}`;
-  const pufaSeat = decoded.pufaSeat;
-
-  addLabel(doc, [s, header, `Siedzisko: ${decoded.seat.code}`, `Pianka: ${pufaSeat?.foam || "-"}`], true);
-  addLabel(doc, [s, header, `Skrzynka: ${pufaSeat?.box || "-"}`], false);
-
-  if (decoded.pufaLegs) {
-    addLabel(doc, [s, header, `Noga: ${decoded.pufaLegs.code} H=${decoded.pufaLegs.height}cm`, `Ilość: ${decoded.pufaLegs.count} szt`], false);
-  }
-
-  return toBlob(doc);
+  return generateLabelsPDF(decoded, "pufa");
 }
 
 export async function generateFotelLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
-  const doc = await createDoc("landscape", [100, 30]);
-  const s = seriesLine(decoded);
-  const header = `FOTEL | Zam: ${decoded.orderNumber || ""}`;
-
-  addLabel(doc, [s, header, `Siedzisko: ${decoded.seat.code}`], true);
-  addLabel(doc, [s, header, `Boczek: ${decoded.side.code}${decoded.side.finish}`], false);
-
-  if (decoded.fotelLegs) {
-    addLabel(doc, [s, header, `Noga: ${decoded.fotelLegs.code} H=${decoded.fotelLegs.height}cm`, `Ilość: ${decoded.fotelLegs.count} szt`], false);
-  }
-
-  return toBlob(doc);
+  return generateLabelsPDF(decoded, "fotel");
 }

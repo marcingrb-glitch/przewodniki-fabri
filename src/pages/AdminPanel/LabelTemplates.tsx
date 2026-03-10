@@ -5,9 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus, GripVertical } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Trash2, Plus, GripVertical, Copy } from "lucide-react";
 import InlineEditCell from "./spec/InlineEditCell";
 import { toast } from "sonner";
+import DisplayFieldsSelector from "./labels/DisplayFieldsSelector";
+import ComponentSelector from "./labels/ComponentSelector";
 
 interface LabelTemplate {
   id: string;
@@ -19,10 +22,17 @@ interface LabelTemplate {
   sort_order: number;
   is_conditional: boolean;
   condition_field: string | null;
+  series_id: string | null;
+  display_fields: string[];
+}
+
+interface Series {
+  id: string;
+  code: string;
+  name: string;
 }
 
 const PRODUCT_TYPES = ["sofa", "pufa", "fotel"] as const;
-
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
   sofa: "SOFA",
   pufa: "PUFA",
@@ -32,6 +42,7 @@ const PRODUCT_TYPE_LABELS: Record<string, string> = {
 export default function LabelTemplates() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("sofa");
+  const [selectedSeries, setSelectedSeries] = useState<string>("all");
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["label-templates"],
@@ -46,8 +57,17 @@ export default function LabelTemplates() {
     },
   });
 
+  const { data: seriesList = [] } = useQuery({
+    queryKey: ["series-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("series").select("id, code, name").order("code");
+      if (error) throw error;
+      return data as Series[];
+    },
+  });
+
   const updateMutation = useMutation({
-    mutationFn: async ({ id, field, value }: { id: string; field: string; value: string | number | boolean }) => {
+    mutationFn: async ({ id, field, value }: { id: string; field: string; value: unknown }) => {
       const { error } = await supabase
         .from("label_templates")
         .update({ [field]: value })
@@ -75,15 +95,20 @@ export default function LabelTemplates() {
 
   const addMutation = useMutation({
     mutationFn: async (productType: string) => {
-      const filtered = templates.filter((t) => t.product_type === productType);
+      const seriesId = selectedSeries === "all" ? null : selectedSeries;
+      const filtered = templates.filter(
+        (t) => t.product_type === productType && t.series_id === seriesId
+      );
       const maxOrder = filtered.length > 0 ? Math.max(...filtered.map((t) => t.sort_order)) : 0;
       const { error } = await supabase.from("label_templates").insert({
         product_type: productType,
         label_name: "Nowa etykieta",
-        component: "custom",
+        component: "seat",
         content_template: "",
         quantity: 1,
         sort_order: maxOrder + 1,
+        series_id: seriesId,
+        display_fields: [],
       });
       if (error) throw error;
     },
@@ -94,12 +119,57 @@ export default function LabelTemplates() {
     onError: () => toast.error("Błąd dodawania"),
   });
 
+  const copyForSeriesMutation = useMutation({
+    mutationFn: async ({ productType, seriesId }: { productType: string; seriesId: string }) => {
+      const globals = templates.filter(
+        (t) => t.product_type === productType && t.series_id === null
+      );
+      const inserts = globals.map((t) => ({
+        product_type: t.product_type,
+        label_name: t.label_name,
+        component: t.component,
+        content_template: t.content_template,
+        quantity: t.quantity,
+        sort_order: t.sort_order,
+        is_conditional: t.is_conditional,
+        condition_field: t.condition_field,
+        series_id: seriesId,
+        display_fields: t.display_fields,
+      }));
+      if (inserts.length === 0) return;
+      const { error } = await supabase.from("label_templates").insert(inserts);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["label-templates"] });
+      toast.success("Skopiowano szablony dla serii");
+    },
+    onError: () => toast.error("Błąd kopiowania"),
+  });
+
   const handleUpdate = (id: string, field: string) => async (value: string) => {
     const parsed = field === "quantity" || field === "sort_order" ? parseInt(value) || 0 : value;
     await updateMutation.mutateAsync({ id, field, value: parsed });
   };
 
-  const filteredTemplates = templates.filter((t) => t.product_type === activeTab);
+  const handleFieldsChange = async (id: string, fields: string[]) => {
+    await updateMutation.mutateAsync({ id, field: "display_fields", value: fields });
+  };
+
+  const handleComponentChange = async (id: string, component: string) => {
+    await updateMutation.mutateAsync({ id, field: "component", value: component });
+    // Clear display_fields when component changes
+    await updateMutation.mutateAsync({ id, field: "display_fields", value: [] });
+  };
+
+  const filteredTemplates = templates.filter((t) => {
+    if (t.product_type !== activeTab) return false;
+    if (selectedSeries === "all") return t.series_id === null;
+    return t.series_id === selectedSeries;
+  });
+
+  const hasSeriesOverride = (productType: string, seriesId: string) =>
+    templates.some((t) => t.product_type === productType && t.series_id === seriesId);
 
   return (
     <div className="space-y-6">
@@ -110,13 +180,50 @@ export default function LabelTemplates() {
         </p>
       </div>
 
+      <div className="flex items-center gap-4">
+        <div className="w-[220px]">
+          <Select value={selectedSeries} onValueChange={setSelectedSeries}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">🌐 Globalne (domyślne)</SelectItem>
+              {seriesList.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {selectedSeries !== "all" && !hasSeriesOverride(activeTab, selectedSeries) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              copyForSeriesMutation.mutate({
+                productType: activeTab,
+                seriesId: selectedSeries,
+              })
+            }
+          >
+            <Copy className="h-4 w-4 mr-1" />
+            Nadpisz dla tej serii
+          </Button>
+        )}
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           {PRODUCT_TYPES.map((type) => (
             <TabsTrigger key={type} value={type}>
               {PRODUCT_TYPE_LABELS[type]}
               <Badge variant="secondary" className="ml-2 text-xs">
-                {templates.filter((t) => t.product_type === type).length}
+                {templates.filter(
+                  (t) =>
+                    t.product_type === type &&
+                    (selectedSeries === "all" ? t.series_id === null : t.series_id === selectedSeries)
+                ).length}
               </Badge>
             </TabsTrigger>
           ))}
@@ -134,8 +241,8 @@ export default function LabelTemplates() {
                       <TableRow>
                         <TableHead className="w-[40px]">#</TableHead>
                         <TableHead className="w-[160px]">Nazwa etykiety</TableHead>
-                        <TableHead className="w-[120px]">Komponent</TableHead>
-                        <TableHead>Dane na etykiecie</TableHead>
+                        <TableHead className="w-[140px]">Komponent</TableHead>
+                        <TableHead>Wyświetlane pola</TableHead>
                         <TableHead className="w-[80px]">Ilość</TableHead>
                         <TableHead className="w-[90px]">Kolejność</TableHead>
                         <TableHead className="w-[100px]">Warunkowa</TableHead>
@@ -156,18 +263,17 @@ export default function LabelTemplates() {
                             />
                           </TableCell>
                           <TableCell>
-                            <InlineEditCell
+                            <ComponentSelector
                               value={tpl.component}
-                              onSave={handleUpdate(tpl.id, "component")}
-                              placeholder="komponent"
+                              productType={tpl.product_type}
+                              onChange={(v) => handleComponentChange(tpl.id, v)}
                             />
                           </TableCell>
                           <TableCell>
-                            <InlineEditCell
-                              value={tpl.content_template}
-                              onSave={handleUpdate(tpl.id, "content_template")}
-                              placeholder="szablon treści"
-                              className="font-mono text-xs"
+                            <DisplayFieldsSelector
+                              component={tpl.component}
+                              selectedFields={tpl.display_fields || []}
+                              onChange={(fields) => handleFieldsChange(tpl.id, fields)}
                             />
                           </TableCell>
                           <TableCell>
@@ -210,7 +316,9 @@ export default function LabelTemplates() {
                       {filteredTemplates.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                            Brak szablonów etykiet dla tego typu produktu
+                            {selectedSeries !== "all"
+                              ? "Brak nadpisań dla tej serii — używane są szablony globalne"
+                              : "Brak szablonów etykiet dla tego typu produktu"}
                           </TableCell>
                         </TableRow>
                       )}
