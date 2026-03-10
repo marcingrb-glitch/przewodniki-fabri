@@ -1,28 +1,38 @@
 
 
-## Problem
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-W `MagazynSheet.tsx` są dwa błędy uniemożliwiające wyświetlanie pianek ze specyfikacji:
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-1. **Siedziska (linia 100)**: Filtr pianek używa `f.component === "seat"` ale dane w bazie mają `component: "siedzisko"`. Przez to tabela szczegółowych pianek nigdy się nie wyświetla — widać tylko stare pole `seat.foam` ("Pianka ogólna").
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-2. **Oparcia (linia 160)**: Wyświetla tylko `b.foam` (stare pole tekstowe z tabeli `backrests`) — w ogóle nie pobiera danych z `product_foams` dla oparć (component = `"oparcie"`). KierownikSheet robi to poprawnie przez `formatFoamsForCode`, ale MagazynSheet nie.
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-## Rozwiązanie
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### `MagazynSheet.tsx`:
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-1. **Linia 100** — zmień `"seat"` na `"siedzisko"`:
-```typescript
-const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "siedzisko");
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-2. **Sekcja Oparcia (linie 141-168)** — dodaj pianki z `product_foams` analogicznie jak w siedziskach:
-   - Dla każdego oparcia pobierz pianki: `foams.filter(f => f.seat_code === b.code && f.component === "oparcie" && (!f.backrest_id || f.backrest_id === b.id))`
-   - Zamień tabelę na karty z widokiem szczegółowych pianek (tak jak siedziska)
-   - Dodaj fallback na `b.foam` gdy brak pianek w `product_foams`
-   - Uwzględnij model_name i spring_type oparcia w nagłówku karty
+### Krok 4: App.tsx — routing
 
-### Plik do edycji:
-- `src/pages/AdminPanel/cheatsheets/MagazynSheet.tsx`
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

@@ -97,7 +97,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
         {seats.length === 0 ? <NoData label="siedziska" /> : (
           <div className="space-y-4">
             {seats.map(seat => {
-              const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "seat");
+              const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "siedzisko");
               return (
                 <div key={seat.id} className="border border-border p-3 rounded">
                   <h3 className="font-bold">{seat.code} — {seat.model_name ?? seat.type_name ?? "—"}</h3>
@@ -142,28 +142,46 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       <section className="page-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Oparcia</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> : (
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-muted">
-                <th className="border border-border px-2 py-1 text-left">Kod</th>
-                <th className="border border-border px-2 py-1 text-left">Stelaż</th>
-                <th className="border border-border px-2 py-1 text-left">Pianka</th>
-                <th className="border border-border px-2 py-1 text-left">Wys. (cm)</th>
-                <th className="border border-border px-2 py-1 text-left">Góra</th>
-              </tr>
-            </thead>
-            <tbody>
-              {backrests.map(b => (
-                <tr key={b.id}>
-                  <td className="border border-border px-2 py-1 font-mono">{b.code}</td>
-                  <td className="border border-border px-2 py-1">{b.frame ?? "—"}</td>
-                  <td className="border border-border px-2 py-1">{b.foam ?? "—"}</td>
-                  <td className="border border-border px-2 py-1">{b.height_cm ?? "—"}</td>
-                  <td className="border border-border px-2 py-1">{b.top ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-4">
+            {backrests.map(b => {
+              const backrestFoams = foams.filter(f => f.seat_code === b.code && f.component === "oparcie" && (!f.backrest_id || f.backrest_id === b.id));
+              return (
+                <div key={b.id} className="border border-border p-3 rounded">
+                  <h3 className="font-bold">{b.code} — {b.model_name ?? "—"}{b.spring_type ? ` (spr. ${b.spring_type})` : ""}</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm mt-1">
+                    <div><span className="text-muted-foreground">Stelaż:</span> {b.frame ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Wys. (cm):</span> {b.height_cm ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Góra:</span> {b.top ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Pianka (ogólna):</span> {b.foam ?? "—"}</div>
+                  </div>
+                  {backrestFoams.length > 0 && (
+                    <table className="w-full text-xs mt-2 border-collapse">
+                      <thead>
+                        <tr className="bg-muted">
+                          <th className="border border-border px-1 py-0.5 text-left">#</th>
+                          <th className="border border-border px-1 py-0.5 text-left">Nazwa</th>
+                          <th className="border border-border px-1 py-0.5 text-left">Materiał</th>
+                          <th className="border border-border px-1 py-0.5 text-left">Wymiary (DxSxW)</th>
+                          <th className="border border-border px-1 py-0.5 text-left">Szt.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {backrestFoams.map(f => (
+                          <tr key={f.id}>
+                            <td className="border border-border px-1 py-0.5">{f.position_number}</td>
+                            <td className="border border-border px-1 py-0.5">{f.name ?? "—"}</td>
+                            <td className="border border-border px-1 py-0.5">{f.material ?? "—"}</td>
+                            <td className="border border-border px-1 py-0.5">{f.length ?? "?"}×{f.width ?? "?"}×{f.height ?? "?"}</td>
+                            <td className="border border-border px-1 py-0.5">{f.quantity ?? 1}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
