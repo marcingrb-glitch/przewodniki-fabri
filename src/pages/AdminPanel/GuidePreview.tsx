@@ -67,6 +67,8 @@ function resolveExampleValue(field: string, data: any): string {
   }
 
   const map: Record<string, string> = {
+    "seat.code": v(data.seat?.code),
+    "seat.finish_name": finishName,
     "seat.code_finish": `${v(data.seat?.code)} (${finishName})`,
     "seat.frame": v(data.seat?.frame),
     "seat.foams_summary": "T25 40×50×10 (1 szt)",
