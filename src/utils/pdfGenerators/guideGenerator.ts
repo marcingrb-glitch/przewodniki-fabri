@@ -27,6 +27,10 @@ interface GuideSection {
 function resolveField(decoded: DecodedSKU, field: string): string {
   // Special computed fields
   switch (field) {
+    case "seat.code":
+      return decoded.seat.code;
+    case "seat.finish_name":
+      return decoded.seat.finishName;
     case "seat.code_finish":
       return `${decoded.seat.code} (${decoded.seat.finishName})`;
     case "seat.foams_summary":
