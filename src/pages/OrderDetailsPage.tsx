@@ -222,7 +222,7 @@ const OrderDetailsPage = () => {
                       <InfoRow label="Pianka bazowa" value={pufaSeat.foam} />
                       <InfoRow label="Skrzynka" value={pufaSeat.box} />
                     </>}
-                    {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
+                    {decoded.pufaLegs && <InfoRow label="Nóżki" value={`${decoded.pufaLegs.code} H ${decoded.pufaLegs.height}cm (${decoded.pufaLegs.count} szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
