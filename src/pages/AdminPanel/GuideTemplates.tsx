@@ -369,7 +369,7 @@ export default function GuideTemplates() {
             ) : filtered.length === 0 ? (
               <p className="text-muted-foreground">
                 {selectedSeriesId !== "__global__"
-                  ? "Brak nadpisań — używane są sekcje globalne. Kliknij „Nadpisz dla tej serii" aby skopiować globalne sekcje."
+                  ? 'Brak nadpisań — używane są sekcje globalne. Kliknij "Nadpisz dla tej serii" aby skopiować globalne sekcje.'
                   : "Brak sekcji dla tego typu."}
               </p>
             ) : (
