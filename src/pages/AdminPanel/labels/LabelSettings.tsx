@@ -25,7 +25,7 @@ export interface LabelSettingsData {
 
 const DEFAULTS: Omit<LabelSettingsData, "id"> = {
   left_zone_fields: ["series.code", "series.name", "series.collection"],
-  header_template: "{TYPE} | Zam: {ORDER}",
+  header_template: "{TYPE} | {LABEL} | {ORDER}",
   left_zone_width: 16,
   series_code_size: 18,
   series_name_size: 9,
