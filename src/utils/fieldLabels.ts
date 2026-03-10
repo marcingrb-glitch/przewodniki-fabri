@@ -38,7 +38,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "backrest.springType": "Sprężyna oparcia",
 
   // Chest
-  "chest.code": "Kod skrzyni",
+  "chest.code": "Skrzynia",
   "chest.name": "Nazwa skrzyni",
   "chest.legHeight": "Wys. nóżki skrzyni",
   "chest.legCount": "Ilość nóżek skrzyni",
