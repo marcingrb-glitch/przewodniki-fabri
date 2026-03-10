@@ -200,6 +200,8 @@ export default function LabelTemplates() {
         </p>
       </div>
 
+      <LabelSettings />
+
       <div className="flex items-center gap-4">
         <div className="w-[220px]">
           <Select value={selectedSeries} onValueChange={setSelectedSeries}>
