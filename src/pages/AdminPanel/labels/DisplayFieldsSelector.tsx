@@ -87,7 +87,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   ],
   pillow: [
     { value: "pillow.code", label: "Kod poduszki", source: "pillows (wspólne)" },
-    { value: "pillow.name", label: "Nazwa", source: "pillows (wspólne)" },
+    { value: "pillow.name", label: "Poduszka", source: "pillows (wspólne)" },
     { value: "pillow.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "pillow.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
   ],
