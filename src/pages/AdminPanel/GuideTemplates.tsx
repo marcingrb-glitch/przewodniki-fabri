@@ -17,107 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, Copy } from "lucide-react";
-
-interface GuideColumn {
-  header: string;
-  field: string;
-}
-
-interface GuideSection {
-  id: string;
-  product_type: string;
-  series_id: string | null;
-  section_name: string;
-  sort_order: number;
-  is_conditional: boolean;
-  condition_field: string | null;
-  columns: GuideColumn[];
-  enabled: boolean;
-}
-
-interface FieldDef {
-  value: string;
-  label: string;
-  group: string;
-}
-
-const FIELD_GROUPS: { key: string; label: string }[] = [
-  { key: "seat_frame", label: "Siedzisko — Stolarka" },
-  { key: "seat_foam", label: "Siedzisko — Pianki" },
-  { key: "backrest", label: "Oparcie" },
-  { key: "side", label: "Boczek" },
-  { key: "chest", label: "Skrzynia" },
-  { key: "automat", label: "Automat" },
-  { key: "legs", label: "Nóżki" },
-  { key: "pillow", label: "Poduszka" },
-  { key: "jaski", label: "Jaśki" },
-  { key: "walek", label: "Wałek" },
-  { key: "pufa", label: "Pufa" },
-  { key: "fotel", label: "Fotel" },
-  { key: "extras", label: "Dodatki" },
-];
-
-const AVAILABLE_FIELDS: FieldDef[] = [
-  { value: "seat.code", label: "Kod", group: "seat_frame" },
-  { value: "seat.finish_name", label: "Wykończenie", group: "seat_frame" },
-  { value: "seat.code_finish", label: "Kod + wykończenie (razem)", group: "seat_frame" },
-  { value: "seat.type", label: "Typ siedziska", group: "seat_frame" },
-  { value: "seat.frame", label: "Stelaż", group: "seat_frame" },
-  { value: "seat.frameModification", label: "Modyfikacja stelaża", group: "seat_frame" },
-  { value: "seat.front", label: "Front", group: "seat_foam" },
-  { value: "seat.midStrip_yn", label: "Pasek środek", group: "seat_foam" },
-  { value: "seat.springType", label: "Sprężyna", group: "seat_frame" },
-  { value: "seat.foams_summary", label: "Pianka", group: "seat_foam" },
-  { value: "backrest.code", label: "Kod", group: "backrest" },
-  { value: "backrest.finish_name", label: "Wykończenie", group: "backrest" },
-  { value: "backrest.code_finish", label: "Kod + wykończenie (razem)", group: "backrest" },
-  { value: "backrest.frame", label: "Stelaż", group: "backrest" },
-  { value: "backrest.foams_summary", label: "Pianka", group: "backrest" },
-  { value: "backrest.top", label: "Góra", group: "backrest" },
-  { value: "backrest.springType", label: "Sprężyna", group: "backrest" },
-  { value: "side.code", label: "Kod", group: "side" },
-  { value: "side.finish_name", label: "Wykończenie", group: "side" },
-  { value: "side.code_finish", label: "Kod + wykończenie (razem)", group: "side" },
-  { value: "side.frame", label: "Stelaż", group: "side" },
-  { value: "side.foam", label: "Pianka", group: "side" },
-  { value: "chest.name", label: "Nazwa", group: "chest" },
-  { value: "chest_automat.label", label: "Skrzynia + Automat", group: "chest" },
-  { value: "automat.code_name", label: "Kod + nazwa", group: "automat" },
-  { value: "legs.code_color", label: "Kod + kolor", group: "legs" },
-  { value: "legHeights.sofa_chest_info", label: "Skrzynia info", group: "legs" },
-  { value: "legHeights.sofa_seat_info", label: "Siedzisko info", group: "legs" },
-  { value: "pillow.code", label: "Kod", group: "pillow" },
-  { value: "pillow.name", label: "Nazwa", group: "pillow" },
-  { value: "pillow.finish_info", label: "Wykończenie", group: "pillow" },
-  { value: "jaski.code", label: "Kod", group: "jaski" },
-  { value: "jaski.name", label: "Nazwa", group: "jaski" },
-  { value: "jaski.finish_info", label: "Wykończenie", group: "jaski" },
-  { value: "walek.code", label: "Kod", group: "walek" },
-  { value: "walek.name", label: "Nazwa", group: "walek" },
-  { value: "walek.finish_info", label: "Wykończenie", group: "walek" },
-  { value: "pufaSeat.frontBack", label: "Front/tył", group: "pufa" },
-  { value: "pufaSeat.sides", label: "Boki", group: "pufa" },
-  { value: "pufaSeat.foam", label: "Pianka bazowa", group: "pufa" },
-  { value: "pufaSeat.box", label: "Skrzynka", group: "pufa" },
-  { value: "pufaLegs.code", label: "Nóżka kod", group: "pufa" },
-  { value: "pufaLegs.count_info", label: "Nóżka ilość", group: "pufa" },
-  { value: "pufaLegs.height_info", label: "Nóżka wysokość", group: "pufa" },
-  { value: "fotelLegs.code", label: "Nóżka kod", group: "fotel" },
-  { value: "fotelLegs.count_info", label: "Nóżka ilość", group: "fotel" },
-  { value: "fotelLegs.height_info", label: "Nóżka wysokość", group: "fotel" },
-  { value: "extras.label", label: "Etykieta", group: "extras" },
-  { value: "extras.pufa_sku", label: "Pufa SKU", group: "extras" },
-  { value: "extras.fotel_sku", label: "Fotel SKU", group: "extras" },
-];
-
-const CONDITION_FIELDS = [
-  { value: "pillow", label: "Poduszka istnieje" },
-  { value: "jaski", label: "Jaśki istnieją" },
-  { value: "walek", label: "Wałek istnieje" },
-  { value: "pufaLegs", label: "Nóżki pufy istnieją" },
-  { value: "fotelLegs", label: "Nóżki fotela istnieją" },
-  { value: "extras_pufa_fotel", label: "Pufa lub fotel w dodatkach" },
-];
+import { GuideSection, GuideColumn, FIELD_GROUPS, AVAILABLE_FIELDS, CONDITION_FIELDS } from "./fieldResolver";
 
 const emptySection = (productType: string): Omit<GuideSection, "id"> => ({
   product_type: productType,
@@ -237,7 +137,6 @@ export default function GuideTemplates() {
     (selectedSeriesId === "__global__" ? s.series_id === null : s.series_id === selectedSeriesId)
   );
 
-  const hasOverrides = selectedSeriesId !== "__global__" && filtered.length > 0;
   const canCopy = selectedSeriesId !== "__global__" && filtered.length === 0;
 
   const openAdd = () => {
@@ -315,12 +214,6 @@ export default function GuideTemplates() {
     if (swapIdx < 0 || swapIdx >= cols.length) return;
     [cols[i], cols[swapIdx]] = [cols[swapIdx], cols[i]];
     setForm({ ...form, columns: cols });
-  };
-
-  const getSeriesName = (id: string | null) => {
-    if (!id) return "Globalny";
-    const s = seriesList.find(x => x.id === id);
-    return s ? `${s.code} - ${s.name}` : id;
   };
 
   return (
@@ -486,7 +379,6 @@ export default function GuideTemplates() {
             <div className="space-y-3">
               <Label>Kolumny tabeli</Label>
               
-              {/* Field selector popover */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full justify-between text-xs font-normal">
@@ -531,7 +423,6 @@ export default function GuideTemplates() {
                 </PopoverContent>
               </Popover>
 
-              {/* Selected columns list */}
               {form.columns.length > 0 && (
                 <div className="space-y-1.5 border rounded-md p-2">
                   {form.columns.map((col, i) => (

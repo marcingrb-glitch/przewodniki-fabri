@@ -1,40 +1,38 @@
 
 
-## Plan: Konfigurowalny podgląd dekodowania (jak przewodniki)
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Cel
-Dodanie możliwości konfigurowania sekcji i pól w podglądzie dekodowania — analogicznie do przewodników (GuideTemplates). Pola będą wybierane z selektora, a dane będą pobierane z bazy.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Podejście
-Reużycie istniejącej tabeli `guide_sections` z nowym `product_type = "decoding"`. Dzięki temu cały mechanizm CRUD (dodawanie sekcji, edycja kolumn, sortowanie, warunkowe sekcje) działa od razu.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Zmiany
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-**1. `src/pages/AdminPanel/DecodingTemplates.tsx`**
-- Dodać pełne UI zarządzania sekcjami (lista sekcji, dodawanie, edycja, usuwanie, reorder) — skopiowane z GuideTemplates ale uproszczone (bez tabów sofa/pufa/fotel, jeden typ "decoding")
-- Zachować selektor serii i przyciski PDF
-- Wczytywanie sekcji z `guide_sections` filtrowane po `product_type = "decoding"`
-- Dialog dodawania/edycji sekcji z field pickerem (checkboxy pogrupowane)
-- Reużycie stałych `AVAILABLE_FIELDS` i `FIELD_GROUPS` z GuideTemplates (wyeksportować je lub przenieść do wspólnego pliku)
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-**2. `src/pages/AdminPanel/DecodingPreview.tsx`**
-- Przerobić z hardcoded sekcji na dynamiczne — jak GuidePreview
-- Przyjmować `sections` jako prop (zamiast `decoded`)
-- Używać `resolveExampleValue` do mapowania pól na dane z bazy
-- Renderować sekcje z konfigurowalnymi kolumnami
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-**3. `src/pages/AdminPanel/GuideTemplates.tsx`**
-- Wyeksportować `AVAILABLE_FIELDS`, `FIELD_GROUPS`, `CONDITION_FIELDS` aby mogły być reużyte w DecodingTemplates
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-**4. Wspólny resolver danych**
-- Przenieść `resolveExampleValue` z GuidePreview do wspólnego pliku (np. `src/pages/AdminPanel/fieldResolver.ts`) aby był reużywalny
+### Krok 4: App.tsx — routing
 
-### Bez zmian w bazie danych
-Reużycie tabeli `guide_sections` z `product_type = "decoding"` — nie potrzeba nowej migracji.
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-### Pliki do edycji:
-- `src/pages/AdminPanel/DecodingTemplates.tsx` — przebudowa na CRUD sekcji z field pickerem
-- `src/pages/AdminPanel/DecodingPreview.tsx` — dynamiczne sekcje z danymi z bazy
-- `src/pages/AdminPanel/GuideTemplates.tsx` — eksport stałych
-- `src/pages/AdminPanel/fieldResolver.ts` — nowy plik, wyekstrahowany resolver
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
