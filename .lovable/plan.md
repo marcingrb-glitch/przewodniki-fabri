@@ -1,36 +1,38 @@
 
 
-## Podgląd etykiety z realnymi danymi z bazy
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Problem
-Konfigurator etykiet używa zahardkodowanych przykładowych wartości (`EXAMPLE_VALUES`) — "S1-01", "Bonell", "Nóżka okrągła" itd. — które nie odpowiadają rzeczywistym danym w bazie. Użytkownik widzi bzdury zamiast realnych wartości.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Rozwiązanie
-Przy otwarciu konfiguratora pobrać pierwszy wiersz z odpowiednich tabel DB i zbudować `EXAMPLE_VALUES` dynamicznie.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Zapytania do bazy
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Przy montowaniu konfiguratora (lub zmianie `template.component`) — jedno `useQuery` pobierające:
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-| Komponent | Tabela | Kolumny |
-|---|---|---|
-| seat | `seats_sofa` | code, frame, front, type, spring_type, center_strip |
-| side | `sides` | code, name, frame |
-| backrest | `backrests` | code, height_cm, frame, top, spring_type |
-| chest | `chests` | code, name, leg_height_cm, leg_count |
-| automat | `automats` | code, name, type |
-| series | `series` | code, name (do lewej strefy) |
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Dla `finish`, `finishName`, `foamsList` — wstawić fallback "A" / "Zwykły" / "—" bo te wartości zależą od SKU, nie od tabeli komponentu.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Zmiany w plikach
+### Krok 4: App.tsx — routing
 
-**`src/pages/AdminPanel/labels/LabelConfigurator.tsx`**:
-1. Usunąć statyczny obiekt `EXAMPLE_VALUES`
-2. Dodać `useQuery` z kluczem `["label-example-data"]` pobierający po jednym wierszu z każdej tabeli
-3. Zbudować dynamiczny `exampleValues: Record<string, string>` z wyników zapytań, mapując kolumny DB na ścieżki pól (np. `seats_sofa.frame` → `"seat.frame"`, `backrests.height_cm` → `"backrest.height"`)
-4. Użyć `exampleValues` zamiast `EXAMPLE_VALUES` w `previewLines` i `LEFT_FIELD_EXAMPLES`
-5. Pola bez danych w bazie → wyświetlić "(brak)" zamiast "???"
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-Brak zmian w DB, brak zmian w PDF — to dotyczy wyłącznie podglądu w konfiguratorze.
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

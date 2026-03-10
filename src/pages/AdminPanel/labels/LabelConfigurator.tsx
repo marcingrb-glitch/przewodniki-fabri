@@ -8,6 +8,8 @@ import { useLabelSettings, type LabelSettingsData } from "./LabelSettings";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LabelTemplate {
   id: string;
@@ -24,66 +26,104 @@ interface LabelConfiguratorProps {
   onClose: () => void;
 }
 
-// Example data for preview
-const EXAMPLE_VALUES: Record<string, string> = {
-  "seat.code": "S1-01",
-  "seat.type": "N",
-  "seat.frame": "Rama 120x80",
-  "seat.foamsList": "HR35 120x60x10\nT25 120x60x5",
-  "seat.front": "Front 120",
-  "seat.finish": "M",
-  "seat.finishName": "Matowy",
-  "seat.midStrip": "Tak",
-  "seat.springType": "Bonell",
-  "automat.code": "A1",
-  "automat.name": "Automat DL",
-  "automat.type": "DL",
-  "side.code": "B1",
-  "side.name": "Boczek prosty",
-  "side.frame": "Rama boczka",
-  "side.finish": "M",
-  "side.finishName": "Matowy",
-  "backrest.code": "O1",
-  "backrest.height": "45",
-  "backrest.frame": "Rama oparcia",
-  "backrest.foamsList": "HR30 60x40x8",
-  "backrest.top": "Gładki",
-  "backrest.finish": "P",
-  "backrest.finishName": "Pikowany",
-  "backrest.springType": "Fala",
-  "chest.code": "SK1",
-  "chest.name": "Skrzynia std",
-  "chest.legHeight": "5",
-  "chest.legCount": "4",
-  "legHeights.sofa_chest.leg": "Nóżka okrągła",
-  "legHeights.sofa_chest.height": "5",
-  "legHeights.sofa_chest.count": "4",
-  "legHeights.sofa_seat.leg": "Nóżka kwadrat",
-  "legHeights.sofa_seat.height": "3",
-  "legHeights.sofa_seat.count": "6",
-  "leg.code": "Nóżka okrągła",
-  "leg.height": "5",
-  "leg.count": "4",
-  "pufaLegs.code": "NP1",
-  "pufaLegs.height": "8",
-  "pufaLegs.count": "4",
-  "fotelLegs.code": "NF1",
-  "fotelLegs.height": "12",
-  "fotelLegs.count": "4",
-  "pufaSeat.frontBack": "50x40",
-  "pufaSeat.sides": "40x30",
-  "pufaSeat.foam": "HR35",
-  "pufaSeat.box": "15",
-  "pillow.code": "P1",
-  "pillow.name": "Poduszka std",
-  "pillow.finish": "G",
-  "pillow.finishName": "Gładka",
-  "legs.code": "L1",
-  "legs.name": "Nóżka chrom",
-  "legs.material": "Metal",
-  "legs.color": "CH",
-  "legs.colorName": "Chrom",
-};
+// Fetch real example data from DB
+function useExampleData() {
+  return useQuery({
+    queryKey: ["label-example-data"],
+    queryFn: async () => {
+      const [seatRes, sideRes, backrestRes, chestRes, automatRes, seriesRes, legRes, pufaSeatRes, pillowRes, finishRes, legsRes] = await Promise.all([
+        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip").limit(1).maybeSingle(),
+        supabase.from("sides").select("code, name, frame").limit(1).maybeSingle(),
+        supabase.from("backrests").select("code, height_cm, frame, top, spring_type").limit(1).maybeSingle(),
+        supabase.from("chests").select("code, name, leg_height_cm, leg_count").limit(1).maybeSingle(),
+        supabase.from("automats").select("code, name, type").limit(1).maybeSingle(),
+        supabase.from("series").select("code, name, collection").limit(1).maybeSingle(),
+        supabase.from("legs").select("code, name, material, colors").limit(1).maybeSingle(),
+        supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").limit(1).maybeSingle(),
+        supabase.from("pillows").select("code, name").limit(1).maybeSingle(),
+        supabase.from("finishes").select("code, name").limit(1).maybeSingle(),
+        supabase.from("legs").select("code, name, material, colors").limit(1).maybeSingle(),
+      ]);
+      return { seat: seatRes.data, side: sideRes.data, backrest: backrestRes.data, chest: chestRes.data, automat: automatRes.data, series: seriesRes.data, leg: legRes.data, pufaSeat: pufaSeatRes.data, pillow: pillowRes.data, finish: finishRes.data, legs: legsRes.data };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+function buildExampleValues(data: ReturnType<typeof useExampleData>["data"]): Record<string, string> {
+  if (!data) return {};
+  const v = (val: unknown, fallback = "(brak)") => (val != null && val !== "" ? String(val) : fallback);
+  const finishCode = v(data.finish?.code, "A");
+  const finishName = v(data.finish?.name, "Zwykły");
+  // Extract first color from legs.colors if available
+  let legColor = "(brak)";
+  let legColorName = "(brak)";
+  if (data.legs?.colors && Array.isArray(data.legs.colors) && (data.legs.colors as any[]).length > 0) {
+    const first = (data.legs.colors as any[])[0];
+    legColor = first?.code || "(brak)";
+    legColorName = first?.name || "(brak)";
+  }
+
+  return {
+    "seat.code": v(data.seat?.code),
+    "seat.type": v(data.seat?.type),
+    "seat.frame": v(data.seat?.frame),
+    "seat.foamsList": "—",
+    "seat.front": v(data.seat?.front),
+    "seat.finish": finishCode,
+    "seat.finishName": finishName,
+    "seat.midStrip": data.seat?.center_strip ? "Tak" : "Nie",
+    "seat.springType": v(data.seat?.spring_type),
+    "automat.code": v(data.automat?.code),
+    "automat.name": v(data.automat?.name),
+    "automat.type": v(data.automat?.type),
+    "side.code": v(data.side?.code),
+    "side.name": v(data.side?.name),
+    "side.frame": v(data.side?.frame),
+    "side.finish": finishCode,
+    "side.finishName": finishName,
+    "backrest.code": v(data.backrest?.code),
+    "backrest.height": v(data.backrest?.height_cm),
+    "backrest.frame": v(data.backrest?.frame),
+    "backrest.foamsList": "—",
+    "backrest.top": v(data.backrest?.top),
+    "backrest.finish": finishCode,
+    "backrest.finishName": finishName,
+    "backrest.springType": v(data.backrest?.spring_type),
+    "chest.code": v(data.chest?.code),
+    "chest.name": v(data.chest?.name),
+    "chest.legHeight": v(data.chest?.leg_height_cm),
+    "chest.legCount": v(data.chest?.leg_count),
+    "legHeights.sofa_chest.leg": v(data.leg?.name),
+    "legHeights.sofa_chest.height": v(data.chest?.leg_height_cm),
+    "legHeights.sofa_chest.count": v(data.chest?.leg_count),
+    "legHeights.sofa_seat.leg": v(data.leg?.name),
+    "legHeights.sofa_seat.height": "(brak)",
+    "legHeights.sofa_seat.count": "(brak)",
+    "leg.code": v(data.leg?.name),
+    "leg.height": v(data.chest?.leg_height_cm),
+    "leg.count": v(data.chest?.leg_count),
+    "pufaLegs.code": v(data.leg?.code),
+    "pufaLegs.height": "(brak)",
+    "pufaLegs.count": "(brak)",
+    "fotelLegs.code": v(data.leg?.code),
+    "fotelLegs.height": "(brak)",
+    "fotelLegs.count": "(brak)",
+    "pufaSeat.frontBack": v(data.pufaSeat?.front_back),
+    "pufaSeat.sides": v(data.pufaSeat?.sides),
+    "pufaSeat.foam": v(data.pufaSeat?.base_foam),
+    "pufaSeat.box": v(data.pufaSeat?.box_height),
+    "pillow.code": v(data.pillow?.code),
+    "pillow.name": v(data.pillow?.name),
+    "pillow.finish": finishCode,
+    "pillow.finishName": finishName,
+    "legs.code": v(data.legs?.code),
+    "legs.name": v(data.legs?.name),
+    "legs.material": v(data.legs?.material),
+    "legs.color": legColor,
+    "legs.colorName": legColorName,
+  };
+}
 
 /** Normalize display_fields: flat string[] → string[][], nested stays as-is */
 function normalizeFields(fields: unknown): string[][] {
@@ -105,6 +145,8 @@ export default function LabelConfigurator({
 }: LabelConfiguratorProps) {
   const lines = useMemo(() => normalizeFields(template.display_fields), [template.display_fields]);
   const { data: labelSettings } = useLabelSettings();
+  const { data: exampleData } = useExampleData();
+  const exampleValues = useMemo(() => buildExampleValues(exampleData), [exampleData]);
 
   const productLabel = template.product_type.toUpperCase();
   const availableFields = COMPONENT_FIELDS[template.component] || [];
@@ -136,13 +178,12 @@ export default function LabelConfigurator({
     updateLine(lineIdx, lines[lineIdx].filter((f) => f !== fieldValue));
   };
 
-  // Build preview lines
   const previewLines = useMemo(() => {
     const result: string[] = [];
     for (let i = 0; i < lines.length; i++) {
       const lineFields = lines[i];
       const values = lineFields
-        .map((f) => EXAMPLE_VALUES[f] || "???")
+        .map((f) => exampleValues[f] || "(brak)")
         .filter((v) => v !== "-");
       const prefix = i === 0 ? `${template.label_name}: ` : "";
       if (values.length > 0 || i === 0) {
@@ -150,13 +191,13 @@ export default function LabelConfigurator({
       }
     }
     return result;
-  }, [lines, template.label_name]);
+  }, [lines, template.label_name, exampleValues]);
 
   // Left zone fields from settings
   const LEFT_FIELD_EXAMPLES: Record<string, string> = {
-    "series.code": "S1",
-    "series.name": "Sofa Mar",
-    "series.collection": "Vienne",
+    "series.code": exampleData?.series?.code || "(brak)",
+    "series.name": exampleData?.series?.name || "(brak)",
+    "series.collection": exampleData?.series?.collection || "(brak)",
     "product_type": productLabel,
     "order_number": "12345",
   };
