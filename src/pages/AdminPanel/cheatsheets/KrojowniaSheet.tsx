@@ -155,6 +155,34 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
         )}
       </section>
 
+      {/* Warianty szycia oparcia */}
+      {sewingVariants.length > 0 && (
+        <section className="page-break">
+          <div className="border-4 border-orange-500 rounded-lg p-4 bg-orange-50 dark:bg-orange-950/30">
+            <h2 className="text-lg font-bold mb-2 text-orange-700 dark:text-orange-400">⚠️ Warianty szycia oparcia — WAŻNE!</h2>
+            <p className="text-sm mb-3 font-medium">Różne modele mają różne rysunki oparcia. Sprawdź model przed krojem!</p>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-orange-100 dark:bg-orange-900/40">
+                  <th className="border border-border px-2 py-1 text-left">Wariant</th>
+                  <th className="border border-border px-2 py-1 text-left">Modele</th>
+                  <th className="border border-border px-2 py-1 text-left">Opis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sewingVariants.map(v => (
+                  <tr key={v.id}>
+                    <td className="border border-border px-2 py-1 font-bold">{v.variant_name}</td>
+                    <td className="border border-border px-2 py-1">{(v.models ?? []).join(", ")}</td>
+                    <td className="border border-border px-2 py-1">{v.description ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* Mapowanie poduszek */}
       {pillowMappings.length > 0 && (
         <section className="page-break">

@@ -154,16 +154,14 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
     }
   }
 
-  // --- Fotel (not for S2) ---
-  if (seriesCode !== "S2") {
-    doRows.push({
-      element: "Fotel",
-      detail: "",
-      type: "N z SKU",
-      height: `H${seatLegH ?? pufaLegH ?? "?"}cm`,
-      count: "4szt",
-    });
-  }
+  // --- Fotel ---
+  doRows.push({
+    element: "Fotel",
+    detail: "",
+    type: "N z SKU",
+    height: `H${seatLegH ?? pufaLegH ?? "?"}cm`,
+    count: "4szt",
+  });
 
   return (
     <div className="space-y-8">
