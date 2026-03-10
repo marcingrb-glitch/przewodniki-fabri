@@ -1,38 +1,37 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: 3 poprawki — Krojownia warianty szycia, Nóżki SK23/S2, kolory
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### 1. KrojowniaSheet.tsx — dodaj sekcję wariantów szycia oparcia
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+Dodać query do `sewing_variants` WHERE `series_id` AND `component_type = 'backrest'`.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+Po sekcji "Wykończenia oparć" (linia ~148), dodać nową sekcję warunkową (tylko gdy są rekordy):
+- Ramka z pomarańczowym/żółtym tłem (wyróżnienie ⚠️)
+- Tabela: Wariant | Modele | Opis
+- Dane z `variant_name`, `models` (array → join), `description`
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+### 2. NozkiSheet.tsx — poprawki SK23 i fotel S2
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**Problem z fotelem S2**: Linia 158 `if (seriesCode !== "S2")` wyklucza fotel dla S2. Zmienić na: zawsze dodawaj fotel do `doRows` (bez warunku na serię). Fotel powinien być w CO KOMPLETOWAĆ dla wszystkich serii.
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+**SK23**: Logika `c.leg_height_cm > 0` już poprawnie kieruje SK23 (leg_height_cm=0) do dontRows. Weryfikacja — jeśli dane w bazie są poprawne (SK23 ma leg_height_cm=0), to działa. Nie wymaga zmian w kodzie.
 
-### Krok 4: App.tsx — routing
+### 3. formatColors — już poprawione
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+Obie wersje `formatColors` (NozkiSheet linia 14-25, SeriesLegs linia 26-37) już obsługują JSONB object `{A: "Buk"}` poprawnie. Jeśli nadal wyświetla `[object Object]`, problem może być w tym, że `colors` ma default `'[]'::jsonb` (array), a dane to object. Obecna logika obsługuje oba formaty — nie wymaga zmian.
 
-### Krok 5: skuDecoder.ts — uprość seat types
+### Zmiany w plikach
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+**KrojowniaSheet.tsx**:
+- Dodać `useQuery` dla `sewing_variants` (component_type = 'backrest')
+- Dodać sekcję po oparciach z tabelą wariantów w wyróżnionej ramce
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+**NozkiSheet.tsx**:
+- Linia 157-166: usunąć warunek `if (seriesCode !== "S2")` — fotel zawsze w doRows
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Brak zmian w:
+- `skuParser.ts`, `skuDecoder.ts`, `utils/pdfGenerators/*`
+- `SeriesLegs.tsx` (formatColors już poprawne)
+- Brak migracji SQL
 
