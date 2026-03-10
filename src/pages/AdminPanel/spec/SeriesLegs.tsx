@@ -142,7 +142,7 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
       type: LEG_TYPE_LABELS[seatType] ?? seatType ?? "—",
       height: config.seat_leg_height_cm != null ? `${config.seat_leg_height_cm} cm` : "—",
       count: "—",
-      who: isPlastic ? "Tapicer (na stanowisku)" : seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+      who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
     });
   }
 
