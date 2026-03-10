@@ -201,7 +201,10 @@ export default function GuideTemplates() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["guide-sections"] }),
   });
 
-  const filtered = sections.filter(s => s.product_type === activeTab);
+  const filtered = sections.filter(s =>
+    s.product_type === activeTab &&
+    (selectedSeriesId === "__global__" ? s.series_id === null : s.series_id === selectedSeriesId)
+  );
 
   const openAdd = () => {
     const maxOrder = filtered.length > 0 ? Math.max(...filtered.map(s => s.sort_order)) : 0;
