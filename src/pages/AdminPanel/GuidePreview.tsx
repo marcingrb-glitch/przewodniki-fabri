@@ -32,7 +32,7 @@ function useExampleData() {
     queryKey: ["guide-preview-example-data"],
     queryFn: async () => {
       const [seatRes, sideRes, backrestRes, chestRes, automatRes, seriesRes, legRes, pufaSeatRes, pillowRes, finishRes, jaskiRes, walekRes] = await Promise.all([
-        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip, model_name").limit(1).maybeSingle(),
+        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip, model_name, frame_modification").limit(1).maybeSingle(),
         supabase.from("sides").select("code, name, frame").limit(1).maybeSingle(),
         supabase.from("backrests").select("code, height_cm, frame, top, spring_type").limit(1).maybeSingle(),
         supabase.from("chests").select("code, name, leg_height_cm, leg_count").limit(1).maybeSingle(),
@@ -75,6 +75,8 @@ function resolveExampleValue(field: string, data: any): string {
     "seat.frame": v(data.seat?.frame),
     "seat.foams_summary": "T25 40×50×10 (1 szt)",
     "seat.front": v(data.seat?.front),
+    "seat.springType": v(data.seat?.spring_type),
+    "seat.frameModification": v(data.seat?.frame_modification),
     "seat.midStrip_yn": data.seat?.center_strip ? "TAK" : "NIE",
     "backrest.code": v(data.backrest?.code),
     "backrest.finish_name": finishName,
@@ -82,6 +84,7 @@ function resolveExampleValue(field: string, data: any): string {
     "backrest.frame": v(data.backrest?.frame),
     "backrest.foams_summary": "HR35 30×40×8 (1 szt)",
     "backrest.top": v(data.backrest?.top),
+    "backrest.springType": v(data.backrest?.spring_type),
     "side.code": v(data.side?.code),
     "side.finish_name": finishName,
     "side.code_finish": `${v(data.side?.code)}${finishCode} (${finishName})`,
