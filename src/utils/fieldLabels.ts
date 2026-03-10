@@ -14,6 +14,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "seat.finishName": "Wykończenie (nazwa)",
   "seat.midStrip": "Środkowy pasek",
   "seat.springType": "Sprężyna",
+  "seat.frameModification": "Modyfikacja stelaża",
 
   // Automat
   "automat.code": "Automat",

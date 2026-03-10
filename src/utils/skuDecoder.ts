@@ -281,6 +281,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
   let seatType = "";
   let seatSpringType = "";
+  let seatFrameModification = "";
 
   if (seatSofaRes.data) {
     seatFrame = seatSofaRes.data.frame ?? "";
@@ -289,6 +290,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
     seatType = seatSofaRes.data.type ?? "";
     seatSpringType = seatSofaRes.data.spring_type ?? "";
+    seatFrameModification = seatSofaRes.data.frame_modification ?? "";
   } else {
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {
@@ -519,6 +521,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       front: seatFront,
       midStrip: seatMidStrip,
       springType: seatSpringType || undefined,
+      frameModification: seatFrameModification || undefined,
       foams: seatFoams.length > 0 ? seatFoams : undefined,
     },
     side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish || (sidesRes.data?.default_finish ?? ""), finishName: FINISHES[parsed.side.finish || (sidesRes.data?.default_finish ?? "")] || parsed.side.finish },

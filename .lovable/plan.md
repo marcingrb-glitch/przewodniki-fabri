@@ -1,39 +1,38 @@
 
 
-## Dodanie "Modyfikacja stelaża" + podział siedziska na podgrupy
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### 1. `src/types/index.ts` — dodać pole do DecodedSKU
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-Dodać `frameModification?: string` do obiektu `seat` w interfejsie `DecodedSKU`.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### 2. `src/utils/skuDecoder.ts` — pobrać wartość z DB
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-- Dodać `let seatFrameModification = ""` (linia ~283)
-- W bloku `if (seatSofaRes.data)` (~285): `seatFrameModification = seatSofaRes.data.frame_modification ?? ""`
-- W obiekcie `seat:` (~512): dodać `frameModification: seatFrameModification || undefined`
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### 3. `src/utils/pdfGenerators/guideGenerator.ts` — resolver
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Dodać case w `resolveField`:
-```
-case "seat.frameModification":
-  return decoded.seat.frameModification || "-";
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### 4. `src/pages/AdminPanel/GuideTemplates.tsx` — podział grupy + nowe pole
+### Krok 4: App.tsx — routing
 
-**FIELD_GROUPS** — zamienić `{ key: "seat", label: "Siedzisko" }` na:
-- `{ key: "seat_frame", label: "Siedzisko — Stolarka" }`
-- `{ key: "seat_foam", label: "Siedzisko — Pianki" }`
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-**AVAILABLE_FIELDS** — zmienić grupy istniejących pól seat:
-- `seat.code`, `seat.finish_name`, `seat.code_finish`, `seat.type`, `seat.frame`, `seat.front`, `seat.midStrip_yn`, `seat.springType` → group: `"seat_frame"`
-- Nowe: `{ value: "seat.frameModification", label: "Modyfikacja stelaża", group: "seat_frame" }`
-- `seat.foams_summary` → group: `"seat_foam"`
+### Krok 5: skuDecoder.ts — uprość seat types
 
-### Pliki do edycji
-1. `src/types/index.ts` — 1 linia
-2. `src/utils/skuDecoder.ts` — 3 linie
-3. `src/utils/pdfGenerators/guideGenerator.ts` — 2 linie
-4. `src/pages/AdminPanel/GuideTemplates.tsx` — ~12 linii
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
