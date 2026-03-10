@@ -69,7 +69,19 @@ export default function Users() {
     },
   });
 
+  const { data: roles = [] } = useQuery({
+    queryKey: ["admin-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+      if (error) throw error;
+      return data as { user_id: string; role: string }[];
+    },
+  });
+
   const permMap = new Map(permissions.map(p => [p.user_id, p]));
+  const adminIds = new Set(roles.filter(r => r.role === "admin").map(r => r.user_id));
 
   const toggleApproval = useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
