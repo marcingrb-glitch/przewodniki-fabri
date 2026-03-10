@@ -81,6 +81,14 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
     },
   });
 
+  const { data: finishes = [] } = useQuery({
+    queryKey: ["cheat-finishes"],
+    queryFn: async () => {
+      const { data } = await supabase.from("finishes").select("*").order("code");
+      return data ?? [];
+    },
+  });
+
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
   const { data: chests = [] } = useQuery({
