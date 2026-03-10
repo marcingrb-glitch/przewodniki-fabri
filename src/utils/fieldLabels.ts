@@ -44,24 +44,24 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "chest.legCount": "Ilość nóżek",
 
   // Legs (sofa chest)
-  "legHeights.sofa_chest.leg": "Typ nogi (skrzynia)",
-  "legHeights.sofa_chest.height": "Wysokość nogi (skrzynia)",
-  "legHeights.sofa_chest.count": "Ilość nóg (skrzynia)",
+  "legHeights.sofa_chest.leg": "Noga",
+  "legHeights.sofa_chest.height": "H",
+  "legHeights.sofa_chest.count": "Ilość",
 
   // Legs (sofa seat)
-  "legHeights.sofa_seat.leg": "Typ nogi (siedzisko)",
-  "legHeights.sofa_seat.height": "Wysokość nogi (siedzisko)",
-  "legHeights.sofa_seat.count": "Ilość nóg (siedzisko)",
+  "legHeights.sofa_seat.leg": "Noga",
+  "legHeights.sofa_seat.height": "H",
+  "legHeights.sofa_seat.count": "Ilość",
 
   // Pufa legs
-  "pufaLegs.code": "Noga (pufa)",
-  "pufaLegs.height": "Wysokość nogi (pufa)",
-  "pufaLegs.count": "Ilość nóg (pufa)",
+  "pufaLegs.code": "Noga",
+  "pufaLegs.height": "H",
+  "pufaLegs.count": "Ilość",
 
   // Fotel legs
-  "fotelLegs.code": "Noga (fotel)",
-  "fotelLegs.height": "Wysokość nogi (fotel)",
-  "fotelLegs.count": "Ilość nóg (fotel)",
+  "fotelLegs.code": "Noga",
+  "fotelLegs.height": "H",
+  "fotelLegs.count": "Ilość",
 
   // Pufa seat
   "pufaSeat.frontBack": "Przód/Tył",

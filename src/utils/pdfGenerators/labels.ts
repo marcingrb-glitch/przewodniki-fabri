@@ -38,6 +38,10 @@ function resolveField(decoded: DecodedSKU, path: string): string {
   }
   if (current == null) return "-";
   if (typeof current === "boolean") return current ? "Tak" : "Nie";
+  // Auto-format height fields with "cm" unit
+  if (path.endsWith(".height") && typeof current === "number") {
+    return `${current} cm`;
+  }
   return String(current);
 }
 
