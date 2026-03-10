@@ -43,6 +43,7 @@ export default function LabelTemplates() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("sofa");
   const [selectedSeries, setSelectedSeries] = useState<string>("all");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["label-templates"],
