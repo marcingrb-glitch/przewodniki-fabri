@@ -11,6 +11,11 @@ function NoData({ label }: { label: string }) {
   return <p className="text-destructive font-bold py-2">⚠️ BRAK DANYCH — {label} — uzupełnij w specyfikacji</p>;
 }
 
+const formatColors = (colors: any): string => {
+  if (!colors || typeof colors !== 'object' || Array.isArray(colors)) return '—';
+  return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(', ');
+};
+
 export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Props) {
   const { data: config } = useQuery({
     queryKey: ["cheat-config", seriesId],
