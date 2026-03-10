@@ -1,6 +1,7 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
 import { supabase } from "@/integrations/supabase/client";
+import { formatFoamsDetailed } from "@/utils/foamHelpers";
 
 function seriesLine(decoded: DecodedSKU): string {
   return `${decoded.series.code}|${decoded.series.name}|${decoded.series.collection}`;
@@ -8,6 +9,16 @@ function seriesLine(decoded: DecodedSKU): string {
 
 /** Resolve a dotted path like "seat.code" from DecodedSKU */
 function resolveField(decoded: DecodedSKU, path: string): string {
+  // Special handling for foams lists
+  if (path === "seat.foamsList") {
+    const lines = formatFoamsDetailed(decoded.seat.foams);
+    return lines.length > 0 ? lines.join("\n") : "-";
+  }
+  if (path === "backrest.foamsList") {
+    const lines = formatFoamsDetailed(decoded.backrest.foams);
+    return lines.length > 0 ? lines.join("\n") : "-";
+  }
+
   const parts = path.split(".");
   let current: unknown = decoded;
   for (const part of parts) {
