@@ -12,8 +12,16 @@ function NoData({ label }: { label: string }) {
 }
 
 const formatColors = (colors: any): string => {
-  if (!colors || typeof colors !== 'object' || Array.isArray(colors)) return '—';
-  return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(', ');
+  if (!colors) return '—';
+  if (Array.isArray(colors)) {
+    if (colors.length === 0) return '—';
+    if (typeof colors[0] === 'object') return colors.map((c: any) => `${c.code}=${c.name}`).join(', ');
+    return colors.join(', ');
+  }
+  if (typeof colors === 'object') {
+    return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(', ');
+  }
+  return String(colors);
 };
 
 export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Props) {
