@@ -35,7 +35,7 @@ export interface ValidationResult {
 export interface DecodedSKU {
   series: { code: string; name: string; collection: string };
   fabric: { code: string; name: string; color: string; colorName: string; group: number };
-  seat: { code: string; type: string; typeName: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean };
+  seat: { code: string; type: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean; springType?: string };
   side: { code: string; name: string; frame: string; finish: string; finishName: string };
   backrest: { code: string; height: string; frame: string; foam: string; top: string; finish: string; finishName: string };
   chest: { code: string; name: string; legHeight: number; legCount: number };
