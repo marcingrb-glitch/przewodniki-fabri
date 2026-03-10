@@ -97,7 +97,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
         {seats.length === 0 ? <NoData label="siedziska" /> : (
           <div className="space-y-4">
             {seats.map(seat => {
-              const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "seat");
+              const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "siedzisko");
               return (
                 <div key={seat.id} className="border border-border p-3 rounded">
                   <h3 className="font-bold">{seat.code} — {seat.model_name ?? seat.type_name ?? "—"}</h3>
