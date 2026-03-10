@@ -127,7 +127,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
     seriesId
-      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type, spring_type").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type, spring_type, model_name").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     seriesId && parsed.side.code
       ? supabase.from("sides").select("code, name, frame, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
