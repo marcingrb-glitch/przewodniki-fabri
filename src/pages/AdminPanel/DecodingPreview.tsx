@@ -1,58 +1,41 @@
-import { DecodedSKU } from "@/types";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { GuideSection, GuideColumn, CONDITION_LABELS, resolveExampleValue } from "./fieldResolver";
 
 interface DecodingPreviewProps {
-  decoded: DecodedSKU;
+  sections: GuideSection[];
+  exampleData: any;
+  seriesId?: string | null;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="border border-border rounded overflow-hidden">
-      <div className="px-2 py-1 bg-muted/60">
-        <span className="text-[10px] font-bold uppercase tracking-wide">{title}</span>
-      </div>
-      {children}
-    </div>
+export default function DecodingPreview({ sections, exampleData, seriesId }: DecodingPreviewProps) {
+  const enabledSections = useMemo(
+    () => sections.filter(s => s.enabled),
+    [sections]
   );
-}
 
-function MiniTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
-  return (
-    <table className="w-full text-[9px]">
-      <thead>
-        <tr className="bg-muted/30">
-          {headers.map((h, i) => (
-            <th key={i} className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate">
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, ri) => (
-          <tr key={ri} className="border-t border-border">
-            {row.map((cell, ci) => (
-              <td key={ci} className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground">
-                {cell}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
+  const seriesLabel = exampleData?.series
+    ? `${exampleData.series.code} - ${exampleData.series.name} [${exampleData.series.collection || ""}]`
+    : "S1 - Seria przykładowa [Kolekcja]";
 
-export default function DecodingPreview({ decoded }: DecodingPreviewProps) {
-  const seriesLabel = `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`;
+  if (enabledSections.length === 0) {
+    return (
+      <Card className="mt-4">
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          Brak aktywnych sekcji do podglądu. Dodaj sekcje aby zobaczyć podgląd dekodowania.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mt-4">
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm font-semibold">
           🔍 Podgląd dekodowania
-          <Badge variant="secondary" className="ml-2 text-[10px]">Seria: {seriesLabel}</Badge>
+          {seriesId && <Badge variant="secondary" className="ml-2 text-[10px]">Seria: {seriesLabel}</Badge>}
+          {!seriesId && <Badge variant="outline" className="ml-2 text-[10px]">Globalny</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
@@ -64,14 +47,14 @@ export default function DecodingPreview({ decoded }: DecodingPreviewProps) {
           <div className="px-5 pt-4 pb-2 space-y-0.5">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-bold">NUMER ZAMÓWIENIA: {decoded.orderNumber || "12345"}</p>
+                <p className="text-xs font-bold">NUMER ZAMÓWIENIA: 12345</p>
                 <p className="text-[10px] text-muted-foreground">
-                  Data złożenia zamówienia: {decoded.orderDate || new Date().toISOString().slice(0, 10)}
+                  Data złożenia zamówienia: {new Date().toISOString().slice(0, 10)}
                 </p>
               </div>
               <p className="text-[10px] font-medium text-right">{seriesLabel}</p>
             </div>
-            <p className="text-[10px] text-muted-foreground font-mono">SKU: {decoded.rawSKU || "—"}</p>
+            <p className="text-[10px] text-muted-foreground font-mono">SKU: S1-N01A-O01A-B01-SK15-AU01-N01BK</p>
           </div>
 
           {/* Image placeholder */}
@@ -79,169 +62,92 @@ export default function DecodingPreview({ decoded }: DecodingPreviewProps) {
             <span className="text-[10px] text-muted-foreground">Zdjęcie wariantu</span>
           </div>
 
-          {/* Sections */}
+          {/* Dynamic sections */}
           <div className="px-5 pb-4 space-y-3">
-            {/* TKANINA */}
-            <Section title="Tkanina">
-              <MiniTable
-                headers={["Kod", "Nazwa", "Kolor", "Grupa"]}
-                rows={[[
-                  `${decoded.fabric.code}${decoded.fabric.color}`,
-                  decoded.fabric.name,
-                  `${decoded.fabric.color} - ${decoded.fabric.colorName}`,
-                  `${decoded.fabric.group}`,
-                ]]}
-              />
-            </Section>
+            {enabledSections.map(section => {
+              const cols = section.columns as GuideColumn[];
+              if (cols.length === 0) return null;
 
-            {/* SIEDZISKO — STOLARKA */}
-            <Section title="Siedzisko — Stolarka">
-              <MiniTable
-                headers={["Kod", "Typ", "Stelaż", "Modyfikacja", "Sprężyna", "Wykończenie"]}
-                rows={[[
-                  decoded.seat.code,
-                  decoded.seat.type || "—",
-                  decoded.seat.frame || "—",
-                  decoded.seat.frameModification || "—",
-                  decoded.seat.springType || "—",
-                  `${decoded.seat.finish} (${decoded.seat.finishName})`,
-                ]]}
-              />
-            </Section>
+              const isConditional = section.is_conditional;
+              const condLabel = section.condition_field ? CONDITION_LABELS[section.condition_field] || section.condition_field : "";
 
-            {/* SIEDZISKO — PIANKI */}
-            <Section title="Siedzisko — Pianki">
-              <MiniTable
-                headers={["Pianki", "Front", "Pasek środkowy"]}
-                rows={[[
-                  decoded.seat.foam || "—",
-                  decoded.seat.front || "—",
-                  decoded.seat.midStrip ? "TAK" : "NIE",
-                ]]}
-              />
-            </Section>
+              const MAX_COLS = 4;
+              const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
 
-            {/* OPARCIE */}
-            <Section title="Oparcie">
-              <MiniTable
-                headers={["Kod", "Wys.", "Stelaż", "Góra", "Sprężyna", "Wykończenie"]}
-                rows={[[
-                  decoded.backrest.code,
-                  `${decoded.backrest.height}cm`,
-                  decoded.backrest.frame || "—",
-                  decoded.backrest.top || "—",
-                  decoded.backrest.springType || "—",
-                  `${decoded.backrest.finish} (${decoded.backrest.finishName})`,
-                ]]}
-              />
-            </Section>
+              const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
+              const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
+              const otherCols = cols.filter(c => !c.field.startsWith("seat."));
+              const hasSplit = frameCols.length > 0 && foamCols.length > 0;
 
-            {/* BOCZEK */}
-            <Section title="Boczek">
-              <MiniTable
-                headers={["Kod", "Nazwa", "Stelaż", "Wykończenie"]}
-                rows={[[
-                  decoded.side.code,
-                  decoded.side.name,
-                  decoded.side.frame || "—",
-                  `${decoded.side.finish} (${decoded.side.finishName})`,
-                ]]}
-              />
-            </Section>
+              const renderChunkedTable = (columns: GuideColumn[], keyPrefix: string) => {
+                const chunks: GuideColumn[][] = [];
+                for (let i = 0; i < columns.length; i += MAX_COLS) {
+                  chunks.push(columns.slice(i, i + MAX_COLS));
+                }
+                return chunks.map((chunk, chunkIdx) => (
+                  <table key={`${keyPrefix}-${chunkIdx}`} className="w-full text-[9px]">
+                    <thead>
+                      <tr className="bg-muted/30">
+                        {chunk.map((col, ci) => (
+                          <th key={ci} className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate" style={{ maxWidth: `${100 / chunk.length}%` }}>
+                            {col.header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-t border-border">
+                        {chunk.map((col, ci) => (
+                          <td key={ci} className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground" style={{ maxWidth: `${100 / chunk.length}%` }}>
+                            {resolveExampleValue(col.field, exampleData)}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                ));
+              };
 
-            {/* SKRZYNIA + AUTOMAT */}
-            <Section title="Skrzynia + Automat">
-              <MiniTable
-                headers={["Skrzynia", "Nazwa", "Automat", "Nazwa", "Typ"]}
-                rows={[[
-                  decoded.chest.code,
-                  decoded.chest.name || "—",
-                  decoded.automat.code,
-                  decoded.automat.name,
-                  decoded.automat.type || "—",
-                ]]}
-              />
-            </Section>
+              return (
+                <div
+                  key={section.id}
+                  className={`rounded overflow-hidden ${
+                    isConditional
+                      ? "border border-dashed border-muted-foreground/40"
+                      : "border border-border"
+                  }`}
+                >
+                  <div className={`px-2 py-1 flex items-center gap-2 ${
+                    isConditional ? "bg-muted/30" : "bg-muted/60"
+                  }`}>
+                    <span className="text-[10px] font-bold uppercase tracking-wide">
+                      {section.section_name}
+                    </span>
+                    {isConditional && (
+                      <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal border-dashed">
+                        warunkowa: {condLabel}
+                      </Badge>
+                    )}
+                  </div>
 
-            {/* NÓŻKI */}
-            <Section title="Nóżki">
-              <MiniTable
-                headers={["", "Wartość", "Ilość/Materiał", "Kolor"]}
-                rows={[
-                  ...(decoded.legs ? [[
-                    "Typ nóżki",
-                    `${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name}`,
-                    decoded.legs.material || "—",
-                    decoded.legs.colorName || "—",
-                  ]] : []),
-                  [
-                    "Pod skrzynią",
-                    decoded.legHeights.sofa_chest ? `${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm` : "—",
-                    decoded.legHeights.sofa_chest ? `${decoded.legHeights.sofa_chest.count} szt` : "—",
-                    "",
-                  ],
-                  [
-                    "Pod siedziskiem",
-                    decoded.legHeights.sofa_seat ? `${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm` : "BRAK",
-                    decoded.legHeights.sofa_seat ? `${decoded.legHeights.sofa_seat.count} szt` : "—",
-                    "",
-                  ],
-                ]}
-              />
-            </Section>
-
-            {/* DODATKI */}
-            {(decoded.pillow || decoded.jaski || decoded.walek || decoded.extras.length > 0) && (
-              <Section title="Dodatki">
-                <MiniTable
-                  headers={["Typ", "Kod / Nazwa", "Wykończenie"]}
-                  rows={[
-                    ...(decoded.pillow ? [["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name}`, `${decoded.pillow.finish} (${decoded.pillow.finishName})`]] : []),
-                    ...(decoded.jaski ? [["Jaśki", `${decoded.jaski.code} - ${decoded.jaski.name}`, `${decoded.jaski.finish} (${decoded.jaski.finishName})`]] : []),
-                    ...(decoded.walek ? [["Wałek", decoded.walek.code, `${decoded.walek.finish} (${decoded.walek.finishName})`]] : []),
-                    ...decoded.extras.map(e => [e.name, e.code, e.type || "—"]),
-                  ]}
-                />
-              </Section>
-            )}
-
-            {/* PUFA */}
-            {decoded.pufaSKU && (
-              <Section title="Pufa">
-                <MiniTable
-                  headers={["", "Wartość"]}
-                  rows={[
-                    ["SKU pufy", decoded.pufaSKU],
-                    ...(decoded.pufaSeat ? [
-                      ["Przód/Tył", decoded.pufaSeat.frontBack || "—"],
-                      ["Boki", decoded.pufaSeat.sides || "—"],
-                      ["Pianka", decoded.pufaSeat.foam || "—"],
-                      ["Skrzynka", decoded.pufaSeat.box || "—"],
-                    ] : []),
-                    ...(decoded.pufaLegs ? [[
-                      "Nóżki pufy",
-                      `${decoded.pufaLegs.code} H ${decoded.pufaLegs.height}cm (${decoded.pufaLegs.count} szt)`,
-                    ]] : []),
-                  ]}
-                />
-              </Section>
-            )}
-
-            {/* FOTEL */}
-            {decoded.fotelSKU && (
-              <Section title="Fotel">
-                <MiniTable
-                  headers={["", "Wartość"]}
-                  rows={[
-                    ["SKU fotela", decoded.fotelSKU],
-                    ...(decoded.fotelLegs ? [[
-                      "Nóżki fotela",
-                      `${decoded.fotelLegs.code} H ${decoded.fotelLegs.height}cm (${decoded.fotelLegs.count} szt)`,
-                    ]] : []),
-                  ]}
-                />
-              </Section>
-            )}
+                  {hasSplit ? (
+                    <>
+                      <div className="text-[9px] font-semibold italic bg-muted/20 px-2 py-0.5 text-muted-foreground border-b border-border">Stolarka</div>
+                      {renderChunkedTable(frameCols, "frame")}
+                      <div className="text-[9px] font-semibold italic bg-muted/20 px-2 py-0.5 text-muted-foreground border-y border-border">Pianki</div>
+                      {renderChunkedTable(foamCols, "foam")}
+                    </>
+                  ) : (
+                    renderChunkedTable(
+                      otherCols.length > 0
+                        ? (frameCols.length > 0 || foamCols.length > 0 ? [...frameCols, ...foamCols, ...otherCols] : cols)
+                        : cols,
+                      "all"
+                    )
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </CardContent>
