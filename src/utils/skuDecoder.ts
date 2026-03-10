@@ -273,9 +273,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const colorName = fabricColors[parsed.fabric.color] || parsed.fabric.color;
 
   // ---- SEAT (fallback to static) ----
-  const staticSeat = SEATS_SOFA_S1[seatCode] || { frame: "?", foam: "?", front: "?", midStrip: false };
+  const staticSeat = SEATS_SOFA_S1[seatCode] || { frame: "?", front: "?", midStrip: false };
   let seatFrame = staticSeat.frame;
-  let seatFront = staticSeat.front;
   let seatFront = staticSeat.front;
   let seatMidStrip = staticSeat.midStrip;
   let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
