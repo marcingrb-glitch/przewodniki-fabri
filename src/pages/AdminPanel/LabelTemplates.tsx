@@ -313,32 +313,13 @@ export default function LabelTemplates() {
                             />
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1.5">
-                              <Checkbox
-                                checked={tpl.is_conditional}
-                                onCheckedChange={(checked) =>
-                                  updateMutation.mutate({
-                                    id: tpl.id,
-                                    field: "is_conditional",
-                                    value: !!checked,
-                                  })
-                                }
-                              />
-                              {tpl.is_conditional && (
-                                <Input
-                                  className="h-7 text-xs w-[140px]"
-                                  placeholder="np. legHeights.sofa_seat"
-                                  value={tpl.condition_field || ""}
-                                  onChange={(e) =>
-                                    updateMutation.mutate({
-                                      id: tpl.id,
-                                      field: "condition_field",
-                                      value: e.target.value || null,
-                                    })
-                                  }
-                                />
-                              )}
-                            </div>
+                            {tpl.is_conditional ? (
+                              <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                                ⚡ Tylko gdy ma nóżki
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Zawsze</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Button
