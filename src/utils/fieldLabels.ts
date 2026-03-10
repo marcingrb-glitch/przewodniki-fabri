@@ -28,7 +28,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "side.finishName": "Wykończenie (nazwa)",
 
   // Backrest
-  "backrest.code": "Kod oparcia",
+  "backrest.code": "Oparcie",
   "backrest.height": "Wysokość oparcia",
   "backrest.frame": "Rama oparcia",
   "backrest.foamsList": "Pianki oparcia",
