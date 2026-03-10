@@ -2,6 +2,7 @@ import { DecodedSKU } from "@/types";
 import { createDoc, addLabel, toBlob, LabelSettings } from "@/utils/pdfHelpers";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFoamsDetailed } from "@/utils/foamHelpers";
+import { formatFieldWithLabel } from "@/utils/fieldLabels";
 
 function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string): string {
   // Build pipe-separated values matching leftZoneFields order
