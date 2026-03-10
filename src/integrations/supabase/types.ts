@@ -228,11 +228,13 @@ export type Database = {
           condition_field: string | null
           content_template: string
           created_at: string
+          display_fields: string[]
           id: string
           is_conditional: boolean
           label_name: string
           product_type: string
           quantity: number
+          series_id: string | null
           sort_order: number
         }
         Insert: {
@@ -240,11 +242,13 @@ export type Database = {
           condition_field?: string | null
           content_template: string
           created_at?: string
+          display_fields?: string[]
           id?: string
           is_conditional?: boolean
           label_name: string
           product_type: string
           quantity?: number
+          series_id?: string | null
           sort_order?: number
         }
         Update: {
@@ -252,14 +256,24 @@ export type Database = {
           condition_field?: string | null
           content_template?: string
           created_at?: string
+          display_fields?: string[]
           id?: string
           is_conditional?: boolean
           label_name?: string
           product_type?: string
           quantity?: number
+          series_id?: string | null
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "label_templates_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       legs: {
         Row: {
