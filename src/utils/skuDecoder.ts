@@ -133,7 +133,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? supabase.from("sides").select("code, name, frame, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     seriesId && parsed.backrest.code
-      ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.chest
       ? supabase.from("chests").select("code, name, leg_height_cm, leg_count").eq("code", parsed.chest).maybeSingle()
