@@ -1,25 +1,38 @@
 
 
-## Plan: Strona "Dekodowanie" w panelu administracyjnym
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Cel
-Dodanie nowej strony `/admin/decoding-templates` w panelu admina z podglądem PDF dekodowania — analogicznie do strony Przewodników.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiana 1: AdminLayout.tsx — nowy link w sidebarze
-Dodać `{ to: "/admin/decoding-templates", label: "🔍 Dekodowanie" }` w `skuConfigLinks` pod "Przewodniki".
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Zmiana 2: Nowy plik `src/pages/AdminPanel/DecodingTemplates.tsx`
-Strona z:
-- Wyborem serii (select) — pobiera przykładowe dane z DB dla wybranej serii
-- Podglądem PDF dekodowania w `<iframe>` (jak w GuideTemplates/PDFPreview)
-- Przyciskami "Podgląd" i "Pobierz" generującymi PDF przez `generateDecodingPDF`
-- Przykładowe `DecodedSKU` budowane na podstawie danych z bazy (pierwszy rekord seats_sofa, sides, backrests itd. dla wybranej serii)
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-### Zmiana 3: App.tsx — routing
-Dodać import `DecodingTemplates` i route `<Route path="decoding-templates" element={<DecodingTemplates />} />` wewnątrz admin routes.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### Pliki do edycji/utworzenia
-- `src/pages/AdminPanel/AdminLayout.tsx` — 1 linia (nowy link)
-- `src/pages/AdminPanel/DecodingTemplates.tsx` — nowy plik
-- `src/App.tsx` — 2 linie (import + route)
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

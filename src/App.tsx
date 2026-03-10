@@ -31,6 +31,7 @@ import ParseRules from "@/pages/AdminPanel/ParseRules";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
 import LabelTemplates from "@/pages/AdminPanel/LabelTemplates";
 import GuideTemplates from "@/pages/AdminPanel/GuideTemplates";
+import DecodingTemplates from "@/pages/AdminPanel/DecodingTemplates";
 import SeriesSpecification from "@/pages/AdminPanel/SeriesSpecification";
 import Cheatsheets from "@/pages/AdminPanel/Cheatsheets";
 import NotFound from "@/pages/NotFound";
@@ -73,6 +74,7 @@ const App = () => (
                   <Route path="side-exceptions" element={<ProtectedRoute adminOnly><SideExceptions /></ProtectedRoute>} />
                   <Route path="label-templates" element={<ProtectedRoute adminOnly><LabelTemplates /></ProtectedRoute>} />
                   <Route path="guide-templates" element={<ProtectedRoute adminOnly><GuideTemplates /></ProtectedRoute>} />
+                  <Route path="decoding-templates" element={<ProtectedRoute adminOnly><DecodingTemplates /></ProtectedRoute>} />
                   {/* Permission-based routes */}
                   <Route path="spec/:seriesCode" element={<ProtectedRoute requiredPermission="can_view_specs"><SeriesSpecification /></ProtectedRoute>} />
                   <Route path="cheatsheets" element={<ProtectedRoute requiredPermission="can_view_cheatsheets"><Cheatsheets /></ProtectedRoute>} />
