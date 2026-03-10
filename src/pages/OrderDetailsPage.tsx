@@ -17,7 +17,7 @@ import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
 import { getOrderById } from "@/utils/supabaseQueries";
 import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
-import { SEATS_PUFA } from "@/data/mappings";
+
 import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateSofaGuidePDF } from "@/utils/pdfGenerators/sofaGuide";
 import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
