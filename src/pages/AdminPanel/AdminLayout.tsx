@@ -63,6 +63,7 @@ export default function AdminLayout() {
         { to: "/admin/side-exceptions", label: "Wyjątki boczków" },
         { to: "/admin/label-templates", label: "🏷️ Etykiety" },
         { to: "/admin/guide-templates", label: "📄 Przewodniki" },
+        { to: "/admin/decoding-templates", label: "🔍 Dekodowanie" },
       ]
     : [];
 
