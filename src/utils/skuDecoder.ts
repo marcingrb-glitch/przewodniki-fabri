@@ -309,15 +309,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- BACKREST (fallback to static) ----
-  const staticBackrest = BACKRESTS[parsed.backrest.code] || { frame: "?", foam: "?", top: "?", height: "?" };
+  const staticBackrest = BACKRESTS[parsed.backrest.code] || { frame: "?", top: "?", height: "?" };
   let backrestFrame = staticBackrest.frame;
-  let backrestFoam = staticBackrest.foam;
   let backrestTop = staticBackrest.top;
   let backrestHeight = staticBackrest.height;
 
   if (backrestsRes.data) {
     backrestFrame = backrestsRes.data.frame ?? "";
-    backrestFoam = backrestsRes.data.foam ?? "";
     backrestTop = backrestsRes.data.top ?? "";
     backrestHeight = backrestsRes.data.height_cm ?? "";
   }
