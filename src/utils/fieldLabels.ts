@@ -17,12 +17,12 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Automat
   "automat.code": "Automat",
-  "automat.name": "Nazwa",
+  "automat.name": "Automat",
   "automat.type": "Typ",
 
   // Side
   "side.code": "Boczek",
-  "side.name": "Nazwa",
+  "side.name": "Boczek",
   "side.frame": "Stelaż",
   "side.finish": "Wykończenie (kod)",
   "side.finishName": "Wykończenie (nazwa)",
@@ -39,7 +39,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Chest
   "chest.code": "Skrzynia",
-  "chest.name": "Nazwa",
+  "chest.name": "Skrzynia",
   "chest.legHeight": "Wys. nóżki",
   "chest.legCount": "Ilość nóżek",
 
@@ -71,13 +71,13 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Pillow
   "pillow.code": "Poduszka",
-  "pillow.name": "Nazwa",
+  "pillow.name": "Poduszka",
   "pillow.finish": "Wykończenie (kod)",
   "pillow.finishName": "Wykończenie (nazwa)",
 
   // Legs (common)
   "legs.code": "Noga",
-  "legs.name": "Nazwa",
+  "legs.name": "Noga",
   "legs.material": "Materiał",
   "legs.color": "Kolor (kod)",
   "legs.colorName": "Kolor (nazwa)",
