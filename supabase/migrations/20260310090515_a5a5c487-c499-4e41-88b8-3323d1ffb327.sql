@@ -1,0 +1,1 @@
+DELETE FROM sewing_variants WHERE id = '8c0115b8-46c2-4053-a48f-7599d3b883d6';
