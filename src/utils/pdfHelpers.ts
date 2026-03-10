@@ -95,6 +95,8 @@ export function addTable(
   rows: string[][],
   columnStyles?: ColumnStyles,
   spacing: number = 8,
+  fontSize: number = 10,
+  minCellHeight: number = 8,
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
@@ -110,10 +112,10 @@ export function addTable(
     columnStyles: columnStyles || {},
     styles: {
       font: "Roboto",
-      fontSize: 10,
+      fontSize,
       cellPadding: 2.5,
       overflow: "linebreak",
-      minCellHeight: 8,
+      minCellHeight,
       valign: "middle",
       halign: "left",
       textColor: [0, 0, 0],
