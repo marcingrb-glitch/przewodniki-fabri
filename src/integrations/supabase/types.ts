@@ -48,6 +48,7 @@ export type Database = {
           frame: string | null
           height_cm: string | null
           id: string
+          model_name: string | null
           series_id: string
           spring_type: string | null
           top: string | null
@@ -61,6 +62,7 @@ export type Database = {
           frame?: string | null
           height_cm?: string | null
           id?: string
+          model_name?: string | null
           series_id: string
           spring_type?: string | null
           top?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           frame?: string | null
           height_cm?: string | null
           id?: string
+          model_name?: string | null
           series_id?: string
           spring_type?: string | null
           top?: string | null
@@ -364,6 +367,7 @@ export type Database = {
       }
       product_foams: {
         Row: {
+          backrest_id: string | null
           component: string
           created_at: string
           height: number | null
@@ -380,6 +384,7 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          backrest_id?: string | null
           component: string
           created_at?: string
           height?: number | null
@@ -396,6 +401,7 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          backrest_id?: string | null
           component?: string
           created_at?: string
           height?: number | null
@@ -412,6 +418,13 @@ export type Database = {
           width?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_foams_backrest_id_fkey"
+            columns: ["backrest_id"]
+            isOneToOne: false
+            referencedRelation: "backrests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_foams_series_id_fkey"
             columns: ["series_id"]
