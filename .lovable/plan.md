@@ -1,38 +1,27 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Fix: "Błąd zapisu" przy dodawaniu linii
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem
+Kolumna `display_fields` w tabeli `label_templates` jest typu `text[]` (tablica Postgres), a nie `jsonb`. Tablice Postgres wymagają jednakowych wymiarów we wszystkich pod-tablicach, wiec `[["seat.code"], []]` (1 element vs 0 elementow) zwraca blad:
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+> `"Multidimensional arrays must have sub-arrays with matching dimensions."`
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Rozwiazanie
+Zmiana typu kolumny `display_fields` z `text[]` na `jsonb`. Dane pozostana kompatybilne — istniejace flat arrays (`["seat.code"]`) beda dalej dzialac, a nested arrays (`[["seat.code"], []]`) tez beda akceptowane.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+### Zmiany
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**1. Migracja DB:**
+```sql
+ALTER TABLE label_templates 
+  ALTER COLUMN display_fields TYPE jsonb 
+  USING to_jsonb(display_fields);
+```
+To konwertuje istniejace dane `text[]` na `jsonb` (np. `{"seat.code","automat.code"}` → `["seat.code","automat.code"]`).
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+**2. `src/pages/AdminPanel/LabelTemplates.tsx`:**
+- Typ `display_fields` w interfejsie `LabelTemplate` zmieniony z `string[]` na `any` (albo `string[] | string[][]`), zeby obsluzyc oba formaty.
 
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+**3. Bez zmian w pozostalych plikach** — `LabelConfigurator.tsx`, `labels.ts` i `pdfHelpers.ts` juz obsluguja oba formaty dzieki `normalizeFields()`.
 
