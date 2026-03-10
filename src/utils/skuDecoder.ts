@@ -275,7 +275,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // ---- SEAT (fallback to static) ----
   const staticSeat = SEATS_SOFA_S1[seatCode] || { frame: "?", foam: "?", front: "?", midStrip: false };
   let seatFrame = staticSeat.frame;
-  let seatFoam = staticSeat.foam;
+  let seatFront = staticSeat.front;
   let seatFront = staticSeat.front;
   let seatMidStrip = staticSeat.midStrip;
   let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
