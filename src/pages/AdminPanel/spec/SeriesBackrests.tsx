@@ -219,7 +219,7 @@ export default function SeriesBackrests({ seriesId }: Props) {
             {modelsToShow.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">Brak modeli</p>
             ) : (
-              availableModels.map(model => (
+              modelsToShow.map(model => (
                 <label key={model} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-accent cursor-pointer text-sm">
                   <Checkbox
                     checked={selected.includes(model)}
