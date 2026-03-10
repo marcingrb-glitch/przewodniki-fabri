@@ -84,6 +84,8 @@ export const AVAILABLE_FIELDS: FieldDef[] = [
   { value: "jaski.code", label: "Kod", group: "jaski" },
   { value: "jaski.name", label: "Nazwa", group: "jaski" },
   { value: "jaski.finish_info", label: "Wykończenie", group: "jaski" },
+  { value: "jaski.construction_type", label: "Wygląd", group: "jaski" },
+  { value: "jaski.insert_type", label: "Wkład", group: "jaski" },
   { value: "walek.code", label: "Kod", group: "walek" },
   { value: "walek.name", label: "Nazwa", group: "walek" },
   { value: "walek.finish_info", label: "Wykończenie", group: "walek" },
