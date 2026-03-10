@@ -204,12 +204,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatMidStrip = seatSofaRes.data.center_strip ?? false;
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
     seatType = seatSofaRes.data.type ?? "";
-    seatTypeName = SEAT_TYPES[seatType] || seatType;
+    seatSpringType = seatSofaRes.data.spring_type ?? "";
   } else {
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {
       seatType = typeMatch[1] || "";
-      seatTypeName = SEAT_TYPES[seatType] || seatType;
     }
   }
 
