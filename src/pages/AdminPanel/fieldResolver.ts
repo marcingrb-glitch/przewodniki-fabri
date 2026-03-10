@@ -124,6 +124,10 @@ export const CONDITION_LABELS: Record<string, string> = {
   extras_pufa_fotel: "pufa/fotel w dodatkach",
 };
 
+function stripPillowPrefix(name: string): string {
+  return name.replace(/^Poduszka\s+/i, "");
+}
+
 export function resolveExampleValue(field: string, data: any): string {
   if (!data) return "—";
   const v = (val: unknown) => (val != null && val !== "" ? String(val) : "—");
