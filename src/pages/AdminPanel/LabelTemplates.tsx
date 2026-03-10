@@ -24,7 +24,7 @@ interface LabelTemplate {
   is_conditional: boolean;
   condition_field: string | null;
   series_id: string | null;
-  display_fields: string[];
+  display_fields: string[] | string[][];
 }
 
 interface Series {
