@@ -224,7 +224,7 @@ export default function GuidePreview({ sections, productType }: GuidePreviewProp
 
                     {/* Mini table(s) — chunked if >6 columns */}
                     {(() => {
-                      const MAX_COLS = 6;
+                      const MAX_COLS = 4;
                       const chunks: GuideColumn[][] = [];
                       for (let i = 0; i < cols.length; i += MAX_COLS) {
                         chunks.push(cols.slice(i, i + MAX_COLS));

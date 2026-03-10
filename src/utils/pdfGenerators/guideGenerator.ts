@@ -209,7 +209,7 @@ export async function generateGuidePDF(
     }
 
     const cols = section.columns as GuideColumn[];
-    const MAX_COLS = 6;
+    const MAX_COLS = 4;
 
     if (cols.length <= MAX_COLS) {
       const headers = cols.map(c => c.header);
