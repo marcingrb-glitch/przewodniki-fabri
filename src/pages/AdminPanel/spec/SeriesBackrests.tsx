@@ -1,9 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,8 +15,8 @@ interface Props {
   seriesId: string;
 }
 
-type Backrest = Tables<"backrests">;
-type Foam = Tables<"product_foams">;
+type Backrest = Tables<"backrests"> & { model_name?: string | null };
+type Foam = Tables<"product_foams"> & { backrest_id?: string | null };
 
 interface SewingVariant {
   id: string;
@@ -32,6 +31,7 @@ interface SewingVariant {
 
 const backrestFields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
+  { name: "model_name", label: "Model (np. Modena / Sienna)", type: "text" },
   { name: "height_cm", label: "Wysokość (cm)", type: "text" },
   { name: "frame", label: "Stelaż", type: "text" },
   { name: "foam", label: "Pianka", type: "text" },
@@ -48,7 +48,6 @@ export default function SeriesBackrests({ seriesId }: Props) {
   const [backrests, setBackrests] = useState<Backrest[]>([]);
   const [foams, setFoams] = useState<Foam[]>([]);
   const [sewingVariants, setSewingVariants] = useState<SewingVariant[]>([]);
-  const [modelNames, setModelNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Backrest | null>(null);
@@ -56,17 +55,14 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [backrestsRes, foamsRes, variantsRes, seatsRes] = await Promise.all([
+    const [backrestsRes, foamsRes, variantsRes] = await Promise.all([
       supabase.from("backrests").select("*").eq("series_id", seriesId).order("code"),
       supabase.from("product_foams").select("*").eq("series_id", seriesId).order("position_number"),
       supabase.from("sewing_variants").select("*").eq("series_id", seriesId).eq("component_type", "backrest") as any,
-      supabase.from("seats_sofa").select("model_name").eq("series_id", seriesId),
     ]);
-    setBackrests(backrestsRes.data ?? []);
-    setFoams(foamsRes.data ?? []);
+    setBackrests((backrestsRes.data ?? []) as Backrest[]);
+    setFoams((foamsRes.data ?? []) as Foam[]);
     setSewingVariants((variantsRes.data ?? []) as SewingVariant[]);
-    const names = [...new Set((seatsRes.data ?? []).map((s: any) => s.model_name).filter(Boolean))] as string[];
-    setModelNames(names);
     setLoading(false);
   };
 
@@ -110,12 +106,13 @@ export default function SeriesBackrests({ seriesId }: Props) {
     else { toast.success("Zapisano"); fetchAll(); }
   };
 
-  const addFoam = async (backrestCode: string) => {
-    const backrestFoams = foams.filter((f) => f.seat_code === backrestCode);
+  const addFoam = async (backrest: Backrest) => {
+    const backrestFoams = foams.filter((f) => f.backrest_id === backrest.id);
     const maxPos = backrestFoams.reduce((m, f) => Math.max(m, f.position_number ?? 0), 0);
     const { error } = await supabase.from("product_foams").insert({
-      series_id: seriesId, seat_code: backrestCode, component: "oparcie", position_number: maxPos + 1, quantity: 1,
-    });
+      series_id: seriesId, seat_code: backrest.code, component: "oparcie", position_number: maxPos + 1, quantity: 1,
+      backrest_id: backrest.id,
+    } as any);
     if (error) toast.error("Błąd dodawania pianki");
     else { toast.success("Dodano piankę"); fetchAll(); }
   };
@@ -150,96 +147,97 @@ export default function SeriesBackrests({ seriesId }: Props) {
     else { toast.success("Usunięto wariant"); fetchAll(); }
   };
 
-  const toggleModel = (variant: SewingVariant, model: string) => {
-    const newModels = variant.models.includes(model)
-      ? variant.models.filter((m) => m !== model)
-      : [...variant.models, model];
-    updateSewingVariant(variant.id, "models", newModels);
-  };
-
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
-  const renderSewingVariants = (backrestCode: string) => {
-    const variants = sewingVariants.filter((v) => v.component_code === backrestCode);
+  // Get matching sewing variants for a backrest card based on model_name overlap
+  const getMatchingVariants = (b: Backrest) => {
+    const variants = sewingVariants.filter((v) => v.component_code === b.code);
+    if (!b.model_name) return variants; // no model_name = show all variants for this code
+
+    const cardModels = b.model_name.split(/\s*\/\s*/).map((m) => m.trim());
+    return variants.filter((v) =>
+      v.models.length === 0 || v.models.some((m) => cardModels.includes(m))
+    );
+  };
+
+  // Get foams for a specific backrest card
+  const getBackrestFoams = (b: Backrest) => {
+    // If backrest_id is set on foams, filter by it; otherwise fall back to seat_code
+    const foamsByBackrestId = foams.filter((f) => f.backrest_id === b.id);
+    if (foamsByBackrestId.length > 0) return foamsByBackrestId;
+    // Fallback: only if no backrest has backrest_id-linked foams for this code
+    const anyLinked = foams.some((f) => f.seat_code === b.code && f.backrest_id);
+    if (anyLinked) return []; // other backrest owns these foams
+    return foams.filter((f) => f.seat_code === b.code);
+  };
+
+  const renderSewingSection = (b: Backrest) => {
+    const variants = getMatchingVariants(b);
+    if (variants.length === 0) return null;
 
     return (
       <div className="rounded-md border p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold">Warianty szycia</h4>
-          <Button variant="outline" size="sm" onClick={() => addSewingVariant(backrestCode)}>
+          <Button variant="outline" size="sm" onClick={() => addSewingVariant(b.code)}>
             <Plus className="mr-1 h-3 w-3" /> Dodaj wariant
           </Button>
         </div>
-        {variants.length > 0 ? (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[140px]">Wariant</TableHead>
-                  <TableHead>Modele</TableHead>
-                  <TableHead>Opis</TableHead>
-                  <TableHead className="w-[40px]"></TableHead>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[140px]">Wariant</TableHead>
+                <TableHead>Opis</TableHead>
+                <TableHead>Modele</TableHead>
+                <TableHead className="w-[40px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {variants.map((v) => (
+                <TableRow key={v.id}>
+                  <TableCell>
+                    <InlineEditCell value={v.variant_name} onSave={(val) => updateSewingVariant(v.id, "variant_name", val)} />
+                  </TableCell>
+                  <TableCell>
+                    <InlineEditCell value={v.description} onSave={(val) => updateSewingVariant(v.id, "description", val || null)} placeholder="uzupełnij" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {v.models.map((m) => (
+                        <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Usunąć wariant {v.variant_name}?</AlertDialogTitle>
+                          <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteSewingVariant(v.id)}>Usuń</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {variants.map((v) => (
-                  <TableRow key={v.id}>
-                    <TableCell>
-                      <InlineEditCell value={v.variant_name} onSave={(val) => updateSewingVariant(v.id, "variant_name", val)} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {modelNames.map((model) => (
-                          <Badge
-                            key={model}
-                            variant={v.models.includes(model) ? "default" : "outline"}
-                            className="cursor-pointer select-none"
-                            onClick={() => toggleModel(v, model)}
-                          >
-                            {model}
-                          </Badge>
-                        ))}
-                        {v.models.filter((m) => !modelNames.includes(m)).map((m) => (
-                          <Badge key={m} variant="secondary" className="cursor-pointer select-none" onClick={() => toggleModel(v, m)}>
-                            {m}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <InlineEditCell value={v.description} onSave={(val) => updateSewingVariant(v.id, "description", val || null)} placeholder="uzupełnij" />
-                    </TableCell>
-                    <TableCell>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Usunąć wariant {v.variant_name}?</AlertDialogTitle>
-                            <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteSewingVariant(v.id)}>Usuń</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Brak wariantów szycia</p>
-        )}
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     );
   };
 
   const renderBackrestCard = (b: Backrest) => {
-    const backrestFoams = foams.filter((f) => f.seat_code === b.code);
+    const backrestFoams = getBackrestFoams(b);
+    const matchingVariants = getMatchingVariants(b);
 
     return (
       <Card key={b.id} className="mb-4">
@@ -247,7 +245,13 @@ export default function SeriesBackrests({ seriesId }: Props) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <InlineEditCell value={b.code} onSave={(v) => updateField(b.id, "code", v)} />
+              {b.model_name && (
+                <span className="text-muted-foreground font-normal">— {b.model_name}</span>
+              )}
               {b.spring_type && <Badge variant="outline">Sprężyna: {b.spring_type}</Badge>}
+              {matchingVariants.map((v) => v.description && (
+                <Badge key={v.id} variant="secondary">Szycie: {v.description}</Badge>
+              ))}
             </CardTitle>
             <div className="flex gap-1">
               <Button variant="ghost" size="icon" onClick={() => { setEditingItem(b); setFormOpen(true); }}>
@@ -259,7 +263,7 @@ export default function SeriesBackrests({ seriesId }: Props) {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Usunąć oparcie {b.code}?</AlertDialogTitle>
+                    <AlertDialogTitle>Usunąć oparcie {b.code}{b.model_name ? ` (${b.model_name})` : ''}?</AlertDialogTitle>
                     <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -291,11 +295,15 @@ export default function SeriesBackrests({ seriesId }: Props) {
                 <span className="font-medium text-muted-foreground w-36 shrink-0">Sprężyna:</span>
                 <InlineEditCell value={b.spring_type} onSave={(v) => updateField(b.id, "spring_type", v)} />
               </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-36 shrink-0">Model:</span>
+                <InlineEditCell value={b.model_name} onSave={(v) => updateField(b.id, "model_name", v)} />
+              </div>
             </div>
           </div>
 
           {/* Warianty szycia */}
-          {renderSewingVariants(b.code)}
+          {renderSewingSection(b)}
 
           {/* Pianki szczegółowe */}
           {backrestFoams.length > 0 && (
@@ -351,7 +359,7 @@ export default function SeriesBackrests({ seriesId }: Props) {
               </div>
             </div>
           )}
-          <Button variant="outline" size="sm" onClick={() => addFoam(b.code)}>
+          <Button variant="outline" size="sm" onClick={() => addFoam(b)}>
             <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
           </Button>
         </CardContent>
