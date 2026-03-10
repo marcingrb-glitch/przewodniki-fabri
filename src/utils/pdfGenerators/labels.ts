@@ -162,9 +162,8 @@ function buildLabelLines(
         return formatFieldWithLabel(f, val);
       })
       .filter(Boolean) as string[];
-    const prefix = i === 0 ? `${tpl.label_name}: ` : "";
-    if (parts.length > 0 || i === 0) {
-      contentLines.push(`${prefix}${parts.join(" | ")}`);
+    if (parts.length > 0) {
+      contentLines.push(parts.join(" | "));
     }
   }
 
