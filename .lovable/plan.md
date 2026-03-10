@@ -1,38 +1,45 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Fix [object Object] in leg colors + Add finishes legend
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### 1. Fix formatColors in KierownikSheet.tsx (line 257)
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+The inline color formatting on line 257 is the bug source. The `colors` field default is `'[]'::jsonb` (empty array), but actual data is a JSON object like `{"A":"Buk"}`. The inline code handles both cases but may fail with nested objects.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+**Fix**: Replace the inline expression on line 257 with a `formatColors` helper function (same as in NozkiSheet/SeriesLegs). Add the function at the top of the file (after line 12):
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+```typescript
+const formatColors = (colors: any): string => {
+  if (!colors || typeof colors !== 'object' || Array.isArray(colors)) return '—';
+  return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(', ');
+};
+```
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+Then line 257: `{formatColors(l.colors)}`
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+SeriesLegs.tsx and NozkiSheet.tsx already have correct `formatColors` — no changes needed there.
 
-### Krok 4: App.tsx — routing
+### 2. Add finishes legend to KrojowniaSheet.tsx and KierownikSheet.tsx
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+Add a `useQuery` for `finishes` table in both files. Display a bold bordered bar after the `<h1>` title, before the first section:
 
-### Krok 5: skuDecoder.ts — uprość seat types
+```
+LEGENDA WYKOŃCZEŃ: A = Stebnówka | B = Szczypanka | C = Dwuigłówka | D = Zwykły
+```
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+**KrojowniaSheet.tsx** (after line 59, before "Pułapki"):
+- Add `useQuery` for `finishes` table, ordered by `code`
+- Render legend bar: `finishes.map(f => f.code + " = " + f.name).join(" | ")`
+- Styled with border, bold, background highlight
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+**KierownikSheet.tsx** (after line 97, before "Konfiguracja"):
+- Same query and legend bar
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
+### Files to edit
+- `src/pages/AdminPanel/cheatsheets/KierownikSheet.tsx` — add formatColors helper + finishes legend
+- `src/pages/AdminPanel/cheatsheets/KrojowniaSheet.tsx` — add finishes legend
 
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### No changes to
+- `skuParser.ts`, `skuDecoder.ts`, `utils/pdfGenerators/*`
+- `SeriesLegs.tsx`, `NozkiSheet.tsx` (already correct)
 
