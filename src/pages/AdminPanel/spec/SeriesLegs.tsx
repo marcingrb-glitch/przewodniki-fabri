@@ -54,7 +54,8 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
     ]);
     setLegs((legsRes.data as any) ?? []);
     setChests((chestsRes.data as any) ?? []);
-    setAutomats((automatsRes.data as any) ?? []);
+    setSeriesAutomats((seriesAutomatsRes.data as any) ?? []);
+    setGlobalAutomats((globalAutomatsRes.data as any) ?? []);
     setLoading(false);
   };
 
