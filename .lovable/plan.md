@@ -1,38 +1,41 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Rozbudowa PDF Dekodowania o pełne dane zamówienia
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Obecny stan
+PDF dekodowania zawiera: nagłówek, SKU, zdjęcie wariantu (180x90mm), dwie kolumny z podstawowymi komponentami i dodatkami. Dane są skrótowe.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Cel
+PDF ma zawierać **wszystkie szczegóły techniczne** zamówienia — jak ściągawka Kierownika, ale dla jednego konkretnego zdekodowanego SKU. Zdjęcie wariantu zostaje na górze.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Nowy układ PDF (wielostronicowy A4)
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+**Strona 1:**
+1. Nagłówek (numer zamówienia, seria, data) — bez zmian
+2. SKU wycentrowane — bez zmian
+3. Zdjęcie wariantu — zmniejszone do ~60mm wysokości (zamiast 90mm) żeby zmieścić więcej danych
+4. **Tabela: Tkanina** — kod, nazwa, kolor, grupa cenowa
+5. **Tabela: Siedzisko — Stolarka** — kod, typ, model, stelaż, modyfikacja, sprężyna, wykończenie
+6. **Tabela: Siedzisko — Pianki** — szczegółowe pianki (formatFoamsDetailed), front, pasek środek
+7. **Tabela: Oparcie** — kod, wysokość, stelaż, góra, sprężyna, wykończenie + pianki szczegółowe
+8. **Tabela: Boczek** — kod, nazwa, stelaż, wykończenie
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**Strona 2 (jeśli potrzebna — jsPDF autoTable automatycznie łamie strony):**
+9. **Tabela: Skrzynia + Automat** — kody, nazwy, typ automatu
+10. **Tabela: Nóżki** — kod, materiał, kolor + wysokości pod skrzynią i siedziskiem
+11. **Tabela: Dodatki** — poduszka, jaśki, wałek z wykończeniami
+12. **Tabela: Pufa** (warunkowa) — SKU pufy, nóżki pufy
+13. **Tabela: Fotel** (warunkowa) — SKU fotela, nóżki fotela
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+### Zmiana w pliku
+- **`src/utils/pdfGenerators/decodingPDF.ts`** — pełna przebudowa funkcji `generateDecodingPDF`:
+  - Zmniejszenie obszaru zdjęcia (imageH 90→60)
+  - Zastąpienie dwukolumnowego layoutu sekwencją pełnoszerokich tabel (używając `addTable` z pdfHelpers)
+  - Dodanie szczegółowych danych pianek (via `formatFoamsDetailed`)
+  - Użycie mniejszej czcionki (fontSize 8) i mniejszego row height (6) żeby zmieścić dużo danych
+  - Automatyczne łamanie stron przez autoTable
 
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Bez zmian
+- `pdfHelpers.ts` — istniejące `addTable`, `addHeader` wystarczą
+- Typy — `DecodedSKU` już zawiera wszystkie potrzebne dane
 
