@@ -251,7 +251,7 @@ const OrderDetailsPage = () => {
                   <div className="space-y-2 text-sm">
                     <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name}`} />
                     <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`} />
-                    <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}`} />
+                    <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.type || '?'}`} />
                     <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}`} />
                     {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
                     {decoded.fotelLegs && <InfoRow label="Nóżki" value={`${decoded.fotelLegs.code} H ${decoded.fotelLegs.height}cm (${decoded.fotelLegs.count} szt)`} />}
