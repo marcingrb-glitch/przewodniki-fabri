@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 const Header = () => {
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, isAdmin, permissions, signOut } = useAuth();
+  const hasAnyPermission = isAdmin || permissions.can_view_cheatsheets || permissions.can_view_specs;
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
