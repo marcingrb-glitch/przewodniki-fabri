@@ -187,6 +187,83 @@ export default function DecodingTemplates() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const seedDefaultsMutation = useMutation({
+    mutationFn: async () => {
+      const sid = selectedSeriesId === "__global__" ? null : selectedSeriesId;
+      const defaults = [
+        { section_name: "Tkanina", sort_order: 0, columns: [
+          { header: "Kod", field: "fabric.code" }, { header: "Nazwa", field: "fabric.name" },
+          { header: "Kolor", field: "fabric.color" }, { header: "Grupa", field: "fabric.group" },
+        ]},
+        { section_name: "Siedzisko — Stolarka", sort_order: 1, columns: [
+          { header: "Kod", field: "seat.code" }, { header: "Typ", field: "seat.type" },
+          { header: "Stelaż", field: "seat.frame" }, { header: "Mod. stelaża", field: "seat.frameModification" },
+          { header: "Sprężyna", field: "seat.springType" }, { header: "Wykończenie", field: "seat.finish_name" },
+        ]},
+        { section_name: "Siedzisko — Pianki", sort_order: 2, columns: [
+          { header: "Pianka", field: "seat.foams_summary" }, { header: "Front", field: "seat.front" },
+          { header: "Pasek środek", field: "seat.midStrip_yn" },
+        ]},
+        { section_name: "Oparcie", sort_order: 3, columns: [
+          { header: "Kod", field: "backrest.code" }, { header: "Stelaż", field: "backrest.frame" },
+          { header: "Pianka", field: "backrest.foams_summary" }, { header: "Góra", field: "backrest.top" },
+          { header: "Sprężyna", field: "backrest.springType" }, { header: "Wykończenie", field: "backrest.finish_name" },
+        ]},
+        { section_name: "Boczek", sort_order: 4, columns: [
+          { header: "Kod", field: "side.code" }, { header: "Stelaż", field: "side.frame" },
+          { header: "Wykończenie", field: "side.finish_name" },
+        ]},
+        { section_name: "Skrzynia + Automat", sort_order: 5, columns: [
+          { header: "Skrzynia", field: "chest.name" }, { header: "Automat", field: "automat.code_name" },
+        ]},
+        { section_name: "Nóżki", sort_order: 6, columns: [
+          { header: "Kod + kolor", field: "legs.code_color" },
+          { header: "Skrzynia info", field: "legHeights.sofa_chest_info" },
+          { header: "Siedzisko info", field: "legHeights.sofa_seat_info" },
+        ]},
+        { section_name: "Poduszka", sort_order: 7, is_conditional: true, condition_field: "pillow", columns: [
+          { header: "Kod", field: "pillow.code" }, { header: "Nazwa", field: "pillow.name" },
+          { header: "Wykończenie", field: "pillow.finish_info" },
+        ]},
+        { section_name: "Jaśki", sort_order: 8, is_conditional: true, condition_field: "jaski", columns: [
+          { header: "Kod", field: "jaski.code" }, { header: "Nazwa", field: "jaski.name" },
+          { header: "Wykończenie", field: "jaski.finish_info" },
+        ]},
+        { section_name: "Wałek", sort_order: 9, is_conditional: true, condition_field: "walek", columns: [
+          { header: "Kod", field: "walek.code" }, { header: "Nazwa", field: "walek.name" },
+          { header: "Wykończenie", field: "walek.finish_info" },
+        ]},
+        { section_name: "Pufa", sort_order: 10, is_conditional: true, condition_field: "extras_pufa_fotel", columns: [
+          { header: "Front/tył", field: "pufaSeat.frontBack" }, { header: "Boki", field: "pufaSeat.sides" },
+          { header: "Pianka", field: "pufaSeat.foam" }, { header: "Skrzynka", field: "pufaSeat.box" },
+          { header: "Nóżka kod", field: "pufaLegs.code" }, { header: "Wys.", field: "pufaLegs.height_info" },
+          { header: "Ilość", field: "pufaLegs.count_info" },
+        ]},
+        { section_name: "Fotel", sort_order: 11, is_conditional: true, condition_field: "fotelLegs", columns: [
+          { header: "Nóżka kod", field: "fotelLegs.code" }, { header: "Wys.", field: "fotelLegs.height_info" },
+          { header: "Ilość", field: "fotelLegs.count_info" },
+        ]},
+      ];
+      const inserts = defaults.map(d => ({
+        product_type: PRODUCT_TYPE,
+        series_id: sid,
+        section_name: d.section_name,
+        sort_order: d.sort_order,
+        is_conditional: d.is_conditional || false,
+        condition_field: d.condition_field || null,
+        columns: d.columns as any,
+        enabled: true,
+      }));
+      const { error } = await supabase.from("guide_sections").insert(inserts);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guide-sections"] });
+      toast.success("Wstawiono domyślne sekcje dekodowania");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const openAdd = () => {
     const maxOrder = filtered.length > 0 ? Math.max(...filtered.map(s => s.sort_order)) : 0;
     setEditingSection(null);
