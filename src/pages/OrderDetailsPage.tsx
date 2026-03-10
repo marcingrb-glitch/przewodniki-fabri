@@ -310,14 +310,14 @@ const OrderDetailsPage = () => {
           }} />
           <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
             const zip = new JSZip();
-            zip.file("sofa_przewodnik.pdf", await generateSofaGuidePDF(decoded));
+            zip.file("sofa_przewodnik.pdf", await generateGuidePDF(decoded, "sofa"));
             zip.file("sofa_etykiety.pdf", await generateSofaLabelsPDF(decoded));
             if (hasPufa) {
-              zip.file("pufa_przewodnik.pdf", await generatePufaGuidePDF(decoded));
+              zip.file("pufa_przewodnik.pdf", await generateGuidePDF(decoded, "pufa"));
               zip.file("pufa_etykiety.pdf", await generatePufaLabelsPDF(decoded));
             }
             if (hasFotel) {
-              zip.file("fotel_przewodnik.pdf", await generateFotelGuidePDF(decoded));
+              zip.file("fotel_przewodnik.pdf", await generateGuidePDF(decoded, "fotel"));
               zip.file("fotel_etykiety.pdf", await generateFotelLabelsPDF(decoded));
             }
             zip.file("dekodowanie.pdf", await generateDecodingPDF(decoded, variantImageUrl || undefined));
