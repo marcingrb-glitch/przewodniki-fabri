@@ -158,10 +158,28 @@ export default function LabelTemplates() {
     await updateMutation.mutateAsync({ id, field: "display_fields", value: fields });
   };
 
+  // Map leg components to their condition fields
+  const LEG_CONDITION_MAP: Record<string, string> = {
+    leg_chest: "legHeights.sofa_chest",
+    leg_seat: "legHeights.sofa_seat",
+    leg: "pufaLegs",
+    legs: "legHeights.sofa_chest",
+  };
+
+  const isLegComponent = (component: string) => component in LEG_CONDITION_MAP;
+
   const handleComponentChange = async (id: string, component: string) => {
     await updateMutation.mutateAsync({ id, field: "component", value: component });
     // Clear display_fields when component changes
     await updateMutation.mutateAsync({ id, field: "display_fields", value: [] });
+    // Auto-set conditional for leg components
+    const isLeg = isLegComponent(component);
+    await updateMutation.mutateAsync({ id, field: "is_conditional", value: isLeg });
+    await updateMutation.mutateAsync({
+      id,
+      field: "condition_field",
+      value: isLeg ? LEG_CONDITION_MAP[component] : null,
+    });
   };
 
   const filteredTemplates = templates.filter((t) => {
