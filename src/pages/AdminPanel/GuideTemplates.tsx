@@ -356,7 +356,6 @@ export default function GuideTemplates() {
                       <TableCell className="text-xs text-muted-foreground">
                         {(s.columns as GuideColumn[]).map(c => c.header).join(" | ")}
                       </TableCell>
-                      <TableCell className="text-xs">{getSeriesName(s.series_id)}</TableCell>
                       <TableCell className="text-xs">
                         {s.is_conditional ? `✓ (${s.condition_field})` : "—"}
                       </TableCell>
