@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Plus, Trash2 } from "lucide-react";
 import { COMPONENT_FIELDS } from "./DisplayFieldsSelector";
+import { useLabelSettings, type LabelSettingsData } from "./LabelSettings";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
