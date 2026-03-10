@@ -244,7 +244,7 @@ export default function SeriesBackrests({ seriesId }: Props) {
       <div className="rounded-md border p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold">Warianty szycia</h4>
-          <Button variant="outline" size="sm" onClick={() => addSewingVariant(b.code)}>
+          <Button variant="outline" size="sm" onClick={() => addSewingVariant(b)}>
             <Plus className="mr-1 h-3 w-3" /> Dodaj wariant
           </Button>
         </div>
