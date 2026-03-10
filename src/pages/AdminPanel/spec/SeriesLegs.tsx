@@ -107,17 +107,15 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
   const mountRows: MountRow[] = [];
 
   for (const c of chests) {
-    if (c.code === "SK23") {
-      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N4 plastikowe", height: "2.5 cm", count: "4 szt", who: "Tapicer (na stanowisku)" });
-    } else if (c.code === "SK15") {
-      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N z SKU", height: "10 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
-    } else if (c.code === "SK17") {
-      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N z SKU", height: "8 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
-    } else if (c.leg_height_cm > 0) {
-      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N z SKU", height: `${c.leg_height_cm} cm`, count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
-    } else {
-      mountRows.push({ element: "Pod skrzynią", detail: c.code, type: "N4 plastikowe", height: "2.5 cm", count: "4 szt", who: "Tapicer (na stanowisku)" });
-    }
+    const isPlastic = c.leg_height_cm <= 2.5;
+    mountRows.push({
+      element: "Pod skrzynią",
+      detail: c.code,
+      type: isPlastic ? "N4 plastikowe" : "N z SKU",
+      height: `${c.leg_height_cm} cm`,
+      count: "4 szt",
+      who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
+    });
   }
 
   for (const a of automats) {

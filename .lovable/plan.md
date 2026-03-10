@@ -1,45 +1,38 @@
 
 
-## Plan: Make "Kto co kompletuje" data-driven instead of hardcoded
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Problem
-The "Kto co kompletuje" table in `SeriesLegs.tsx` has hardcoded logic mapping specific chest codes (SK23, SK15, SK17) to leg types. This can't be edited from the admin panel.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Solution
-Remove all hardcoded chest-code checks. Derive leg type from `chests.leg_height_cm`:
-- If `leg_height_cm <= 2.5` → N4 plastikowe, Tapicer (na stanowisku)
-- If `leg_height_cm > 2.5` → N z SKU, Dziewczyny od nóżek
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-This way, editing `leg_height_cm` in the Chests admin panel controls the behavior everywhere.
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-### Changes
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-**`src/pages/AdminPanel/spec/SeriesLegs.tsx`** (lines 109-120):
-Replace the hardcoded `if (c.code === "SK23") ... else if (c.code === "SK15") ...` block with a single data-driven rule:
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-```typescript
-for (const c of chests) {
-  const isPlastic = c.leg_height_cm <= 2.5;
-  mountRows.push({
-    element: "Pod skrzynią",
-    detail: c.code,
-    type: isPlastic ? "N4 plastikowe" : "N z SKU",
-    height: `${c.leg_height_cm} cm`,
-    count: "4 szt",
-    who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
-  });
-}
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-Current chest data confirms this logic works correctly:
-- SK23: 2.5cm → plastic (correct)
-- SK15: 10cm → from SKU (correct)
-- SK17: 8cm → from SKU (correct)
+### Krok 4: App.tsx — routing
 
-### No changes to
-- `skuParser.ts`, `skuDecoder.ts`, `utils/pdfGenerators/*`
-- Database schema (no migration needed)
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-### Files to edit
-- `src/pages/AdminPanel/spec/SeriesLegs.tsx` only
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
