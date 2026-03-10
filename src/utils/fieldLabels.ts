@@ -17,7 +17,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Automat
   "automat.code": "Automat",
-  "automat.name": "Nazwa",
+  "automat.name": "Automat",
   "automat.type": "Typ",
 
   // Side
