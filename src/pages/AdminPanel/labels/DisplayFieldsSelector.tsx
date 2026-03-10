@@ -23,6 +23,7 @@ const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "seat.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "seat.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
     { value: "seat.midStrip", label: "Środkowy pasek", source: "seats_sofa.center_strip" },
+    { value: "seat.springType", label: "Sprężyna siedziska", source: "seats_sofa.spring_type" },
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
     { value: "automat.name", label: "Nazwa automatu", source: "automats (wspólne)" },
     { value: "automat.type", label: "Typ automatu", source: "automats (wspólne)" },
