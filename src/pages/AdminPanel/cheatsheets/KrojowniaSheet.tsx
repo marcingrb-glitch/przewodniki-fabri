@@ -44,6 +44,14 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
     },
   });
 
+  const { data: sewingVariants = [] } = useQuery({
+    queryKey: ["cheat-sewing-variants", seriesId],
+    queryFn: async () => {
+      const { data } = await supabase.from("sewing_variants").select("*").eq("series_id", seriesId).eq("component_type", "backrest").order("variant_name");
+      return data ?? [];
+    },
+  });
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">
