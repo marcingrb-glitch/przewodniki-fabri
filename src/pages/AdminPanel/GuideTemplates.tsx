@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 
 interface GuideColumn {
   header: string;
@@ -29,47 +33,68 @@ interface GuideSection {
   enabled: boolean;
 }
 
-const AVAILABLE_FIELDS = [
-  { value: "seat.code_finish", label: "Siedzisko (kod + wykończenie)" },
-  { value: "seat.frame", label: "Siedzisko — stelaż" },
-  { value: "seat.foams_summary", label: "Siedzisko — pianka" },
-  { value: "seat.front", label: "Siedzisko — front" },
-  { value: "seat.midStrip_yn", label: "Siedzisko — pasek środek" },
-  { value: "backrest.code_finish", label: "Oparcie (kod + wykończenie)" },
-  { value: "backrest.frame", label: "Oparcie — stelaż" },
-  { value: "backrest.foams_summary", label: "Oparcie — pianka" },
-  { value: "backrest.top", label: "Oparcie — góra" },
-  { value: "side.code_finish", label: "Boczek (kod + wykończenie)" },
-  { value: "side.frame", label: "Boczek — stelaż" },
-  { value: "side.foam", label: "Boczek — pianka" },
-  { value: "chest.name", label: "Skrzynia — nazwa" },
-  { value: "chest_automat.label", label: "Skrzynia + Automat (etykieta)" },
-  { value: "automat.code_name", label: "Automat (kod + nazwa)" },
-  { value: "legs.code_color", label: "Nóżka (kod + kolor)" },
-  { value: "legHeights.sofa_chest_info", label: "Nóżka — skrzynia info" },
-  { value: "legHeights.sofa_seat_info", label: "Nóżka — siedzisko info" },
-  { value: "pillow.code", label: "Poduszka — kod" },
-  { value: "pillow.name", label: "Poduszka — nazwa" },
-  { value: "pillow.finish_info", label: "Poduszka — wykończenie" },
-  { value: "jaski.code", label: "Jaśki — kod" },
-  { value: "jaski.name", label: "Jaśki — nazwa" },
-  { value: "jaski.finish_info", label: "Jaśki — wykończenie" },
-  { value: "walek.code", label: "Wałek — kod" },
-  { value: "walek.name", label: "Wałek — nazwa" },
-  { value: "walek.finish_info", label: "Wałek — wykończenie" },
-  { value: "pufaSeat.frontBack", label: "Pufa — front/tył" },
-  { value: "pufaSeat.sides", label: "Pufa — boki" },
-  { value: "pufaSeat.foam", label: "Pufa — pianka bazowa" },
-  { value: "pufaSeat.box", label: "Pufa — skrzynka" },
-  { value: "pufaLegs.code", label: "Pufa nóżka — kod" },
-  { value: "pufaLegs.count_info", label: "Pufa nóżka — ilość" },
-  { value: "pufaLegs.height_info", label: "Pufa nóżka — wysokość" },
-  { value: "fotelLegs.code", label: "Fotel nóżka — kod" },
-  { value: "fotelLegs.count_info", label: "Fotel nóżka — ilość" },
-  { value: "fotelLegs.height_info", label: "Fotel nóżka — wysokość" },
-  { value: "extras.label", label: "Dodatki — etykieta" },
-  { value: "extras.pufa_sku", label: "Dodatki — pufa SKU" },
-  { value: "extras.fotel_sku", label: "Dodatki — fotel SKU" },
+interface FieldDef {
+  value: string;
+  label: string;
+  group: string;
+}
+
+const FIELD_GROUPS: { key: string; label: string }[] = [
+  { key: "seat", label: "Siedzisko" },
+  { key: "backrest", label: "Oparcie" },
+  { key: "side", label: "Boczek" },
+  { key: "chest", label: "Skrzynia" },
+  { key: "automat", label: "Automat" },
+  { key: "legs", label: "Nóżki" },
+  { key: "pillow", label: "Poduszka" },
+  { key: "jaski", label: "Jaśki" },
+  { key: "walek", label: "Wałek" },
+  { key: "pufa", label: "Pufa" },
+  { key: "fotel", label: "Fotel" },
+  { key: "extras", label: "Dodatki" },
+];
+
+const AVAILABLE_FIELDS: FieldDef[] = [
+  { value: "seat.code_finish", label: "Kod + wykończenie", group: "seat" },
+  { value: "seat.frame", label: "Stelaż", group: "seat" },
+  { value: "seat.foams_summary", label: "Pianka", group: "seat" },
+  { value: "seat.front", label: "Front", group: "seat" },
+  { value: "seat.midStrip_yn", label: "Pasek środek", group: "seat" },
+  { value: "backrest.code_finish", label: "Kod + wykończenie", group: "backrest" },
+  { value: "backrest.frame", label: "Stelaż", group: "backrest" },
+  { value: "backrest.foams_summary", label: "Pianka", group: "backrest" },
+  { value: "backrest.top", label: "Góra", group: "backrest" },
+  { value: "side.code_finish", label: "Kod + wykończenie", group: "side" },
+  { value: "side.frame", label: "Stelaż", group: "side" },
+  { value: "side.foam", label: "Pianka", group: "side" },
+  { value: "chest.name", label: "Nazwa", group: "chest" },
+  { value: "chest_automat.label", label: "Skrzynia + Automat", group: "chest" },
+  { value: "automat.code_name", label: "Kod + nazwa", group: "automat" },
+  { value: "legs.code_color", label: "Kod + kolor", group: "legs" },
+  { value: "legHeights.sofa_chest_info", label: "Skrzynia info", group: "legs" },
+  { value: "legHeights.sofa_seat_info", label: "Siedzisko info", group: "legs" },
+  { value: "pillow.code", label: "Kod", group: "pillow" },
+  { value: "pillow.name", label: "Nazwa", group: "pillow" },
+  { value: "pillow.finish_info", label: "Wykończenie", group: "pillow" },
+  { value: "jaski.code", label: "Kod", group: "jaski" },
+  { value: "jaski.name", label: "Nazwa", group: "jaski" },
+  { value: "jaski.finish_info", label: "Wykończenie", group: "jaski" },
+  { value: "walek.code", label: "Kod", group: "walek" },
+  { value: "walek.name", label: "Nazwa", group: "walek" },
+  { value: "walek.finish_info", label: "Wykończenie", group: "walek" },
+  { value: "pufaSeat.frontBack", label: "Front/tył", group: "pufa" },
+  { value: "pufaSeat.sides", label: "Boki", group: "pufa" },
+  { value: "pufaSeat.foam", label: "Pianka bazowa", group: "pufa" },
+  { value: "pufaSeat.box", label: "Skrzynka", group: "pufa" },
+  { value: "pufaLegs.code", label: "Nóżka kod", group: "pufa" },
+  { value: "pufaLegs.count_info", label: "Nóżka ilość", group: "pufa" },
+  { value: "pufaLegs.height_info", label: "Nóżka wysokość", group: "pufa" },
+  { value: "fotelLegs.code", label: "Nóżka kod", group: "fotel" },
+  { value: "fotelLegs.count_info", label: "Nóżka ilość", group: "fotel" },
+  { value: "fotelLegs.height_info", label: "Nóżka wysokość", group: "fotel" },
+  { value: "extras.label", label: "Etykieta", group: "extras" },
+  { value: "extras.pufa_sku", label: "Pufa SKU", group: "extras" },
+  { value: "extras.fotel_sku", label: "Fotel SKU", group: "extras" },
 ];
 
 const CONDITION_FIELDS = [
@@ -217,12 +242,30 @@ export default function GuideTemplates() {
     reorderMutation.mutate({ id: other.id, newOrder: s.sort_order });
   };
 
-  const addColumn = () => setForm({ ...form, columns: [...form.columns, { header: "", field: "" }] });
+  const toggleField = (fieldValue: string) => {
+    const exists = form.columns.find(c => c.field === fieldValue);
+    if (exists) {
+      setForm({ ...form, columns: form.columns.filter(c => c.field !== fieldValue) });
+    } else {
+      const fieldDef = AVAILABLE_FIELDS.find(f => f.value === fieldValue);
+      const groupDef = FIELD_GROUPS.find(g => g.key === fieldDef?.group);
+      const defaultHeader = fieldDef ? `${groupDef?.label || ""} — ${fieldDef.label}` : fieldValue;
+      setForm({ ...form, columns: [...form.columns, { header: defaultHeader, field: fieldValue }] });
+    }
+  };
   const removeColumn = (i: number) => setForm({ ...form, columns: form.columns.filter((_, idx) => idx !== i) });
-  const updateColumn = (i: number, key: keyof GuideColumn, val: string) => {
+  const updateColumnHeader = (i: number, val: string) => {
     const cols = [...form.columns];
-    cols[i] = { ...cols[i], [key]: val };
+    cols[i] = { ...cols[i], header: val };
     setForm({ ...form, columns: cols });
+  };
+  const moveColumn = (i: number, direction: "up" | "down") => {
+    const cols = [...form.columns];
+    const swapIdx = direction === "up" ? i - 1 : i + 1;
+    if (swapIdx < 0 || swapIdx >= cols.length) return;
+    [cols[i], cols[swapIdx]] = [cols[swapIdx], cols[i]];
+    setForm({ ...form, columns: cols });
+  };
   };
 
   const getSeriesName = (id: string | null) => {
@@ -363,33 +406,83 @@ export default function GuideTemplates() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Kolumny tabeli</Label>
-                <Button variant="outline" size="sm" onClick={addColumn}><Plus className="mr-1 h-3 w-3" /> Kolumna</Button>
-              </div>
-              {form.columns.map((col, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <Input
-                    placeholder="Nagłówek"
-                    value={col.header}
-                    onChange={e => updateColumn(i, "header", e.target.value)}
-                    className="flex-1"
-                  />
-                  <Select value={col.field} onValueChange={v => updateColumn(i, "field", v)}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Pole danych" /></SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_FIELDS.map(f => (
-                        <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="icon" onClick={() => removeColumn(i)} disabled={form.columns.length <= 1}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
+            <div className="space-y-3">
+              <Label>Kolumny tabeli</Label>
+              
+              {/* Field selector popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-between text-xs font-normal">
+                    <span className="flex flex-wrap gap-1">
+                      {form.columns.length === 0 ? (
+                        <span className="text-muted-foreground italic">wybierz pola...</span>
+                      ) : (
+                        <span>{form.columns.length} pól wybrano</span>
+                      )}
+                    </span>
+                    <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
                   </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[380px] p-2 max-h-[400px] overflow-y-auto" align="start">
+                  <div className="space-y-0.5">
+                    {FIELD_GROUPS.map((group, gi) => {
+                      const groupFields = AVAILABLE_FIELDS.filter(f => f.group === group.key);
+                      if (groupFields.length === 0) return null;
+                      return (
+                        <div key={group.key}>
+                          {gi > 0 && <Separator className="my-1.5" />}
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide px-2 pt-1 pb-0.5">
+                            {group.label}
+                          </p>
+                          {groupFields.map(field => (
+                            <label
+                              key={field.value}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-sm"
+                            >
+                              <Checkbox
+                                checked={form.columns.some(c => c.field === field.value)}
+                                onCheckedChange={() => toggleField(field.value)}
+                              />
+                              <span className="truncate">{field.label}</span>
+                              <span className="text-muted-foreground text-[10px] ml-auto font-mono shrink-0">{field.value}</span>
+                            </label>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Selected columns list */}
+              {form.columns.length > 0 && (
+                <div className="space-y-1.5 border rounded-md p-2">
+                  {form.columns.map((col, i) => (
+                    <div key={`${col.field}-${i}`} className="flex gap-1.5 items-center">
+                      <div className="flex flex-col gap-0.5 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => moveColumn(i, "up")} disabled={i === 0}>
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => moveColumn(i, "down")} disabled={i === form.columns.length - 1}>
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono shrink-0 max-w-[140px] truncate">
+                        {col.field}
+                      </Badge>
+                      <Input
+                        value={col.header}
+                        onChange={e => updateColumnHeader(i, e.target.value)}
+                        placeholder="Nagłówek"
+                        className="h-7 text-xs flex-1"
+                      />
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeColumn(i)}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

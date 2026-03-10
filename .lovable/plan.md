@@ -1,32 +1,38 @@
 
 
-## Selektor pól w sekcjach przewodnika — styl jak etykiety
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Obecny stan
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-Panel `GuideTemplates` wymaga ręcznego dodawania kolumn jedna po drugiej (nagłówek + Select z polem). Etykiety używają `DisplayFieldsSelector` z checkboxami pogrupowanymi po komponentach — znacznie wygodniej.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Plan
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Zastąpić obecny edytor kolumn w dialogu sekcji selektorem checkboxowym analogicznym do `DisplayFieldsSelector`, z następującą logiką:
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-1. **Selektor pól z checkboxami** — pogrupowane po komponentach (Siedzisko, Oparcie, Boczek, Skrzynia, Nóżki, Poduszka, Jaśki, Wałek, Pufa, Fotel, Dodatki). Zaznaczenie pola = dodanie kolumny z domyślnym nagłówkiem.
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-2. **Lista wybranych kolumn** — pod selektorem, z możliwością:
-   - Zmiany nagłówka (Input)
-   - Zmiany kolejności (strzałki góra/dół)
-   - Usunięcia (Trash)
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-3. **Przepływ**: zaznacz pole w selektorze → pojawia się na liście z domyślnym nagłówkiem z `AVAILABLE_FIELDS.label` → admin może zmienić nagłówek → kolejność drag/strzałkami.
+### Krok 4: App.tsx — routing
 
-### Zmiany
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-**`src/pages/AdminPanel/GuideTemplates.tsx`**:
-- Pogrupować `AVAILABLE_FIELDS` po prefixie (seat, backrest, side, chest, legs, pillow, jaski, walek, pufa, fotel, extras)
-- Zamienić sekcję "Kolumny tabeli" na Popover z checkboxami (wzorzec z `DisplayFieldsSelector`) + lista wybranych pól z edycją nagłówka
-- Zaznaczenie checkboxa dodaje kolumnę `{ header: defaultLabel, field: value }`, odznaczenie usuwa
+### Krok 5: skuDecoder.ts — uprość seat types
 
-### Pliki
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
 
-- `src/pages/AdminPanel/GuideTemplates.tsx` — jedyna zmiana
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
