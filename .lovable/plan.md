@@ -1,38 +1,57 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Problem: Warianty szycia "znikają" po zapisie
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Analiza
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+Dane w bazie potwierdzają, ze warianty **zostały zapisane** (Wariant 3 i 4 z modelami [Ravenna] i opisem "Bodno na górze" istnieją w bazie). Problem polega na tym, ze po zapisie **nie są widoczne** na karcie OP68 sprężyna B.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+Przyczyna tkwi w funkcji `getMatchingVariants`:
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+```text
+getMatchingVariants(b) — filtruje warianty szycia wg modeli karty:
+  1. Pobiera warianty z component_code === b.code (OP68)
+  2. Filtruje: v.models musi mieć overlap z b.model_name
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+Karta B: model_name = "Modena / Sienna / Porto" (bez Ravenna!)
+Wariant 3: models = ["Ravenna"]
+→ Ravenna ∉ [Modena, Sienna, Porto] → wariant UKRYTY
+```
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+**Flow użytkownika:**
+1. Klika "Dodaj wariant" → wariant z `models: []` pojawia się (bo length===0 przepuszcza filtr)
+2. Przypisuje Ravenna do modeli wariantu, wpisuje opis
+3. Po zapisie `fetchAll()` → wariant ma teraz `models: ["Ravenna"]` → filtr odrzuca go, bo karta B nie ma Ravenna w model_name
+4. Wariant "znika" — użytkownik myśli, ze nie zapisał się
 
-### Krok 4: App.tsx — routing
+### Rozwiązanie
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+Zmienić logikę wyświetlania wariantów szycia: **nie filtrować po overlap modeli**. Zamiast tego wyświetlać wszystkie warianty dla danego kodu komponentu na każdej karcie z tym kodem. Model badges w tabeli wariantów wystarczająco komunikują, do których modeli wariant się odnosi.
 
-### Krok 5: skuDecoder.ts — uprość seat types
+### Zmiana w `SeriesBackrests.tsx`
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+Funkcja `getMatchingVariants` — usunąć filtrowanie po modelach:
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+```typescript
+// PRZED:
+const getMatchingVariants = (b: Backrest) => {
+  const variants = sewingVariants.filter(v => v.component_code === b.code);
+  if (!b.model_name) return variants;
+  const cardModels = parseModels(b.model_name);
+  return variants.filter(v =>
+    v.models.length === 0 || v.models.some(m => cardModels.includes(m))
+  );
+};
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
+// PO:
+const getMatchingVariants = (b: Backrest) => {
+  return sewingVariants.filter(v => v.component_code === b.code);
+};
+```
 
-### Krok 7: Usuń SKUConfig.tsx
+Dodatkowo: usunąć zduplikowane Warianty 3 i 4 z bazy (oba mają ten sam opis i modele — wystarczy jeden).
 
-Plik nie jest już potrzebny.
+### Plik do edycji
+- `src/pages/AdminPanel/spec/SeriesBackrests.tsx` — uproszczenie `getMatchingVariants`
+- Usunięcie duplikatu wariantu z bazy (Wariant 4, id: `8c0115b8-...`)
 
