@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
 import { DecodedSKU } from "@/types";
 import { Eye, Download } from "lucide-react";
+import PDFPreview from "@/components/PDFPreview";
+import { toast } from "sonner";
 
 function buildExampleDecoded(data: any): DecodedSKU {
   const finish = data.finish || { code: "A", name: "Zwykłe" };
@@ -123,7 +124,8 @@ function buildExampleDecoded(data: any): DecodedSKU {
 
 export default function DecodingTemplates() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("__any__");
-  const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const { data: seriesList = [] } = useQuery({
@@ -169,17 +171,20 @@ export default function DecodingTemplates() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const generatePreview = async () => {
-    if (!exampleData) return;
+  const handlePreview = async () => {
+    if (!exampleData) {
+      toast.error("Brak danych do wygenerowania podglądu");
+      return;
+    }
     setGenerating(true);
     try {
       const decoded = buildExampleDecoded(exampleData);
       const blob = await generateDecodingPDF(decoded);
-      const reader = new FileReader();
-      reader.onload = () => setPdfDataUri(reader.result as string);
-      reader.readAsDataURL(blob);
+      setPdfBlob(blob);
+      setShowPreview(true);
     } catch (err) {
       console.error("Error generating decoding PDF:", err);
+      toast.error("Błąd generowania PDF dekodowania");
     } finally {
       setGenerating(false);
     }
@@ -199,17 +204,11 @@ export default function DecodingTemplates() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error downloading decoding PDF:", err);
+      toast.error("Błąd pobierania PDF");
     } finally {
       setGenerating(false);
     }
   };
-
-  useEffect(() => {
-    if (exampleData) {
-      generatePreview();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exampleData]);
 
   return (
     <div className="space-y-4">
@@ -232,7 +231,7 @@ export default function DecodingTemplates() {
           </Select>
         </div>
 
-        <Button onClick={generatePreview} disabled={generating || !exampleData} variant="outline" size="sm">
+        <Button onClick={handlePreview} disabled={generating || !exampleData} variant="outline" size="sm">
           <Eye className="mr-1 h-4 w-4" /> Podgląd
         </Button>
         <Button onClick={handleDownload} disabled={generating || !exampleData} variant="outline" size="sm">
@@ -240,27 +239,14 @@ export default function DecodingTemplates() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-semibold">
-            📄 Podgląd dekodowania
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          {pdfDataUri ? (
-            <iframe
-              src={pdfDataUri}
-              className="w-full border rounded-md bg-background"
-              style={{ height: 700 }}
-              title="Podgląd dekodowania PDF"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
-              {generating ? "Generowanie podglądu..." : "Kliknij 'Podgląd' aby wygenerować PDF"}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {showPreview && (
+        <PDFPreview
+          pdfBlob={pdfBlob}
+          title="Podgląd dekodowania SKU"
+          fileName="dekodowanie-przyklad.pdf"
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   );
 }
