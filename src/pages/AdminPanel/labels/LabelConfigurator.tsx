@@ -249,7 +249,7 @@ export default function LabelConfigurator({
           <div className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/50 mb-1">
             <span className="text-xs text-muted-foreground">Nagłówek (auto):</span>
             <span className="text-xs font-medium">
-              „{productLabel} | Zam: &#123;nr&#125;"
+              „{headerText}"
             </span>
           </div>
 
