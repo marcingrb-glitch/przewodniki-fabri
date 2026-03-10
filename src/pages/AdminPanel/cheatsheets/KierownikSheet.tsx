@@ -232,7 +232,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                 <tr key={s.id} className={exc ? "bg-red-100 dark:bg-red-900/30" : ""}>
                     <td className="border border-border px-1 py-0.5 font-mono">{s.code}</td>
                     <td className="border border-border px-1 py-0.5">{s.model_name ?? "—"}</td>
-                    <td className="border border-border px-1 py-0.5">{s.type_name ?? s.type ?? "—"}</td>
+                    <td className="border border-border px-1 py-0.5">{s.type ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5">{s.frame ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5">{s.frame_modification ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5 font-bold">{spring}</td>

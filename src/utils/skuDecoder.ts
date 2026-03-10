@@ -204,7 +204,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatMidStrip = seatSofaRes.data.center_strip ?? false;
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
     seatType = seatSofaRes.data.type ?? "";
-    seatTypeName = (seatSofaRes.data as any).type_name || SEAT_TYPES[seatType] || seatType;
+    seatTypeName = SEAT_TYPES[seatType] || seatType;
   } else {
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {

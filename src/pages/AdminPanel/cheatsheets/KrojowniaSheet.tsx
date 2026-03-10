@@ -115,7 +115,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
               {seats.map(s => (
                 <tr key={s.id}>
                   <td className="border border-border px-2 py-1 font-mono">{s.code}</td>
-                  <td className="border border-border px-2 py-1">{s.model_name ?? s.type_name ?? "—"}</td>
+                  <td className="border border-border px-2 py-1">{s.model_name ?? "—"}</td>
                   <td className="border border-border px-2 py-1">{(s.allowed_finishes ?? []).join(", ") || "—"}</td>
                   <td className="border border-border px-2 py-1 font-bold">{s.default_finish ?? "—"}</td>
                 </tr>

@@ -662,7 +662,6 @@ export type Database = {
           series_id: string
           spring_type: string | null
           type: string | null
-          type_name: string | null
         }
         Insert: {
           allowed_finishes?: string[] | null
@@ -679,7 +678,6 @@ export type Database = {
           series_id: string
           spring_type?: string | null
           type?: string | null
-          type_name?: string | null
         }
         Update: {
           allowed_finishes?: string[] | null
@@ -696,7 +694,6 @@ export type Database = {
           series_id?: string
           spring_type?: string | null
           type?: string | null
-          type_name?: string | null
         }
         Relationships: [
           {
