@@ -11,6 +11,7 @@ import InlineEditCell from "./spec/InlineEditCell";
 import { toast } from "sonner";
 import ComponentSelector from "./labels/ComponentSelector";
 import LabelConfigurator from "./labels/LabelConfigurator";
+import LabelSettings from "./labels/LabelSettings";
 
 interface LabelTemplate {
   id: string;
