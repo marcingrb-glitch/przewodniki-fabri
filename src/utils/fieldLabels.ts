@@ -16,7 +16,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "seat.springType": "Sprężyna siedziska",
 
   // Automat
-  "automat.code": "Kod automatu",
+  "automat.code": "Automat",
   "automat.name": "Nazwa automatu",
   "automat.type": "Typ automatu",
 
