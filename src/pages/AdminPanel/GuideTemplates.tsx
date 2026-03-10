@@ -72,6 +72,7 @@ const AVAILABLE_FIELDS: FieldDef[] = [
   { value: "backrest.frame", label: "Stelaż", group: "backrest" },
   { value: "backrest.foams_summary", label: "Pianka", group: "backrest" },
   { value: "backrest.top", label: "Góra", group: "backrest" },
+  { value: "backrest.springType", label: "Sprężyna", group: "backrest" },
   { value: "side.code", label: "Kod", group: "side" },
   { value: "side.finish_name", label: "Wykończenie", group: "side" },
   { value: "side.code_finish", label: "Kod + wykończenie (razem)", group: "side" },
