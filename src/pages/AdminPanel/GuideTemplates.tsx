@@ -333,8 +333,7 @@ export default function GuideTemplates() {
                     <TableHead className="w-10">#</TableHead>
                     <TableHead>Nazwa sekcji</TableHead>
                     <TableHead>Kolumny</TableHead>
-                    <TableHead>Seria</TableHead>
-                    <TableHead>Warunkowa</TableHead>
+                     <TableHead>Warunkowa</TableHead>
                     <TableHead>Aktywna</TableHead>
                     <TableHead className="w-32">Akcje</TableHead>
                   </TableRow>
