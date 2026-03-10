@@ -164,11 +164,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // ---- BACKREST query (depends on seat's model_name) ----
   const seatModelName = seatSofaRes.data?.model_name ?? null;
   let backrestsRes: { data: any } = { data: null };
+  const backrestSelect = "id, code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type";
   if (seriesId && parsed.backrest.code) {
     if (seatModelName) {
       const { data: byModel } = await supabase
         .from("backrests")
-        .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+        .select(backrestSelect)
         .eq("code", parsed.backrest.code)
         .eq("series_id", seriesId)
         .eq("model_name", seatModelName)
@@ -178,7 +179,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       } else {
         const { data: fallback } = await supabase
           .from("backrests")
-          .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+          .select(backrestSelect)
           .eq("code", parsed.backrest.code)
           .eq("series_id", seriesId)
           .is("model_name", null)
@@ -188,7 +189,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     } else {
       const { data: defaultBackrest } = await supabase
         .from("backrests")
-        .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+        .select(backrestSelect)
         .eq("code", parsed.backrest.code)
         .eq("series_id", seriesId)
         .is("model_name", null)
@@ -198,7 +199,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       } else {
         const { data: anyBackrest } = await supabase
           .from("backrests")
-          .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+          .select(backrestSelect)
           .eq("code", parsed.backrest.code)
           .eq("series_id", seriesId)
           .limit(1)
@@ -208,6 +209,48 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     }
   }
 
+  // ---- PRODUCT FOAMS (fetch all for seat/backrest/pufa) ----
+  let seatFoams: ProductFoamItem[] = [];
+  let backrestFoams: ProductFoamItem[] = [];
+  let pufaFoams: ProductFoamItem[] = [];
+
+  if (seriesId) {
+    const backrestId = backrestsRes.data?.id ?? null;
+    const { data: foamsData } = await supabase
+      .from("product_foams")
+      .select("component, position_number, name, height, width, length, material, quantity, notes, backrest_id")
+      .eq("series_id", seriesId)
+      .eq("seat_code", seatCode)
+      .order("position_number");
+
+    if (foamsData) {
+      const mapFoam = (f: any): ProductFoamItem => ({
+        position: f.position_number ?? 0,
+        name: f.name ?? "",
+        height: f.height,
+        width: f.width,
+        length: f.length,
+        material: f.material ?? "",
+        quantity: f.quantity ?? 1,
+        notes: f.notes,
+      });
+
+      for (const f of foamsData) {
+        const comp = f.component?.toLowerCase() ?? "";
+        if (comp.startsWith("oparcie") || comp.startsWith("backrest")) {
+          // Match by backrest_id if available
+          if (!backrestId || f.backrest_id === backrestId || !f.backrest_id) {
+            backrestFoams.push(mapFoam(f));
+          }
+        } else if (comp.startsWith("pufa")) {
+          pufaFoams.push(mapFoam(f));
+        } else {
+          // Seat foams (Baza, Front, etc.)
+          seatFoams.push(mapFoam(f));
+        }
+      }
+    }
+  }
   // ---- SERIES (fallback to static) ----
   const seriesData = seriesRes.data
     ? { name: seriesRes.data.name, collection: seriesRes.data.collection || "?" }
