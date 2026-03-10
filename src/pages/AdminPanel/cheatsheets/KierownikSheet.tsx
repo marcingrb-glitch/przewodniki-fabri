@@ -210,7 +210,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                     <td className="border border-border px-1 py-0.5">{s.frame ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5">{s.frame_modification ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5 font-bold">{spring}</td>
-                    <td className="border border-border px-1 py-0.5">{s.foam ?? "—"}</td>
+                    <td className="border border-border px-1 py-0.5">{formatFoamsForCode(s.code, "siedzisko") !== "—" ? formatFoamsForCode(s.code, "siedzisko") : s.foam ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5">{(s.allowed_finishes ?? []).join(",")}</td>
                   </tr>);
 
