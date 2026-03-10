@@ -42,7 +42,8 @@ interface FieldDef {
 }
 
 const FIELD_GROUPS: { key: string; label: string }[] = [
-  { key: "seat", label: "Siedzisko" },
+  { key: "seat_frame", label: "Siedzisko — Stolarka" },
+  { key: "seat_foam", label: "Siedzisko — Pianki" },
   { key: "backrest", label: "Oparcie" },
   { key: "side", label: "Boczek" },
   { key: "chest", label: "Skrzynia" },
@@ -57,15 +58,16 @@ const FIELD_GROUPS: { key: string; label: string }[] = [
 ];
 
 const AVAILABLE_FIELDS: FieldDef[] = [
-  { value: "seat.code", label: "Kod", group: "seat" },
-  { value: "seat.finish_name", label: "Wykończenie", group: "seat" },
-  { value: "seat.code_finish", label: "Kod + wykończenie (razem)", group: "seat" },
-  { value: "seat.type", label: "Typ siedziska", group: "seat" },
-  { value: "seat.frame", label: "Stelaż", group: "seat" },
-  { value: "seat.foams_summary", label: "Pianka", group: "seat" },
-  { value: "seat.front", label: "Front", group: "seat" },
-  { value: "seat.midStrip_yn", label: "Pasek środek", group: "seat" },
-  { value: "seat.springType", label: "Sprężyna", group: "seat" },
+  { value: "seat.code", label: "Kod", group: "seat_frame" },
+  { value: "seat.finish_name", label: "Wykończenie", group: "seat_frame" },
+  { value: "seat.code_finish", label: "Kod + wykończenie (razem)", group: "seat_frame" },
+  { value: "seat.type", label: "Typ siedziska", group: "seat_frame" },
+  { value: "seat.frame", label: "Stelaż", group: "seat_frame" },
+  { value: "seat.frameModification", label: "Modyfikacja stelaża", group: "seat_frame" },
+  { value: "seat.front", label: "Front", group: "seat_frame" },
+  { value: "seat.midStrip_yn", label: "Pasek środek", group: "seat_frame" },
+  { value: "seat.springType", label: "Sprężyna", group: "seat_frame" },
+  { value: "seat.foams_summary", label: "Pianka", group: "seat_foam" },
   { value: "backrest.code", label: "Kod", group: "backrest" },
   { value: "backrest.finish_name", label: "Wykończenie", group: "backrest" },
   { value: "backrest.code_finish", label: "Kod + wykończenie (razem)", group: "backrest" },

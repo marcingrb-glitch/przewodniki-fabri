@@ -39,6 +39,8 @@ function resolveField(decoded: DecodedSKU, field: string): string {
       return formatFoamsSummary(decoded.seat.foams);
     case "seat.midStrip_yn":
       return decoded.seat.midStrip ? "TAK" : "NIE";
+    case "seat.frameModification":
+      return decoded.seat.frameModification || "-";
     case "backrest.code":
       return decoded.backrest.code;
     case "backrest.finish_name":
