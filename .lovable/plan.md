@@ -1,47 +1,38 @@
 
 
-## Plan: Poprawki ściągawki nóżek i formatowania kolorów
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Plik 1: `src/pages/AdminPanel/cheatsheets/NozkiSheet.tsx` — pełna przebudowa logiki CO/CZEGO NIE
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-Przebudowa sekcji na dwa osobne zestawy wierszy (`doRows` / `dontRows`):
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-**doRows (CO KOMPLETOWAĆ):**
-- SK15: N z SKU, H10cm, 4szt
-- SK17: N z SKU, H8cm, 4szt
-- Automaty z `has_seat_legs` AND `seat_leg_type === "from_sku"`: N z SKU
-- Pufa gdy `pufa_leg_type === "from_sku"`: N z SKU
-- Fotel (tylko gdy `seriesCode !== "S2"`)
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-**dontRows (CZEGO NIE KOMPLETOWAĆ):**
-- SK23: N4 plastikowe, 2.5cm — tapicer ma na stanowisku
-- Automaty z `has_seat_legs` AND plastic/built_in: tapicer
-- Automaty bez `has_seat_legs` (AT2): BRAK nóżek
-- Pufa gdy plastic: tapicer
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-Wyświetlanie: `doRows` w sekcji zielonej, `dontRows` w sekcji czerwonej z powodami.
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-**Kolory nóżek** — zastąpienie istniejącej logiki nową `formatColors`:
-```typescript
-const formatColors = (colors: any): string => {
-  if (!colors) return "—";
-  if (typeof colors === "object" && !Array.isArray(colors)) {
-    return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(", ");
-  }
-  if (Array.isArray(colors)) {
-    if (colors.length === 0) return "—";
-    if (typeof colors[0] === "object") return colors.map((c: any) => `${c.code}=${c.name}`).join(", ");
-    return colors.join(", ");
-  }
-  return String(colors);
-};
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Plik 2: `src/pages/AdminPanel/spec/SeriesLegs.tsx` — fix formatColors
+### Krok 4: App.tsx — routing
 
-Linia 26-34: Zastąpić `formatColors` tą samą nową wersją (obsługuje JSONB object `{A: "Buk"}` i array `[{code, name}]`).
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-### Brak zmian w:
-- `skuParser.ts`, `skuDecoder.ts`, `utils/pdfGenerators/*`
-- Brak migracji SQL
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
