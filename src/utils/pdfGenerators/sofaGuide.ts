@@ -35,7 +35,7 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     [[
       `${decoded.backrest.code}${decoded.backrest.finish} (${decoded.backrest.finishName})`,
       decoded.backrest.frame,
-      decoded.backrest.foam,
+      formatFoamsSummary(decoded.backrest.foams, decoded.backrest.foam),
       decoded.backrest.top,
     ]]
   );

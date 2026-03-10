@@ -22,7 +22,7 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
     [[
       `${decoded.seat.code} (${decoded.seat.finishName})`,
       decoded.seat.frame,
-      decoded.seat.foam,
+      formatFoamsSummary(decoded.seat.foams, decoded.seat.foam),
       decoded.seat.front,
     ]]
   );
