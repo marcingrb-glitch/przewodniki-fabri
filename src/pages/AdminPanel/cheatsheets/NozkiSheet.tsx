@@ -33,6 +33,18 @@ interface CheatRow {
   reason?: string;
 }
 
+interface SeriesAutomat {
+  automat_code: string;
+  has_seat_legs: boolean;
+  seat_leg_height_cm: number | null;
+  seat_leg_count: number | null;
+}
+
+interface GlobalAutomat {
+  code: string;
+  name: string;
+}
+
 export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) {
   const { data: config } = useQuery({
     queryKey: ["cheat-config", seriesId],
@@ -62,13 +74,23 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
     enabled: availableChests.length > 0,
   });
 
-  const { data: automats = [] } = useQuery({
-    queryKey: ["cheat-automats", seriesId],
+  const { data: seriesAutomats = [] } = useQuery({
+    queryKey: ["cheat-series-automats", seriesId],
     queryFn: async () => {
-      const { data } = await supabase.from("automats").select("*").eq("series_id", seriesId).order("code");
-      return data ?? [];
+      const { data } = await supabase.from("series_automats" as any).select("*").eq("series_id", seriesId).order("automat_code");
+      return (data ?? []) as unknown as SeriesAutomat[];
     },
   });
+
+  const { data: globalAutomats = [] } = useQuery({
+    queryKey: ["cheat-global-automats"],
+    queryFn: async () => {
+      const { data } = await supabase.from("automats").select("code, name").order("code");
+      return (data ?? []) as GlobalAutomat[];
+    },
+  });
+
+  const automatNameMap = Object.fromEntries(globalAutomats.map(a => [a.code, a.name]));
 
   const seatLegType = config?.seat_leg_type ?? "from_sku";
   const pufaLegType = config?.pufa_leg_type ?? "from_sku";
@@ -101,12 +123,13 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
     }
   }
 
-  // --- Automats (seats) ---
-  for (const a of automats) {
-    if (!a.has_seat_legs) {
+  // --- Automats (seats) from series_automats ---
+  for (const sa of seriesAutomats) {
+    const aName = automatNameMap[sa.automat_code] ?? "";
+    if (!sa.has_seat_legs) {
       dontRows.push({
         element: "Pod siedziskiem",
-        detail: `${a.code} (${a.name})`,
+        detail: `${sa.automat_code} (${aName})`,
         type: "BRAK",
         height: "—",
         count: "—",
@@ -115,18 +138,18 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
     } else if (seatLegType === "from_sku") {
       doRows.push({
         element: "Pod siedziskiem",
-        detail: `${a.code} (${a.name})`,
+        detail: `${sa.automat_code} (${aName})`,
         type: "N z SKU",
-        height: `H${a.seat_leg_height_cm ?? seatLegH ?? "?"}cm`,
-        count: `${a.seat_leg_count ?? 2}szt`,
+        height: `H${sa.seat_leg_height_cm ?? seatLegH ?? "?"}cm`,
+        count: `${sa.seat_leg_count ?? 2}szt`,
       });
     } else {
       dontRows.push({
         element: "Pod siedziskiem",
-        detail: `${a.code} (${a.name})`,
+        detail: `${sa.automat_code} (${aName})`,
         type: "N4 plastikowe",
         height: "2.5cm",
-        count: `${a.seat_leg_count ?? 2}szt`,
+        count: `${sa.seat_leg_count ?? 2}szt`,
         reason: "tapicer ma na stanowisku",
       });
     }

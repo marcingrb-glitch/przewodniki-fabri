@@ -268,9 +268,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   if (automatsRes.data) {
     automatName = automatsRes.data.name ?? "";
     automatType = automatsRes.data.type ?? "";
-    automatSeatLegs = automatsRes.data.has_seat_legs ?? false;
-    automatSeatLegHeight = (automatsRes.data as any).seat_leg_height_cm ?? automatSeatLegHeight;
-    automatSeatLegCount = (automatsRes.data as any).seat_leg_count ?? automatSeatLegCount;
+  }
+  const saData = seriesAutomatsRes.data as any;
+  if (saData) {
+    automatSeatLegs = saData.has_seat_legs ?? automatSeatLegs;
+    automatSeatLegHeight = saData.seat_leg_height_cm ?? automatSeatLegHeight;
+    automatSeatLegCount = saData.seat_leg_count ?? automatSeatLegCount;
   }
 
   // ---- LEGS (fallback to static) ----

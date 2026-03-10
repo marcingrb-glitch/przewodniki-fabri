@@ -82,11 +82,19 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
     }
   });
 
-  const { data: automats = [] } = useQuery({
-    queryKey: ["cheat-automats", seriesId],
+  const { data: seriesAutomats = [] } = useQuery({
+    queryKey: ["cheat-series-automats", seriesId],
     queryFn: async () => {
-      const { data } = await supabase.from("automats").select("*").eq("series_id", seriesId).order("code");
-      return data ?? [];
+      const { data } = await supabase.from("series_automats" as any).select("*").eq("series_id", seriesId).order("automat_code");
+      return (data ?? []) as unknown as { automat_code: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null }[];
+    }
+  });
+
+  const { data: globalAutomats = [] } = useQuery({
+    queryKey: ["cheat-global-automats"],
+    queryFn: async () => {
+      const { data } = await supabase.from("automats").select("code, name, type").order("code");
+      return (data ?? []) as { code: string; name: string; type: string | null }[];
     }
   });
 
