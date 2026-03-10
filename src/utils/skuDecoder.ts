@@ -123,7 +123,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // Fetch all relevant data from Supabase in parallel
   const [
     seriesRes, fabricsRes, seatSofaRes, sidesRes, backrestsRes,
-    chestsRes, automatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
+    chestsRes, automatsRes, seriesAutomatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
   ] = await Promise.all([
     // Series
     supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
