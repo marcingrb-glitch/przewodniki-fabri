@@ -36,7 +36,8 @@ interface AutomatGlobal { code: string; name: string; type: string | null; }
 export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
   const [legs, setLegs] = useState<LegRow[]>([]);
   const [chests, setChests] = useState<ChestRow[]>([]);
-  const [automats, setAutomats] = useState<AutomatRow[]>([]);
+  const [seriesAutomats, setSeriesAutomats] = useState<SeriesAutomatRow[]>([]);
+  const [globalAutomats, setGlobalAutomats] = useState<AutomatGlobal[]>([]);
   const [loading, setLoading] = useState(true);
 
   const availableChests: string[] = config?.available_chests ?? [];
