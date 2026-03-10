@@ -74,6 +74,8 @@ function resolveExampleValue(field: string, data: any): string {
     "seat.foams_summary": "T25 40×50×10 (1 szt)",
     "seat.front": v(data.seat?.front),
     "seat.midStrip_yn": data.seat?.center_strip ? "TAK" : "NIE",
+    "backrest.code": v(data.backrest?.code),
+    "backrest.finish_name": finishName,
     "backrest.code_finish": `${v(data.backrest?.code)}${finishCode} (${finishName})`,
     "backrest.frame": v(data.backrest?.frame),
     "backrest.foams_summary": "HR35 30×40×8 (1 szt)",
