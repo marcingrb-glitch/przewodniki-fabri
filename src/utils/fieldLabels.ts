@@ -5,7 +5,7 @@
  */
 export const SHORT_FIELD_LABELS: Record<string, string> = {
   // Seat
-  "seat.code": "Kod siedziska",
+  "seat.code": "Siedzisko",
   "seat.type": "Typ siedziska",
   "seat.frame": "Rama siedziska",
   "seat.foamsList": "Pianki siedziska",
@@ -16,19 +16,19 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "seat.springType": "Sprężyna siedziska",
 
   // Automat
-  "automat.code": "Kod automatu",
+  "automat.code": "Automat",
   "automat.name": "Nazwa automatu",
   "automat.type": "Typ automatu",
 
   // Side
-  "side.code": "Kod boczka",
+  "side.code": "Boczek",
   "side.name": "Nazwa boczka",
   "side.frame": "Rama boczka",
   "side.finish": "Wykończenie (kod)",
   "side.finishName": "Wykończenie (nazwa)",
 
   // Backrest
-  "backrest.code": "Kod oparcia",
+  "backrest.code": "Oparcie",
   "backrest.height": "Wysokość oparcia",
   "backrest.frame": "Rama oparcia",
   "backrest.foamsList": "Pianki oparcia",
@@ -38,7 +38,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "backrest.springType": "Sprężyna oparcia",
 
   // Chest
-  "chest.code": "Kod skrzyni",
+  "chest.code": "Skrzynia",
   "chest.name": "Nazwa skrzyni",
   "chest.legHeight": "Wys. nóżki skrzyni",
   "chest.legCount": "Ilość nóżek skrzyni",
@@ -47,7 +47,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "legHeights.sofa_chest.leg": "Typ nogi (skrzynia)",
   "legHeights.sofa_chest.height": "Wysokość nogi (skrzynia)",
   "legHeights.sofa_chest.count": "Ilość nóg (skrzynia)",
-  "leg.code": "Kod nogi",
+  "leg.code": "Noga",
   "leg.height": "Wysokość nogi",
   "leg.count": "Ilość nóg",
 
@@ -57,12 +57,12 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "legHeights.sofa_seat.count": "Ilość nóg (siedzisko)",
 
   // Pufa legs
-  "pufaLegs.code": "Kod nogi (pufa)",
+  "pufaLegs.code": "Noga (pufa)",
   "pufaLegs.height": "Wysokość nogi (pufa)",
   "pufaLegs.count": "Ilość nóg (pufa)",
 
   // Fotel legs
-  "fotelLegs.code": "Kod nogi (fotel)",
+  "fotelLegs.code": "Noga (fotel)",
   "fotelLegs.height": "Wysokość nogi (fotel)",
   "fotelLegs.count": "Ilość nóg (fotel)",
 
@@ -73,13 +73,13 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "pufaSeat.box": "Skrzynka pufy",
 
   // Pillow
-  "pillow.code": "Kod poduszki",
+  "pillow.code": "Poduszka",
   "pillow.name": "Nazwa poduszki",
   "pillow.finish": "Wykończenie poduszki (kod)",
   "pillow.finishName": "Wykończenie poduszki (nazwa)",
 
   // Legs (common)
-  "legs.code": "Kod nogi",
+  "legs.code": "Noga",
   "legs.name": "Nazwa nogi",
   "legs.material": "Materiał nogi",
   "legs.color": "Kolor nogi (kod)",
