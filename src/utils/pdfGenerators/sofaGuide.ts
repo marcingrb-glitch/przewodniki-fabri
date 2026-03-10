@@ -1,5 +1,6 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addHeader, addTable, addInfoBox, toBlob } from "@/utils/pdfHelpers";
+import { formatFoamsSummary } from "@/utils/foamHelpers";
 
 export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const doc = await createDoc("portrait", "a4");
@@ -22,7 +23,7 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     [[
       `${decoded.seat.code} (${decoded.seat.finishName})`,
       decoded.seat.frame,
-      decoded.seat.foam,
+      formatFoamsSummary(decoded.seat.foams, decoded.seat.foam),
       decoded.seat.front,
       decoded.seat.midStrip ? "TAK" : "NIE",
     ]]
@@ -34,7 +35,7 @@ export async function generateSofaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     [[
       `${decoded.backrest.code}${decoded.backrest.finish} (${decoded.backrest.finishName})`,
       decoded.backrest.frame,
-      decoded.backrest.foam,
+      formatFoamsSummary(decoded.backrest.foams, decoded.backrest.foam),
       decoded.backrest.top,
     ]]
   );
