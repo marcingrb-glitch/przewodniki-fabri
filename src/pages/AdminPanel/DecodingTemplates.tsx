@@ -247,9 +247,9 @@ export default function DecodingTemplates() {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4">
-          {pdfUrl ? (
+          {pdfDataUri ? (
             <iframe
-              src={pdfUrl}
+              src={pdfDataUri}
               className="w-full border rounded-md bg-background"
               style={{ height: 700 }}
               title="Podgląd dekodowania PDF"
