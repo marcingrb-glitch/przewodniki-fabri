@@ -306,7 +306,19 @@ export default function GuideTemplates() {
 
         {["sofa", "pufa", "fotel"].map(type => (
           <TabsContent key={type} value={type} className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm whitespace-nowrap">Seria:</Label>
+                <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
+                  <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__global__">Globalny (wszystkie serie)</SelectItem>
+                    {seriesList.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.code} - {s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button onClick={openAdd} size="sm"><Plus className="mr-1 h-4 w-4" /> Dodaj sekcję</Button>
             </div>
 
