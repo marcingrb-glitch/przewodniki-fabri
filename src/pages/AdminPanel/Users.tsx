@@ -1,10 +1,20 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getUserFriendlyError } from "@/utils/errorHandler";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -24,6 +34,10 @@ interface UserProfile {
 
 export default function Users() {
   const queryClient = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newName, setNewName] = useState("");
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -54,6 +68,28 @@ export default function Users() {
     },
   });
 
+  const createUser = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: { email: newEmail, password: newPassword, full_name: newName },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("✅ Użytkownik utworzony i zaakceptowany");
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setAddOpen(false);
+      setNewEmail("");
+      setNewPassword("");
+      setNewName("");
+    },
+    onError: (err) => {
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
+    },
+  });
+
   const pending = users.filter((u) => !u.is_approved);
   const approved = users.filter((u) => u.is_approved);
 
@@ -67,11 +103,16 @@ export default function Users() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">👥 Zarządzanie użytkownikami</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Akceptuj nowych użytkowników i zarządzaj dostępem
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">👥 Zarządzanie użytkownikami</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Akceptuj nowych użytkowników i zarządzaj dostępem
+          </p>
+        </div>
+        <Button onClick={() => setAddOpen(true)}>
+          <Plus className="mr-1 h-4 w-4" /> Dodaj użytkownika
+        </Button>
       </div>
 
       {pending.length > 0 && (
@@ -100,6 +141,57 @@ export default function Users() {
           />
         )}
       </div>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dodaj nowego użytkownika</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Imię i nazwisko</Label>
+              <Input
+                id="new-name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Jan Kowalski"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="jan@firma.pl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Hasło</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Min. 6 znaków"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Anuluj
+            </Button>
+            <Button
+              onClick={() => createUser.mutate()}
+              disabled={!newEmail || !newPassword || createUser.isPending}
+            >
+              {createUser.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Utwórz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
