@@ -1,6 +1,5 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
-import { SEATS_PUFA } from "@/data/mappings";
 
 export async function generatePufaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const doc = await createDoc("portrait", "a4");
@@ -18,7 +17,7 @@ export async function generatePufaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   y += 7;
 
   // Siedzisko pufy
-  const pufaSeat = SEATS_PUFA[decoded.seat.code];
+  const pufaSeat = decoded.pufaSeat;
   y = addTable(doc, y,
     ["Siedzisko", "Front/Tył", "Boki", "Pianka bazowa"],
     [[
@@ -36,10 +35,10 @@ export async function generatePufaGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   );
 
   // Nóżki
-  if (decoded.legs) {
+  if (decoded.pufaLegs) {
     y = addTable(doc, y,
       ["Nóżka", "Ilość", "Wysokość"],
-      [[`${decoded.legs.code}${decoded.legs.color || ""}`, "4 szt", "H 16cm"]]
+      [[decoded.pufaLegs.code, `${decoded.pufaLegs.count} szt`, `H ${decoded.pufaLegs.height}cm`]]
     );
   }
 

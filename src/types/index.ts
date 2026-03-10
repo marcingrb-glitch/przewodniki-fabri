@@ -49,6 +49,9 @@ export interface DecodedSKU {
     sofa_chest: { leg: string; height: number; count: number } | null;
     sofa_seat: { leg: string; height: number; count: number } | null;
   };
+  pufaSeat?: { frontBack: string; sides: string; foam: string; box: string };
+  pufaLegs?: { code: string; height: number; count: number };
+  fotelLegs?: { code: string; height: number; count: number };
   pufaSKU?: string;
   fotelSKU?: string;
   orderNumber?: string;

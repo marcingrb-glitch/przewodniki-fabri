@@ -37,10 +37,10 @@ export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> 
   );
 
   // Nóżki
-  if (decoded.legs) {
+  if (decoded.fotelLegs) {
     y = addTable(doc, y,
       ["Nóżka", "Ilość", "Wysokość"],
-      [[`${decoded.legs.code}${decoded.legs.color || ""}`, "4 szt", "H 16cm"]]
+      [[decoded.fotelLegs.code, `${decoded.fotelLegs.count} szt`, `H ${decoded.fotelLegs.height}cm`]]
     );
   }
 

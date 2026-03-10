@@ -1,6 +1,5 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
-import { SEATS_PUFA } from "@/data/mappings";
 
 function seriesLine(decoded: DecodedSKU): string {
   return `${decoded.series.code}|${decoded.series.name}|${decoded.series.collection}`;
@@ -33,13 +32,13 @@ export async function generatePufaLabelsPDF(decoded: DecodedSKU): Promise<Blob> 
   const doc = await createDoc("landscape", [100, 30]);
   const s = seriesLine(decoded);
   const header = `PUFA | Zam: ${decoded.orderNumber || ""}`;
-  const pufaSeat = SEATS_PUFA[decoded.seat.code];
+  const pufaSeat = decoded.pufaSeat;
 
   addLabel(doc, [s, header, `Siedzisko: ${decoded.seat.code}`, `Pianka: ${pufaSeat?.foam || "-"}`], true);
   addLabel(doc, [s, header, `Skrzynka: ${pufaSeat?.box || "-"}`], false);
 
-  if (decoded.legs) {
-    addLabel(doc, [s, header, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilość: 4 szt`], false);
+  if (decoded.pufaLegs) {
+    addLabel(doc, [s, header, `Noga: ${decoded.pufaLegs.code} H=${decoded.pufaLegs.height}cm`, `Ilość: ${decoded.pufaLegs.count} szt`], false);
   }
 
   return toBlob(doc);
@@ -53,8 +52,8 @@ export async function generateFotelLabelsPDF(decoded: DecodedSKU): Promise<Blob>
   addLabel(doc, [s, header, `Siedzisko: ${decoded.seat.code}`], true);
   addLabel(doc, [s, header, `Boczek: ${decoded.side.code}${decoded.side.finish}`], false);
 
-  if (decoded.legs) {
-    addLabel(doc, [s, header, `Noga: ${decoded.legs.code}${decoded.legs.color || ""} H=16cm`, `Ilość: 4 szt`], false);
+  if (decoded.fotelLegs) {
+    addLabel(doc, [s, header, `Noga: ${decoded.fotelLegs.code} H=${decoded.fotelLegs.height}cm`, `Ilość: ${decoded.fotelLegs.count} szt`], false);
   }
 
   return toBlob(doc);
