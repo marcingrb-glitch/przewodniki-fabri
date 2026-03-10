@@ -100,7 +100,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
               const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "siedzisko");
               return (
                 <div key={seat.id} className="border border-border p-3 rounded">
-                  <h3 className="font-bold">{seat.code} — {seat.model_name ?? seat.type_name ?? "—"}</h3>
+                  <h3 className="font-bold">{seat.code} — {seat.model_name ?? "—"}{seat.type_name ? ` (${seat.type_name})` : ""}</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm mt-1">
                     <div><span className="text-muted-foreground">Stelaż:</span> {seat.frame ?? "—"}</div>
                     <div><span className="text-muted-foreground">Modyfikacja:</span> {seat.frame_modification ?? "brak"}</div>
