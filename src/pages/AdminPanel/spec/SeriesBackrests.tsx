@@ -25,6 +25,7 @@ interface SewingVariant {
   series_id: string;
   component_type: string;
   component_code: string;
+  backrest_id: string | null;
   variant_name: string;
   models: string[];
   description: string | null;
@@ -149,11 +150,12 @@ export default function SeriesBackrests({ seriesId }: Props) {
   };
 
   // Sewing variants CRUD
-  const addSewingVariant = async (backrestCode: string) => {
-    const existing = sewingVariants.filter((v) => v.component_code === backrestCode);
+  const addSewingVariant = async (backrest: Backrest) => {
+    const existing = sewingVariants.filter((v) => v.backrest_id === backrest.id);
     const nextNum = existing.length + 1;
     const { error } = await (supabase.from("sewing_variants") as any).insert({
-      series_id: seriesId, component_type: "backrest", component_code: backrestCode,
+      series_id: seriesId, component_type: "backrest", component_code: backrest.code,
+      backrest_id: backrest.id,
       variant_name: `Wariant ${nextNum}`, models: [],
     });
     if (error) toast.error("Błąd dodawania wariantu");
@@ -174,14 +176,9 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
-  // Get sewing variants for a backrest card — filtered by model overlap
+  // Get sewing variants for a specific backrest instance
   const getMatchingVariants = (b: Backrest) => {
-    const all = sewingVariants.filter((v) => v.component_code === b.code);
-    if (!b.model_name) return all;
-    const cardModels = parseModels(b.model_name);
-    return all.filter((v) =>
-      v.models.length === 0 || v.models.some((m) => cardModels.includes(m))
-    );
+    return sewingVariants.filter((v) => v.backrest_id === b.id);
   };
 
   // Get foams for a specific backrest card
@@ -247,7 +244,7 @@ export default function SeriesBackrests({ seriesId }: Props) {
       <div className="rounded-md border p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold">Warianty szycia</h4>
-          <Button variant="outline" size="sm" onClick={() => addSewingVariant(b.code)}>
+          <Button variant="outline" size="sm" onClick={() => addSewingVariant(b)}>
             <Plus className="mr-1 h-3 w-3" /> Dodaj wariant
           </Button>
         </div>
