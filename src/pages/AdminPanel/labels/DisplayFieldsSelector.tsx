@@ -18,7 +18,8 @@ const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "seat.type", label: "Typ siedziska (kod)", source: "seats_sofa.type" },
     
     { value: "seat.frame", label: "Rama siedziska", source: "seats_sofa.frame" },
-    { value: "seat.foam", label: "Pianka siedziska", source: "seats_sofa.foam" },
+    { value: "seat.foam", label: "Pianka siedziska (tekst)", source: "seats_sofa.foam (legacy)" },
+    { value: "seat.foamsList", label: "Pianki siedziska (lista)", source: "product_foams" },
     { value: "seat.front", label: "Front siedziska", source: "seats_sofa.front" },
     { value: "seat.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "seat.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
