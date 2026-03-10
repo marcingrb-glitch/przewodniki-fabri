@@ -265,7 +265,7 @@ export default function LabelTemplates() {
                         <TableHead>Wyświetlane pola</TableHead>
                         <TableHead className="w-[80px]">Ilość</TableHead>
                         <TableHead className="w-[90px]">Kolejność</TableHead>
-                        <TableHead className="w-[100px]">Warunkowa</TableHead>
+                        <TableHead className="w-[120px]">Status</TableHead>
                         <TableHead className="w-[60px]" />
                       </TableRow>
                     </TableHeader>
