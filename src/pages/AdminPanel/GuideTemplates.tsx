@@ -209,7 +209,11 @@ export default function GuideTemplates() {
   const openAdd = () => {
     const maxOrder = filtered.length > 0 ? Math.max(...filtered.map(s => s.sort_order)) : 0;
     setEditingSection(null);
-    setForm({ ...emptySection(activeTab), sort_order: maxOrder + 1 });
+    setForm({
+      ...emptySection(activeTab),
+      sort_order: maxOrder + 1,
+      series_id: selectedSeriesId === "__global__" ? null : selectedSeriesId,
+    });
     setDialogOpen(true);
   };
 
