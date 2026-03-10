@@ -1,4 +1,4 @@
-import { ParsedSKU, DecodedSKU } from "@/types";
+import { ParsedSKU, DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveSeriesId } from "@/utils/supabaseQueries";
 import {
