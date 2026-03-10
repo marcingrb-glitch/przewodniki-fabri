@@ -23,7 +23,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "seat.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "seat.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
     { value: "seat.midStrip", label: "Środkowy pasek", source: "seats_sofa.center_strip" },
-    { value: "seat.springType", label: "Sprężyna siedziska", source: "seats_sofa.spring_type" },
+    { value: "seat.springType", label: "Sprężyna", source: "seats_sofa.spring_type" },
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
     { value: "automat.name", label: "Nazwa automatu", source: "automats (wspólne)" },
     { value: "automat.type", label: "Typ automatu", source: "automats (wspólne)" },
@@ -43,7 +43,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "backrest.top", label: "Góra oparcia", source: "backrests.top" },
     { value: "backrest.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "backrest.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
-    { value: "backrest.springType", label: "Sprężyna oparcia", source: "backrests.spring_type" },
+    { value: "backrest.springType", label: "Sprężyna", source: "backrests.spring_type" },
   ],
   chest: [
     { value: "chest.code", label: "Kod skrzyni", source: "chests (wspólne)" },

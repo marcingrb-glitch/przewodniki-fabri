@@ -13,7 +13,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "seat.finish": "Wykończenie (kod)",
   "seat.finishName": "Wykończenie (nazwa)",
   "seat.midStrip": "Środkowy pasek",
-  "seat.springType": "Sprężyna siedziska",
+  "seat.springType": "Sprężyna",
 
   // Automat
   "automat.code": "Automat",
@@ -35,7 +35,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "backrest.top": "Góra oparcia",
   "backrest.finish": "Wykończenie (kod)",
   "backrest.finishName": "Wykończenie (nazwa)",
-  "backrest.springType": "Sprężyna oparcia",
+  "backrest.springType": "Sprężyna",
 
   // Chest
   "chest.code": "Skrzynia",
