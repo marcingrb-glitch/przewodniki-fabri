@@ -111,6 +111,22 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
 
   const springExceptions = config?.spring_exceptions as Array<{model: string;spring: string;}> ?? [];
 
+  // Aggregate product_foams per seat_code+component
+  const formatFoamsForCode = (code: string, component: string): string => {
+    const matching = foams.filter((f: any) => f.seat_code === code && f.component === component);
+    if (matching.length === 0) return "—";
+    return matching
+      .sort((a: any, b: any) => (a.position_number ?? 0) - (b.position_number ?? 0))
+      .map((f: any) => {
+        const dims = [f.quantity && f.quantity > 1 ? `${f.quantity}×` : "", f.height, f.width, f.length].filter(Boolean);
+        const dimStr = f.quantity && f.quantity > 1
+          ? `${f.quantity} × ${f.height ?? "?"} × ${f.width ?? "?"} × ${f.length ?? "?"}`
+          : `${f.height ?? "?"} × ${f.width ?? "?"} × ${f.length ?? "?"}`;
+        return `${dimStr} ${f.material ?? ""}`.trim();
+      })
+      .join(" + ");
+  };
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">
