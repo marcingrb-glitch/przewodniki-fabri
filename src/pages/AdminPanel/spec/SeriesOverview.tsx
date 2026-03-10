@@ -13,10 +13,14 @@ interface Props {
   onConfigUpdate: () => void;
 }
 
-const LEG_TYPE_LABELS: Record<string, string> = {
-  from_sku: "Z kodu SKU (drewniane)",
-  built_in_plastic: "Wbudowane plastikowe",
-  plastic_2_5: "Plastikowe N4",
+const formatLegType = (type: string | null, height: number | null): string => {
+  if (!type) return '—';
+  switch (type) {
+    case 'built_in_plastic': return `N4 plastikowe wbudowane, H${height}cm`;
+    case 'plastic_2_5': return `N4 plastikowe, H${height}cm`;
+    case 'from_sku': return `Z segmentu N (z SKU), H${height}cm`;
+    default: return `${type}, H${height}cm`;
+  }
 };
 
 const LEG_COMPLETION_LABELS: Record<string, string> = {
