@@ -266,7 +266,6 @@ export default function GuideTemplates() {
     [cols[i], cols[swapIdx]] = [cols[swapIdx], cols[i]];
     setForm({ ...form, columns: cols });
   };
-  };
 
   const getSeriesName = (id: string | null) => {
     if (!id) return "Globalny";
