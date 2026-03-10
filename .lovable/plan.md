@@ -1,38 +1,32 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Pole "wkład" + zmiana "Typ konstrukcji" → "Wygląd" + pola w dekodowaniu
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### 1. Migracja bazy danych
+Dodanie kolumny `insert_type` (text, nullable) do tabeli `pillows`:
+```sql
+ALTER TABLE public.pillows ADD COLUMN insert_type text;
+```
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### 2. `src/pages/AdminPanel/Pillows.tsx`
+- Zmienić label kolumny `construction_type` z "Typ konstrukcji" na "Wygląd"
+- Zmienić label pola formularza analogicznie
+- Dodać kolumnę `insert_type` ("Wkład") w tabeli
+- Dodać pole `insert_type` w formularzu jako `select` z opcją `dinaro xl` (na razie jedna)
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### 3. `src/pages/AdminPanel/fieldResolver.ts`
+Dodać nowe pola do `AVAILABLE_FIELDS` w grupach pillow/jaski/walek:
+- `pillow.construction_type` → "Wygląd"
+- `pillow.insert_type` → "Wkład"
+- `jaski.construction_type` → "Wygląd"
+- `jaski.insert_type` → "Wkład"
+- `walek.construction_type` → "Wygląd"
+- `walek.insert_type` → "Wkład"
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+Dodać mapowanie w `resolveExampleValue` dla tych pól.
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
-
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Pliki do edycji:
+- Migracja SQL (dodanie kolumny `insert_type`)
+- `src/pages/AdminPanel/Pillows.tsx`
+- `src/pages/AdminPanel/fieldResolver.ts`
 
