@@ -59,6 +59,7 @@ const AVAILABLE_FIELDS: FieldDef[] = [
   { value: "seat.code", label: "Kod", group: "seat" },
   { value: "seat.finish_name", label: "Wykończenie", group: "seat" },
   { value: "seat.code_finish", label: "Kod + wykończenie (razem)", group: "seat" },
+  { value: "seat.type", label: "Typ siedziska", group: "seat" },
   { value: "seat.frame", label: "Stelaż", group: "seat" },
   { value: "seat.foams_summary", label: "Pianka", group: "seat" },
   { value: "seat.front", label: "Front", group: "seat" },
