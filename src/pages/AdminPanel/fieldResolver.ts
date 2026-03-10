@@ -79,6 +79,8 @@ export const AVAILABLE_FIELDS: FieldDef[] = [
   { value: "pillow.code", label: "Kod", group: "pillow" },
   { value: "pillow.name", label: "Nazwa", group: "pillow" },
   { value: "pillow.finish_info", label: "Wykończenie", group: "pillow" },
+  { value: "pillow.construction_type", label: "Wygląd", group: "pillow" },
+  { value: "pillow.insert_type", label: "Wkład", group: "pillow" },
   { value: "jaski.code", label: "Kod", group: "jaski" },
   { value: "jaski.name", label: "Nazwa", group: "jaski" },
   { value: "jaski.finish_info", label: "Wykończenie", group: "jaski" },
