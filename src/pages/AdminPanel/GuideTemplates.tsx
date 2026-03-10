@@ -198,7 +198,7 @@ export default function GuideTemplates() {
     } else {
       const fieldDef = AVAILABLE_FIELDS.find(f => f.value === fieldValue);
       const groupDef = FIELD_GROUPS.find(g => g.key === fieldDef?.group);
-      const defaultHeader = fieldDef ? `${groupDef?.label || ""} — ${fieldDef.label}` : fieldValue;
+      const defaultHeader = fieldDef ? fieldDef.label : fieldValue;
       setForm({ ...form, columns: [...form.columns, { header: defaultHeader, field: fieldValue }] });
     }
   };
