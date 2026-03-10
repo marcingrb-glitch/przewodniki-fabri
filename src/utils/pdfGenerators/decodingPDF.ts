@@ -196,7 +196,7 @@ export async function generateDecodingPDF(
   // 8. DODATKI
   const extraRows: string[][] = [];
   if (decoded.pillow) {
-    extraRows.push(["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name}`, `${decoded.pillow.finish} (${decoded.pillow.finishName})`]);
+    extraRows.push(["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name.replace(/^Poduszka\s+/i, "")}`, `${decoded.pillow.finish} (${decoded.pillow.finishName})`]);
   }
   if (decoded.jaski) {
     extraRows.push(["Jaśki", `${decoded.jaski.code} - ${decoded.jaski.name}`, `${decoded.jaski.finish} (${decoded.jaski.finishName})`]);

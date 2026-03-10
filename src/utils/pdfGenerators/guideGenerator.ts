@@ -71,6 +71,8 @@ function resolveField(decoded: DecodedSKU, field: string): string {
       const sl = decoded.legHeights.sofa_seat;
       return sl ? `${sl.leg} H ${sl.height}cm (${sl.count} szt)` : "BRAK";
     }
+    case "pillow.name":
+      return decoded.pillow ? decoded.pillow.name.replace(/^Poduszka\s+/i, "") : "-";
     case "pillow.finish_info":
       return decoded.pillow ? `${decoded.pillow.finish} (${decoded.pillow.finishName})` : "-";
     case "jaski.finish_info":
