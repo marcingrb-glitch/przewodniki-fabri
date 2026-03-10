@@ -209,10 +209,22 @@ export async function generateGuidePDF(
     }
 
     const cols = section.columns as GuideColumn[];
-    const headers = cols.map(c => c.header);
-    const row = cols.map(c => resolveField(decoded, c.field));
+    const MAX_COLS = 6;
 
-    y = addTable(doc, y, headers, [row]);
+    if (cols.length <= MAX_COLS) {
+      const headers = cols.map(c => c.header);
+      const row = cols.map(c => resolveField(decoded, c.field));
+      y = addTable(doc, y, headers, [row]);
+    } else {
+      // Split into chunks to prevent overflow
+      for (let i = 0; i < cols.length; i += MAX_COLS) {
+        const chunk = cols.slice(i, i + MAX_COLS);
+        const headers = chunk.map(c => c.header);
+        const row = chunk.map(c => resolveField(decoded, c.field));
+        const isLastChunk = i + MAX_COLS >= cols.length;
+        y = addTable(doc, y, headers, [row], undefined, isLastChunk ? 8 : 2);
+      }
+    }
   }
 
   return toBlob(doc);
