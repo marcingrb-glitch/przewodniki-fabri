@@ -65,6 +65,7 @@ const AVAILABLE_FIELDS: FieldDef[] = [
   { value: "seat.foams_summary", label: "Pianka", group: "seat" },
   { value: "seat.front", label: "Front", group: "seat" },
   { value: "seat.midStrip_yn", label: "Pasek środek", group: "seat" },
+  { value: "seat.springType", label: "Sprężyna", group: "seat" },
   { value: "backrest.code", label: "Kod", group: "backrest" },
   { value: "backrest.finish_name", label: "Wykończenie", group: "backrest" },
   { value: "backrest.code_finish", label: "Kod + wykończenie (razem)", group: "backrest" },
