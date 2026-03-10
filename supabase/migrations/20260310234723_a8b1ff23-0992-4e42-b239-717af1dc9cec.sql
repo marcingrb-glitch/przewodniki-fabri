@@ -1,0 +1,1 @@
+ALTER TABLE public.pillows ADD COLUMN insert_type text;

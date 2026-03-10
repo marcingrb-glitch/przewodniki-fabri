@@ -503,6 +503,7 @@ export type Database = {
           created_at: string
           default_finish: string | null
           id: string
+          insert_type: string | null
           name: string
         }
         Insert: {
@@ -512,6 +513,7 @@ export type Database = {
           created_at?: string
           default_finish?: string | null
           id?: string
+          insert_type?: string | null
           name: string
         }
         Update: {
@@ -521,6 +523,7 @@ export type Database = {
           created_at?: string
           default_finish?: string | null
           id?: string
+          insert_type?: string | null
           name?: string
         }
         Relationships: []
