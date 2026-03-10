@@ -270,8 +270,9 @@ export default function LabelTemplates() {
                     </TableHeader>
                     <TableBody>
                       {filteredTemplates.map((tpl) => {
-                        const fieldCount = Array.isArray(tpl.display_fields) ? 
-                          (Array.isArray(tpl.display_fields[0]) ? (tpl.display_fields as string[][]).flat().length : tpl.display_fields.length) : 0;
+                        const fields = tpl.display_fields;
+                        const fieldCount = Array.isArray(fields) ? 
+                          (fields.length > 0 && Array.isArray(fields[0]) ? (fields as unknown as string[][]).flat().length : fields.length) : 0;
                         return (
                         <TableRow 
                           key={tpl.id}
