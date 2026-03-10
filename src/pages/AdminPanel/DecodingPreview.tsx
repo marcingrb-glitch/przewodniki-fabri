@@ -15,6 +15,24 @@ export default function DecodingPreview({ sections, exampleData, seriesId }: Dec
     [sections]
   );
 
+  // Group consecutive sections with identical column headers into multi-row groups
+  const groupedSections = useMemo(() => {
+    const groups: { sections: GuideSection[] }[] = [];
+    for (const section of enabledSections) {
+      const headersKey = (section.columns as GuideColumn[]).map(c => c.header).join("|");
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup) {
+        const lastHeaders = (lastGroup.sections[0].columns as GuideColumn[]).map(c => c.header).join("|");
+        if (headersKey === lastHeaders && lastGroup.sections[0].is_conditional && section.is_conditional) {
+          lastGroup.sections.push(section);
+          continue;
+        }
+      }
+      groups.push({ sections: [section] });
+    }
+    return groups;
+  }, [enabledSections]);
+
   const seriesLabel = exampleData?.series
     ? `${exampleData.series.code} - ${exampleData.series.name} [${exampleData.series.collection || ""}]`
     : "S1 - Seria przykładowa [Kolekcja]";
@@ -64,7 +82,56 @@ export default function DecodingPreview({ sections, exampleData, seriesId }: Dec
 
           {/* Dynamic sections */}
           <div className="px-5 pb-4 space-y-3">
-            {enabledSections.map(section => {
+            {groupedSections.map((group, gi) => {
+              const isMultiRow = group.sections.length > 1;
+
+              if (isMultiRow) {
+                // Merged table for sections with identical columns (e.g. Poduszka/Jaśki/Wałek)
+                const cols = group.sections[0].columns as GuideColumn[];
+                const groupName = group.sections.map(s => s.section_name).join(" / ");
+                return (
+                  <div
+                    key={`group-${gi}`}
+                    className="rounded overflow-hidden border border-dashed border-muted-foreground/40"
+                  >
+                    <div className="px-2 py-1 flex items-center gap-2 bg-muted/30">
+                      <span className="text-[10px] font-bold uppercase tracking-wide">
+                        {groupName}
+                      </span>
+                      <Badge variant="outline" className="text-[8px] h-4 px-1 font-normal border-dashed">
+                        warunkowe
+                      </Badge>
+                    </div>
+                    <table className="w-full text-[9px]">
+                      <thead>
+                        <tr className="bg-muted/30">
+                          <th className="px-2 py-1 text-left font-semibold border-r border-border truncate" style={{ width: "20%" }}>Typ</th>
+                          {cols.map((col, ci) => (
+                            <th key={ci} className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate">
+                              {col.header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.sections.map((section, si) => (
+                          <tr key={section.id} className="border-t border-border">
+                            <td className="px-2 py-1 border-r border-border font-medium truncate">{section.section_name}</td>
+                            {(section.columns as GuideColumn[]).map((col, ci) => (
+                              <td key={ci} className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground">
+                                {resolveExampleValue(col.field, exampleData)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              }
+
+              // Single section rendering (unchanged logic)
+              const section = group.sections[0];
               const cols = section.columns as GuideColumn[];
               if (cols.length === 0) return null;
 
