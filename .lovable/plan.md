@@ -1,29 +1,38 @@
 
 
-## Plan: Inline podgląd dekodowania (jak w przewodnikach)
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Problem
-Obecnie strona dekodowania otwiera PDF w dialogu (`PDFPreview`), a użytkownik oczekuje inline podglądu na stronie — tak jak `GuidePreview` renderuje skalowany mockup A4 bezpośrednio w HTML.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Rozwiązanie
-Stworzyć komponent `DecodingPreview` analogiczny do `GuidePreview` — renderujący dane dekodowania jako skalowany HTML mockup A4 bezpośrednio na stronie, bez generowania PDF.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Nowy plik: `src/pages/AdminPanel/DecodingPreview.tsx`
-Komponent przyjmujący dane z bazy (exampleData) i renderujący:
-- Nagłówek z numerem zamówienia, datą, serią, SKU
-- Placeholder na zdjęcie wariantu (szare pole)
-- Tabele HTML dla każdej sekcji (Tkanina, Siedzisko-Stolarka, Siedzisko-Pianki, Oparcie, Boczek, Skrzynia+Automat, Nóżki, Dodatki)
-- Kontener o stałej szerokości ~500px z border i shadow (jak GuidePreview)
-- Tekst w rozmiarze 9-10px, nagłówki sekcji bold uppercase
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Dane będą mapowane przez istniejący `buildExampleDecoded()` — reuse tej funkcji.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### Zmiana w: `src/pages/AdminPanel/DecodingTemplates.tsx`
-- Dodać `DecodingPreview` renderowany inline pod przyciskami
-- Zachować przyciski "Podgląd PDF" (dialog) i "Pobierz PDF" do generowania faktycznego PDF
-- Inline preview renderuje się automatycznie po wyborze serii (bez klikania)
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-### Pliki:
-- `src/pages/AdminPanel/DecodingPreview.tsx` — nowy komponent
-- `src/pages/AdminPanel/DecodingTemplates.tsx` — dodanie inline preview
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
