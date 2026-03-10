@@ -22,7 +22,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Side
   "side.code": "Boczek",
-  "side.name": "Nazwa",
+  "side.name": "Boczek",
   "side.frame": "Stelaż",
   "side.finish": "Wykończenie (kod)",
   "side.finishName": "Wykończenie (nazwa)",
