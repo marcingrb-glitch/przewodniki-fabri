@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
 
 interface Props {
   seriesId: string;
@@ -10,6 +9,28 @@ interface Props {
 
 function NoData({ label }: { label: string }) {
   return <p className="text-destructive font-bold py-2">⚠️ BRAK DANYCH — {label} — uzupełnij w specyfikacji</p>;
+}
+
+const formatColors = (colors: any): string => {
+  if (!colors) return "—";
+  if (typeof colors === "object" && !Array.isArray(colors)) {
+    return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(", ");
+  }
+  if (Array.isArray(colors)) {
+    if (colors.length === 0) return "—";
+    if (typeof colors[0] === "object") return colors.map((c: any) => `${c.code}=${c.name}`).join(", ");
+    return colors.join(", ");
+  }
+  return String(colors);
+};
+
+interface CheatRow {
+  element: string;
+  detail: string;
+  type: string;
+  height: string;
+  count: string;
+  reason?: string;
 }
 
 export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) {
@@ -54,6 +75,96 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
   const seatLegH = config?.seat_leg_height_cm;
   const pufaLegH = config?.pufa_leg_height_cm;
 
+  // Build doRows and dontRows
+  const doRows: CheatRow[] = [];
+  const dontRows: CheatRow[] = [];
+
+  // --- Chests ---
+  for (const c of chests) {
+    if (c.leg_height_cm > 0) {
+      doRows.push({
+        element: "Pod skrzynią",
+        detail: `${c.code} (${c.name})`,
+        type: "N z SKU",
+        height: `H${c.leg_height_cm}cm`,
+        count: "4szt",
+      });
+    } else {
+      dontRows.push({
+        element: "Pod skrzynią",
+        detail: `${c.code} (${c.name})`,
+        type: "N4 plastikowe",
+        height: "2.5cm",
+        count: "4szt",
+        reason: "tapicer ma na stanowisku",
+      });
+    }
+  }
+
+  // --- Automats (seats) ---
+  for (const a of automats) {
+    if (!a.has_seat_legs) {
+      dontRows.push({
+        element: "Pod siedziskiem",
+        detail: `${a.code} (${a.name})`,
+        type: "BRAK",
+        height: "—",
+        count: "—",
+        reason: "brak nóżek pod siedziskiem",
+      });
+    } else if (seatLegType === "from_sku") {
+      doRows.push({
+        element: "Pod siedziskiem",
+        detail: `${a.code} (${a.name})`,
+        type: "N z SKU",
+        height: `H${a.seat_leg_height_cm ?? seatLegH ?? "?"}cm`,
+        count: `${a.seat_leg_count ?? 2}szt`,
+      });
+    } else {
+      dontRows.push({
+        element: "Pod siedziskiem",
+        detail: `${a.code} (${a.name})`,
+        type: seatLegType === "built_in_plastic" ? "wbudowane plastikowe" : "N4 plastikowe",
+        height: seatLegType === "plastic_2_5" ? "2.5cm" : "—",
+        count: `${a.seat_leg_count ?? 2}szt`,
+        reason: seatLegType === "built_in_plastic" ? "wbudowane" : "tapicer ma na stanowisku",
+      });
+    }
+  }
+
+  // --- Pufa ---
+  if (config) {
+    if (pufaLegType === "from_sku") {
+      doRows.push({
+        element: "Pufa",
+        detail: "",
+        type: "N z SKU",
+        height: `H${pufaLegH ?? "?"}cm`,
+        count: "4szt",
+      });
+    } else {
+      dontRows.push({
+        element: "Pufa",
+        detail: "",
+        type: pufaLegType === "built_in_plastic" ? "wbudowane plastikowe" : "N4 plastikowe",
+        height: pufaLegType === "plastic_2_5" ? "2.5cm" : "—",
+        count: "4szt",
+        reason: pufaLegType === "built_in_plastic" ? "wbudowane" : "tapicer ma na stanowisku",
+      });
+    }
+  }
+
+  // --- Fotel (not for S2) ---
+  if (seriesCode !== "S2") {
+    doRows.push({
+      element: "Fotel",
+      detail: "",
+      type: "N z SKU",
+      height: `H${seatLegH ?? pufaLegH ?? "?"}cm`,
+      count: "4szt",
+    });
+  }
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">
@@ -63,28 +174,16 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
       {/* CO KOMPLETOWAĆ */}
       <section>
         <h2 className="text-xl font-bold mb-3 text-green-700 dark:text-green-400">🟢 CO KOMPLETOWAĆ</h2>
-        {!config ? <NoData label="konfiguracja serii" /> : (
+        {!config ? <NoData label="konfiguracja serii" /> : doRows.length === 0 ? (
+          <p className="text-muted-foreground py-2">Brak elementów do kompletacji nóżek w tej serii.</p>
+        ) : (
           <div className="space-y-2 text-sm">
-            {chests.filter(c => c.leg_height_cm > 0).map(c => (
-              <div key={c.id} className="border border-border p-2 rounded">
-                <strong>Pod skrzynią {c.code} ({c.name}):</strong>{" "}
-                N z SKU, H{c.leg_height_cm}cm, 4szt
+            {doRows.map((r, i) => (
+              <div key={i} className="border border-border p-2 rounded">
+                <strong>{r.element}{r.detail ? ` ${r.detail}` : ""}:</strong>{" "}
+                {r.type}, {r.height}, {r.count}
               </div>
             ))}
-            {automats.filter(a => a.has_seat_legs).map(a => (
-              <div key={a.id} className="border border-border p-2 rounded">
-                <strong>Pod siedziskiem {a.code} ({a.name}):</strong>{" "}
-                {seatLegType === "built_in_plastic" ? "plastikowe (wbudowane)" : `N z SKU, H${a.seat_leg_height_cm ?? seatLegH}cm, ${a.seat_leg_count ?? 2}szt`}
-              </div>
-            ))}
-            {pufaLegType !== "plastic_2_5" && pufaLegType !== "built_in_plastic" && (
-              <div className="border border-border p-2 rounded">
-                <strong>Pufa:</strong> N z SKU, H{pufaLegH ?? "?"}cm, 4szt
-              </div>
-            )}
-            <div className="border border-border p-2 rounded">
-              <strong>Fotel:</strong> N z SKU, H{seatLegH ?? pufaLegH ?? "?"}cm, 4szt
-            </div>
           </div>
         )}
       </section>
@@ -95,17 +194,10 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
           <h2 className="text-2xl font-black mb-3 text-red-700 dark:text-red-400">🔴 CZEGO NIE KOMPLETOWAĆ!</h2>
           <div className="space-y-2 text-lg font-bold">
             <p className="warning underline text-xl">❌ Nóżki plastikowe 2.5cm — NIGDY nie kompletować!</p>
-            {seatLegType === "built_in_plastic" && (
-              <>
-                <p>❌ {seriesCode}: Pod skrzynią = plastikowe → NIE kompletować</p>
-                <p>❌ {seriesCode}: Pod siedziskiem = plastikowe wbudowane → NIE kompletować</p>
-              </>
-            )}
-            {pufaLegType === "plastic_2_5" && (
-              <p>❌ {seriesCode}: Pufa = plastikowe 2.5cm → NIE kompletować</p>
-            )}
-            {chests.filter(c => c.leg_height_cm === 0).map(c => (
-              <p key={c.id}>❌ {c.code} ({c.name}) = plastikowe → NIE kompletować</p>
+            {dontRows.map((r, i) => (
+              <p key={i}>
+                ❌ {r.element}{r.detail ? ` ${r.detail}` : ""}: {r.type}{r.height !== "—" ? `, ${r.height}` : ""}{r.count !== "—" ? `, ${r.count}` : ""} — {r.reason}
+              </p>
             ))}
           </div>
         </div>
@@ -125,19 +217,14 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
               </tr>
             </thead>
             <tbody>
-              {legs.map(l => {
-                const colors = (l.colors && typeof l.colors === "object" && !Array.isArray(l.colors))
-                  ? Object.entries(l.colors).map(([k, v]) => `${k}=${v}`).join(", ")
-                  : Array.isArray(l.colors) ? (l.colors as string[]).join(", ") : "—";
-                return (
-                  <tr key={l.id}>
-                    <td className="border border-border px-2 py-1 font-mono font-bold">{l.code}</td>
-                    <td className="border border-border px-2 py-1">{l.name}</td>
-                    <td className="border border-border px-2 py-1">{l.material ?? "—"}</td>
-                    <td className="border border-border px-2 py-1">{colors}</td>
-                  </tr>
-                );
-              })}
+              {legs.map(l => (
+                <tr key={l.id}>
+                  <td className="border border-border px-2 py-1 font-mono font-bold">{l.code}</td>
+                  <td className="border border-border px-2 py-1">{l.name}</td>
+                  <td className="border border-border px-2 py-1">{l.material ?? "—"}</td>
+                  <td className="border border-border px-2 py-1">{formatColors(l.colors)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
