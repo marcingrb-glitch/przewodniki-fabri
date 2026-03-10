@@ -24,7 +24,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "seat.midStrip", label: "Środkowy pasek", source: "seats_sofa.center_strip" },
     { value: "seat.springType", label: "Sprężyna", source: "seats_sofa.spring_type" },
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
-    { value: "automat.name", label: "Nazwa", source: "automats (wspólne)" },
+    { value: "automat.name", label: "Automat", source: "automats (wspólne)" },
     { value: "automat.type", label: "Typ", source: "automats (wspólne)" },
   ],
   side: [
