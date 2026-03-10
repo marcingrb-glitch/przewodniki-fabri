@@ -1,4 +1,5 @@
 import { useState } from "react";
+import GuidePreview from "./GuidePreview";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -348,6 +349,8 @@ export default function GuideTemplates() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <GuidePreview sections={filtered} productType={activeTab} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
