@@ -124,10 +124,10 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
       dontRows.push({
         element: "Pod siedziskiem",
         detail: `${a.code} (${a.name})`,
-        type: seatLegType === "built_in_plastic" ? "wbudowane plastikowe" : "N4 plastikowe",
-        height: seatLegType === "plastic_2_5" ? "2.5cm" : "—",
+        type: "N4 plastikowe",
+        height: "2.5cm",
         count: `${a.seat_leg_count ?? 2}szt`,
-        reason: seatLegType === "built_in_plastic" ? "wbudowane" : "tapicer ma na stanowisku",
+        reason: "tapicer ma na stanowisku",
       });
     }
   }
@@ -146,10 +146,10 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
       dontRows.push({
         element: "Pufa",
         detail: "",
-        type: pufaLegType === "built_in_plastic" ? "wbudowane plastikowe" : "N4 plastikowe",
-        height: pufaLegType === "plastic_2_5" ? "2.5cm" : "—",
+        type: "N4 plastikowe",
+        height: "2.5cm",
         count: "4szt",
-        reason: pufaLegType === "built_in_plastic" ? "wbudowane" : "tapicer ma na stanowisku",
+        reason: "tapicer ma na stanowisku",
       });
     }
   }

@@ -1,32 +1,38 @@
 
 
-## Plan: Uprość typy nóżek — usuń `built_in_plastic`, zostaw tylko 2 typy
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Kontekst
-Użytkownik potwierdził, ze istnieją tylko **2 typy nóżek**:
-1. **`from_sku`** — nóżka z kodu SKU (drewniane), kompletacja: dziewczyny od nóżek
-2. **`plastic_2_5`** — N4 plastikowe, kompletacja: tapicer na stanowisku
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-Typ `built_in_plastic` nie istnieje w rzeczywistości — to zawsze `plastic_2_5`.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Zmiany
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-**1. Migracja bazy danych** — zamień wszystkie `built_in_plastic` na `plastic_2_5`:
-```sql
-UPDATE series_config SET seat_leg_type = 'plastic_2_5' WHERE seat_leg_type = 'built_in_plastic';
-UPDATE series_config SET pufa_leg_type = 'plastic_2_5' WHERE pufa_leg_type = 'built_in_plastic';
-```
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-**2. Pliki do edycji** — usuń wszystkie referencje do `built_in_plastic` w 5 plikach:
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-- **`src/pages/AdminPanel/spec/SeriesLegs.tsx`** — usuń `built_in_plastic` z `LEG_TYPE_LABELS` i uprość logikę mountRows (2 ścieżki zamiast 3)
-- **`src/pages/AdminPanel/spec/SeriesOverview.tsx`** — usuń case `built_in_plastic` z switch i z `LEG_COMPLETION_LABELS`
-- **`src/pages/AdminPanel/spec/SeriesPufa.tsx`** — usuń `built_in_plastic` z `LEG_TYPE_LABELS` i uprość badge kompletacji
-- **`src/pages/AdminPanel/cheatsheets/NozkiSheet.tsx`** — usuń warunki `built_in_plastic`, zostaw tylko `plastic_2_5` vs `from_sku`
-- **`src/pages/AdminPanel/cheatsheets/KierownikSheet.tsx`** — usuń case `built_in_plastic` z switch
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Wynik
-- 2 typy nóżek w całym systemie: `from_sku` i `plastic_2_5`
-- Prostsze etykiety i logika
-- Brak zmian w `skuParser`, `skuDecoder`, `pdfGenerators`
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

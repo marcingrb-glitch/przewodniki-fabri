@@ -19,7 +19,6 @@ interface Props {
 
 const LEG_TYPE_LABELS: Record<string, string> = {
   from_sku: "N z SKU",
-  built_in_plastic: "Wbudowane plastikowe",
   plastic_2_5: "N4 plastikowe",
 };
 
@@ -125,10 +124,10 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
       mountRows.push({
         element: "Pod siedziskiem",
         detail: a.code,
-        type: isPlastic ? "N4 plastikowe" : seatType === "built_in_plastic" ? "Wbudowane plastikowe" : "N z SKU",
+        type: isPlastic ? "N4 plastikowe" : "N z SKU",
         height: isPlastic ? "2.5 cm" : `${a.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`,
         count: `${a.seat_leg_count ?? 2} szt`,
-        who: isPlastic ? "Tapicer (na stanowisku)" : seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+        who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
       });
     } else {
       mountRows.push({ element: "Pod siedziskiem", detail: a.code, type: "BRAK", height: "—", count: "—", who: "—" });
@@ -143,7 +142,7 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
       type: LEG_TYPE_LABELS[seatType] ?? seatType ?? "—",
       height: config.seat_leg_height_cm != null ? `${config.seat_leg_height_cm} cm` : "—",
       count: "—",
-      who: isPlastic ? "Tapicer (na stanowisku)" : seatType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+      who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
     });
   }
 
@@ -155,7 +154,7 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
       type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—",
       height: config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—",
       count: "4 szt",
-      who: isPlastic ? "Tapicer (na stanowisku)" : pufaType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+      who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
     });
   }
 

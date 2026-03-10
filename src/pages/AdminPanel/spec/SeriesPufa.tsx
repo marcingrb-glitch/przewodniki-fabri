@@ -18,7 +18,6 @@ interface Props {
 
 const LEG_TYPE_LABELS: Record<string, string> = {
   from_sku: "Z kodu SKU (drewniane)",
-  built_in_plastic: "Wbudowane plastikowe",
   plastic_2_5: "Plastikowe 2.5cm",
 };
 
@@ -86,7 +85,7 @@ export default function SeriesPufa({ seriesId, config }: Props) {
               <Badge variant="outline">Nóżki: {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</Badge>
               {config.pufa_leg_height_cm != null && <Badge variant="outline">Wysokość: {config.pufa_leg_height_cm} cm</Badge>}
               <Badge variant="secondary">
-                Kompletacja: {config.pufa_leg_type === "plastic_2_5" ? "Tapicer (na stanowisku)" : config.pufa_leg_type === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)"}
+                Kompletacja: {config.pufa_leg_type === "plastic_2_5" ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)"}
               </Badge>
             </div>
           </CardContent>
