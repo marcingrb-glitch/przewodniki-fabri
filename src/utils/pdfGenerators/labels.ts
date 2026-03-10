@@ -90,18 +90,36 @@ function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
   return val !== "-" && val !== "" && val !== "null" && val !== "undefined";
 }
 
+/** Normalize display_fields: flat string[] → string[][], nested stays as-is */
+function normalizeDisplayFields(fields: unknown): string[][] {
+  if (!Array.isArray(fields) || fields.length === 0) return [[]];
+  if (typeof fields[0] === "string") return [fields as string[]];
+  return fields as string[][];
+}
+
 function buildLabelLines(decoded: DecodedSKU, tpl: LabelTemplate, productType: string): string[] {
   const s = seriesLine(decoded);
   const typeLabel = productType.toUpperCase();
   const header = `${typeLabel} | Zam: ${decoded.orderNumber || ""}`;
 
-  const fields = (tpl.display_fields || [])
-    .map((f) => resolveField(decoded, f))
-    .filter((v) => v !== "-");
+  const lineGroups = normalizeDisplayFields(tpl.display_fields);
+  const contentLines: string[] = [];
 
-  const fieldLine = fields.length > 0 ? `${tpl.label_name}: ${fields.join(" ")}` : tpl.label_name;
+  for (let i = 0; i < lineGroups.length; i++) {
+    const values = lineGroups[i]
+      .map((f) => resolveField(decoded, f))
+      .filter((v) => v !== "-");
+    const prefix = i === 0 ? `${tpl.label_name}: ` : "";
+    if (values.length > 0 || i === 0) {
+      contentLines.push(`${prefix}${values.join(" ")}`);
+    }
+  }
 
-  return [s, header, fieldLine];
+  if (contentLines.length === 0) {
+    contentLines.push(tpl.label_name);
+  }
+
+  return [s, header, ...contentLines];
 }
 
 export async function generateLabelsPDF(

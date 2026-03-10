@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Plus, GripVertical, Copy } from "lucide-react";
 import InlineEditCell from "./spec/InlineEditCell";
 import { toast } from "sonner";
-import DisplayFieldsSelector from "./labels/DisplayFieldsSelector";
 import ComponentSelector from "./labels/ComponentSelector";
+import LabelConfigurator from "./labels/LabelConfigurator";
 
 interface LabelTemplate {
   id: string;
@@ -43,6 +43,7 @@ export default function LabelTemplates() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("sofa");
   const [selectedSeries, setSelectedSeries] = useState<string>("all");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["label-templates"],
@@ -152,7 +153,7 @@ export default function LabelTemplates() {
     await updateMutation.mutateAsync({ id, field, value: parsed });
   };
 
-  const handleFieldsChange = async (id: string, fields: string[]) => {
+  const handleFieldsChange = async (id: string, fields: string[][] | string[]) => {
     await updateMutation.mutateAsync({ id, field: "display_fields", value: fields });
   };
 
@@ -268,8 +269,16 @@ export default function LabelTemplates() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredTemplates.map((tpl) => (
-                        <TableRow key={tpl.id}>
+                      {filteredTemplates.map((tpl) => {
+                        const fields = tpl.display_fields;
+                        const fieldCount = Array.isArray(fields) ? 
+                          (fields.length > 0 && Array.isArray(fields[0]) ? (fields as unknown as string[][]).flat().length : fields.length) : 0;
+                        return (
+                        <TableRow 
+                          key={tpl.id}
+                          className={`cursor-pointer ${selectedTemplateId === tpl.id ? "bg-accent" : ""}`}
+                          onClick={() => setSelectedTemplateId(selectedTemplateId === tpl.id ? null : tpl.id)}
+                        >
                           <TableCell>
                             <GripVertical className="h-4 w-4 text-muted-foreground" />
                           </TableCell>
@@ -288,11 +297,9 @@ export default function LabelTemplates() {
                             />
                           </TableCell>
                           <TableCell>
-                            <DisplayFieldsSelector
-                              component={tpl.component}
-                              selectedFields={tpl.display_fields || []}
-                              onChange={(fields) => handleFieldsChange(tpl.id, fields)}
-                            />
+                            <Badge variant="outline" className="text-xs font-normal">
+                              {fieldCount} {fieldCount === 1 ? "pole" : "pól"}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <InlineEditCell
@@ -323,14 +330,15 @@ export default function LabelTemplates() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => deleteMutation.mutate(tpl.id)}
+                              onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(tpl.id); }}
                               className="h-8 w-8 text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                       {filteredTemplates.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
@@ -343,6 +351,18 @@ export default function LabelTemplates() {
                     </TableBody>
                   </Table>
                 </div>
+                {/* Label Configurator */}
+                {selectedTemplateId && (() => {
+                  const selected = filteredTemplates.find((t) => t.id === selectedTemplateId);
+                  if (!selected) return null;
+                  return (
+                    <LabelConfigurator
+                      template={selected}
+                      onFieldsChange={(fields) => handleFieldsChange(selected.id, fields)}
+                      onClose={() => setSelectedTemplateId(null)}
+                    />
+                  );
+                })()}
                 <Button
                   variant="outline"
                   size="sm"
