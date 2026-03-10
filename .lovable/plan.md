@@ -1,38 +1,53 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Globalne nóżki + ilości przy źródle danych
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Koncepcja
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+Dobry pomysł — dane o ilościach i wysokościach nóżek powinny żyć tam, gdzie naturalnie należą:
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+| Element | Wysokość nóżek | Ilość nóżek | Gdzie już jest / co dodać |
+|---------|----------------|-------------|--------------------------|
+| Skrzynia | `chests.leg_height_cm` (jest) | **dodać `chests.leg_count`** | tabela `chests` |
+| Siedzisko | `automats.seat_leg_height_cm` (jest) | `automats.seat_leg_count` (jest) | tabela `automats` — już kompletne |
+| Pufa | `series_config.pufa_leg_height_cm` (jest) | **dodać `series_config.pufa_leg_count`** | tabela `series_config` |
+| Fotel | stałe 15cm | stałe 4szt | zostaje w logice (lub przyszła konfiguracja) |
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+Nóżki same w sobie (kod, nazwa, materiał, kolory, kto kompletuje) stają się **globalnym zasobem** w sekcji WSPÓLNE.
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+### Zmiany
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+**1. Migracja bazy danych**
+```sql
+-- Nóżki: dodaj completed_by, usuń series_id, dodaj UNIQUE(code)
+ALTER TABLE legs ADD COLUMN completed_by text 
+  DEFAULT 'Dziewczyny od nóżek (kompletacja do worka)';
+UPDATE legs SET completed_by = 'Tapicer (na stanowisku)' WHERE code = 'N4';
+DELETE FROM legs a USING legs b WHERE a.code = b.code AND a.created_at > b.created_at;
+ALTER TABLE legs DROP COLUMN series_id;
+ALTER TABLE legs ADD CONSTRAINT legs_code_unique UNIQUE (code);
 
-### Krok 4: App.tsx — routing
+-- Skrzynie: dodaj ilość nóżek (domyślnie 4)
+ALTER TABLE chests ADD COLUMN leg_count integer DEFAULT 4;
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+-- Series config: dodaj ilość nóżek pufy (domyślnie 4)
+ALTER TABLE series_config ADD COLUMN pufa_leg_count integer DEFAULT 4;
+```
 
-### Krok 5: skuDecoder.ts — uprość seat types
+**2. AdminLayout.tsx** — dodaj "Nóżki" do `sharedLinks` (sekcja WSPÓLNE)
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+**3. Legs.tsx** — usuń `useOutletContext`, `filterColumn`, `series_id` injection. Dodaj kolumnę `completed_by` do tabeli i formularza.
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+**4. Chests.tsx** — dodaj kolumnę `leg_count` do tabeli i formularza
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
+**5. SeriesLegs.tsx** — usuń formularz CRUD nóżek (przeniesiony do WSPÓLNE). Zostaw read-only podgląd globalnych nóżek. Tabela "Kto co kompletuje" pobiera `completed_by` z `legs`, `leg_count` z `chests`, `seat_leg_count` z `automats`, `pufa_leg_count` z `series_config`.
 
-### Krok 7: Usuń SKUConfig.tsx
+**6. skuDecoder.ts** — linia 153-154: usuń `.eq("series_id", seriesId)` z query do `legs`
 
-Plik nie jest już potrzebny.
+**7. NozkiSheet.tsx i KierownikSheet.tsx** — usuń filtrowanie po `series_id` w query do `legs`, używaj `completed_by` z rekordu
+
+### Co się NIE zmienia
+- `skuParser.ts`, `pdfGenerators/*` — bez zmian
+- `automats` — już ma `seat_leg_height_cm` i `seat_leg_count`
+- RLS na `legs` — bez zmian (te same polityki, brak series_id w warunkach)
 
