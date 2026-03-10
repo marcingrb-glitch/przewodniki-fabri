@@ -32,12 +32,23 @@ export interface ValidationResult {
   warnings: string[];
 }
 
+export interface ProductFoamItem {
+  position: number;
+  name: string;
+  height: number | null;
+  width: number | null;
+  length: number | null;
+  material: string;
+  quantity: number;
+  notes: string | null;
+}
+
 export interface DecodedSKU {
   series: { code: string; name: string; collection: string };
   fabric: { code: string; name: string; color: string; colorName: string; group: number };
-  seat: { code: string; type: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean; springType?: string };
+  seat: { code: string; type: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean; springType?: string; foams?: ProductFoamItem[] };
   side: { code: string; name: string; frame: string; finish: string; finishName: string };
-  backrest: { code: string; height: string; frame: string; foam: string; top: string; finish: string; finishName: string; springType?: string };
+  backrest: { code: string; height: string; frame: string; foam: string; top: string; finish: string; finishName: string; springType?: string; foams?: ProductFoamItem[] };
   chest: { code: string; name: string; legHeight: number; legCount: number };
   automat: { code: string; name: string; type: string; seatLegs: boolean; seatLegHeight: number; seatLegCount: number };
   legs?: { code: string; name: string; material: string; color?: string; colorName?: string };
@@ -49,7 +60,7 @@ export interface DecodedSKU {
     sofa_chest: { leg: string; height: number; count: number } | null;
     sofa_seat: { leg: string; height: number; count: number } | null;
   };
-  pufaSeat?: { frontBack: string; sides: string; foam: string; box: string };
+  pufaSeat?: { frontBack: string; sides: string; foam: string; box: string; foams?: ProductFoamItem[] };
   pufaLegs?: { code: string; height: number; count: number };
   fotelLegs?: { code: string; height: number; count: number };
   pufaSKU?: string;
