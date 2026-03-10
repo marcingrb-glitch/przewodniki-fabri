@@ -1,26 +1,38 @@
 
 
-## Opisy (etykiety) przed wartościami pól
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Problem
-Teraz na etykiecie widać np. `Siedzisko: SD02ND 66B` — kod i sprężyna bez opisu. Użytkownik chce widzieć `Siedzisko: SD02ND Sprężyna: 66B` — każde pole z własnym opisem.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Rozwiązanie
-Wykorzystać istniejące `label` z `COMPONENT_FIELDS` (już są w bazie kodu, np. "Kod siedziska", "Sprężyna siedziska") jako prefiksy przed wartościami. Skrócić je do czytelnej formy (np. "Sprężyna" zamiast "Sprężyna siedziska" — bo kontekst wynika z nazwy etykiety).
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Zmiany
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-**`LabelConfigurator.tsx`** — w `previewLines`:
-- Zamiast `values.join(" ")` → każde pole formatować jako `"Label: value"` używając `getFieldLabel(f, component)`
-- Pierwsza linia: prefix `template.label_name` + pola z opisami
-- Kolejne linie: pola z opisami bez prefixu
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-**`pdfHelpers.ts` / `labels.ts`** — w generowaniu PDF:
-- Analogiczna zmiana — przy budowaniu tekstu linii, każde pole dostaje swój opis z `COMPONENT_FIELDS`
-- Format: `"Kod: SD02ND Sprężyna: 66B"` zamiast `"SD02ND 66B"`
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-### Dane
-Opisy pochodzą z `COMPONENT_FIELDS` w `DisplayFieldsSelector.tsx` — nie trzeba dodatkowych zapytań do bazy. Te labele są już zdefiniowane per pole (np. `{ value: "seat.springType", label: "Sprężyna siedziska" }`).
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-Brak zmian w bazie danych.
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

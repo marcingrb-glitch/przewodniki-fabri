@@ -2,6 +2,7 @@ import { DecodedSKU } from "@/types";
 import { createDoc, addLabel, toBlob, LabelSettings } from "@/utils/pdfHelpers";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFoamsDetailed } from "@/utils/foamHelpers";
+import { formatFieldWithLabel } from "@/utils/fieldLabels";
 
 function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string): string {
   // Build pipe-separated values matching leftZoneFields order
@@ -154,12 +155,16 @@ function buildLabelLines(
   const contentLines: string[] = [];
 
   for (let i = 0; i < lineGroups.length; i++) {
-    const values = lineGroups[i]
-      .map((f) => resolveField(decoded, f))
-      .filter((v) => v !== "-");
+    const parts = lineGroups[i]
+      .map((f) => {
+        const val = resolveField(decoded, f);
+        if (val === "-") return null;
+        return formatFieldWithLabel(f, val);
+      })
+      .filter(Boolean) as string[];
     const prefix = i === 0 ? `${tpl.label_name}: ` : "";
-    if (values.length > 0 || i === 0) {
-      contentLines.push(`${prefix}${values.join(" ")}`);
+    if (parts.length > 0 || i === 0) {
+      contentLines.push(`${prefix}${parts.join(" | ")}`);
     }
   }
 
