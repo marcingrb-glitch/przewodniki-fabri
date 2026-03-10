@@ -13,10 +13,13 @@ const columns = [
 const fields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
   { name: "name", label: "Nazwa", type: "text", required: true },
-  { name: "construction_type", label: "Typ konstrukcji", type: "select", options: [
+  { name: "construction_type", label: "Wygląd", type: "select", options: [
     { value: "sztanga", label: "Sztanga" },
     { value: "wciągi", label: "Wciągi" },
     { value: "gładka", label: "Gładka" },
+  ]},
+  { name: "insert_type", label: "Wkład", type: "select", options: [
+    { value: "dinaro xl", label: "Dinaro XL" },
   ]},
   { name: "allowed_finishes", label: "Możliwe wykończenia", type: "multi-select", required: true, options: [
     { value: "A", label: "A (Stebnówka)" },

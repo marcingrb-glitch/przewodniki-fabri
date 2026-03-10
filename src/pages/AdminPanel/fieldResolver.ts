@@ -89,6 +89,8 @@ export const AVAILABLE_FIELDS: FieldDef[] = [
   { value: "walek.code", label: "Kod", group: "walek" },
   { value: "walek.name", label: "Nazwa", group: "walek" },
   { value: "walek.finish_info", label: "Wykończenie", group: "walek" },
+  { value: "walek.construction_type", label: "Wygląd", group: "walek" },
+  { value: "walek.insert_type", label: "Wkład", group: "walek" },
   { value: "pufaSeat.frontBack", label: "Front/tył", group: "pufa" },
   { value: "pufaSeat.sides", label: "Boki", group: "pufa" },
   { value: "pufaSeat.foam", label: "Pianka bazowa", group: "pufa" },
