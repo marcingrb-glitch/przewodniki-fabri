@@ -1,38 +1,30 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Problem
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Podgląd dekodowania PDF renderuje iframe z data URI, ale iframe może wyświetlać się jako pusty. Prawdopodobne przyczyny:
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+1. **Race condition w `generatePreview`**: `setGenerating(false)` wykonuje się w `finally` ZANIM `reader.onload` zdąży ustawić `pdfDataUri` — ale to nie powoduje pustego iframe, bo stan `pdfDataUri` i tak się ustawi po chwili.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+2. **Główny problem**: iframe z `data:application/pdf;base64,...` może nie renderować się w sandboxowanym preview Lovable. Komponent `PDFPreview` (używany przez przewodniki) działa, bo jest w `Dialog` — ale mechanizm jest identyczny (data URI w iframe).
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+3. **Brak obsługi błędów widocznych dla użytkownika** — jeśli PDF się nie wygeneruje (np. brak danych), użytkownik widzi pustą ramkę bez informacji.
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+## Rozwiązanie
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+Zamiast własnego inline iframe, użyć istniejącego komponentu `PDFPreview` (dialog z iframe), który już działa poprawnie dla przewodników. Dodatkowo dodać toast z informacją o błędzie.
 
-### Krok 4: App.tsx — routing
+### Zmiana w `src/pages/AdminPanel/DecodingTemplates.tsx`:
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+1. **Importować `PDFPreview`** i `toast` z sonner
+2. **Zastąpić stan `pdfDataUri`** stanem `pdfBlob: Blob | null`
+3. **Dodać stan `showPreview: boolean`** do kontroli dialogu
+4. **`generatePreview`** — ustawia `pdfBlob` i `showPreview = true`
+5. **Przycisk "Podgląd"** — wywołuje `generatePreview` → otwiera `PDFPreview` dialog
+6. **Usunąć inline Card z iframe** — podgląd będzie w dialogu (jak w przewodnikach)
+7. **Dodać toast error** jeśli generowanie się nie uda
+8. **Usunąć `useEffect` auto-generowania** — podgląd na żądanie (klik "Podgląd")
 
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Pliki do edycji:
+- `src/pages/AdminPanel/DecodingTemplates.tsx` — przebudowa na PDFPreview dialog
 
