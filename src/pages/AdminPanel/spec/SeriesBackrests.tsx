@@ -25,6 +25,7 @@ interface SewingVariant {
   series_id: string;
   component_type: string;
   component_code: string;
+  backrest_id: string | null;
   variant_name: string;
   models: string[];
   description: string | null;
