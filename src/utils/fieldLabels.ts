@@ -57,7 +57,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "legHeights.sofa_seat.count": "Ilość nóg (siedzisko)",
 
   // Pufa legs
-  "pufaLegs.code": "Kod nogi (pufa)",
+  "pufaLegs.code": "Noga (pufa)",
   "pufaLegs.height": "Wysokość nogi (pufa)",
   "pufaLegs.count": "Ilość nóg (pufa)",
 
