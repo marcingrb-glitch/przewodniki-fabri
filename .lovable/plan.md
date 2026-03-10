@@ -1,38 +1,53 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Rozdzielenie "Kod + wykończenie" na osobne checkboxy
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Co robimy
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+Zamiast jednego pola `seat.code_finish` (łączonego "Kod + wykończenie"), dodajemy osobne pola:
+- `seat.code` — Kod
+- `seat.finish_name` — Wykończenie
+- analogicznie dla `backrest` i `side`
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+Stare pola `*.code_finish` zostają jako opcja "łączona" dla kompatybilności wstecznej.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+### Zmiany w plikach
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**1. `src/pages/AdminPanel/GuideTemplates.tsx`** — rozszerzenie `AVAILABLE_FIELDS`:
+```
+// seat group — dodać przed code_finish:
+{ value: "seat.code", label: "Kod", group: "seat" },
+{ value: "seat.finish_name", label: "Wykończenie", group: "seat" },
+{ value: "seat.code_finish", label: "Kod + wykończenie (razem)", group: "seat" },
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+// backrest group:
+{ value: "backrest.code", label: "Kod", group: "backrest" },
+{ value: "backrest.finish_name", label: "Wykończenie", group: "backrest" },
+{ value: "backrest.code_finish", label: "Kod + wykończenie (razem)", group: "backrest" },
 
-### Krok 4: App.tsx — routing
+// side group:
+{ value: "side.code", label: "Kod", group: "side" },
+{ value: "side.finish_name", label: "Wykończenie", group: "side" },
+{ value: "side.code_finish", label: "Kod + wykończenie (razem)", group: "side" },
+```
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+**2. `src/utils/pdfGenerators/guideGenerator.ts`** — dodanie nowych case w `resolveField`:
+```
+case "seat.code": return decoded.seat.code;
+case "seat.finish_name": return decoded.seat.finishName;
+case "backrest.code": return decoded.backrest.code;
+case "backrest.finish_name": return decoded.backrest.finishName;
+case "side.code": return decoded.side.code;
+case "side.finish_name": return decoded.side.finishName;
+```
 
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+**3. `src/pages/AdminPanel/GuidePreview.tsx`** — dodanie nowych pól w mapie `resolveExampleValue`:
+```
+"seat.code": v(data.seat?.code),
+"seat.finish_name": finishName,
+"backrest.code": v(data.backrest?.code),
+"backrest.finish_name": finishName,
+"side.code": v(data.side?.code),
+"side.finish_name": finishName,
+```
 
