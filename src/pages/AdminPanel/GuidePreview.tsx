@@ -135,7 +135,7 @@ const PRODUCT_LABELS: Record<string, string> = {
   fotel: "FOTEL",
 };
 
-export default function GuidePreview({ sections, productType }: GuidePreviewProps) {
+export default function GuidePreview({ sections, productType, seriesId }: GuidePreviewProps) {
   const { data: exampleData, isLoading } = useExampleData();
 
   const enabledSections = useMemo(
