@@ -190,6 +190,7 @@ export default function Users() {
           <UserTable
             users={approved}
             permMap={permMap}
+            adminIds={adminIds}
             onToggle={(id, approved) => toggleApproval.mutate({ id, approved })}
             onPermChange={(userId, field, value) => updatePermission.mutate({ userId, field, value })}
             isPending={toggleApproval.isPending}
