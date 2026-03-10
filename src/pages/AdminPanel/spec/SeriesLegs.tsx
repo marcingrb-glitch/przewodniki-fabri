@@ -44,7 +44,7 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [legsRes, chestsRes, automatsRes] = await Promise.all([
+    const [legsRes, chestsRes, seriesAutomatsRes, globalAutomatsRes] = await Promise.all([
       supabase.from("legs").select("*").order("code"),
       availableChests.length > 0
         ? supabase.from("chests").select("*").in("code", availableChests).order("code")
