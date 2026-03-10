@@ -39,7 +39,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Chest
   "chest.code": "Skrzynia",
-  "chest.name": "Nazwa",
+  "chest.name": "Skrzynia",
   "chest.legHeight": "Wys. nóżki",
   "chest.legCount": "Ilość nóżek",
 
