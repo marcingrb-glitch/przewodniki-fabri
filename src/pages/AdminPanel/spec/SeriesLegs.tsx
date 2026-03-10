@@ -30,7 +30,8 @@ const formatColors = (colors: Json): string => {
 
 interface LegRow { id: string; code: string; name: string; material: string | null; colors: Json; completed_by: string | null; }
 interface ChestRow { id: string; code: string; name: string; leg_height_cm: number; leg_count: number; }
-interface AutomatRow { id: string; code: string; name: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null; }
+interface SeriesAutomatRow { id: string; automat_code: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null; }
+interface AutomatGlobal { code: string; name: string; type: string | null; }
 
 export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
   const [legs, setLegs] = useState<LegRow[]>([]);
