@@ -13,10 +13,14 @@ interface Props {
   onConfigUpdate: () => void;
 }
 
-const LEG_TYPE_LABELS: Record<string, string> = {
-  from_sku: "Z kodu SKU (drewniane)",
-  built_in_plastic: "Wbudowane plastikowe",
-  plastic_2_5: "Plastikowe N4",
+const formatLegType = (type: string | null, height: number | null): string => {
+  if (!type) return '—';
+  switch (type) {
+    case 'built_in_plastic': return `N4 plastikowe wbudowane, H${height}cm`;
+    case 'plastic_2_5': return `N4 plastikowe, H${height}cm`;
+    case 'from_sku': return `Z segmentu N (z SKU), H${height}cm`;
+    default: return `${type}, H${height}cm`;
+  }
 };
 
 const LEG_COMPLETION_LABELS: Record<string, string> = {
@@ -99,8 +103,7 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Nóżki pufy</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Typ:</span> {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</div>
-          <div><span className="font-medium">Wysokość:</span> {config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—"}</div>
+          <div><span className="font-medium">Typ:</span> {formatLegType(config.pufa_leg_type, config.pufa_leg_height_cm)}</div>
           <div><span className="font-medium">Kompletacja:</span> {LEG_COMPLETION_LABELS[config.pufa_leg_type ?? "from_sku"] ?? "—"}</div>
         </CardContent>
       </Card>

@@ -11,6 +11,16 @@ function NoData({ label }: {label: string;}) {
   return <p className="text-destructive font-bold py-2">⚠️ BRAK DANYCH — {label} — uzupełnij w specyfikacji</p>;
 }
 
+const formatLegType = (type: string | null, height: number | null): string => {
+  if (!type) return '—';
+  switch (type) {
+    case 'built_in_plastic': return `N4 plastikowe wbudowane, H${height}cm`;
+    case 'plastic_2_5': return `N4 plastikowe, H${height}cm`;
+    case 'from_sku': return `Z segmentu N (z SKU), H${height}cm`;
+    default: return `${type}, H${height}cm`;
+  }
+};
+
 const formatColors = (colors: any): string => {
   if (!colors) return '—';
   if (Array.isArray(colors)) {
@@ -145,8 +155,8 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
         {!config ? <NoData label="konfiguracja" /> :
         <div className="grid grid-cols-2 gap-2 text-sm border border-border p-3 rounded">
             <div><span className="text-muted-foreground">Sprężyna domyślna:</span> <strong>{config.default_spring ?? "B"}</strong></div>
-            <div><span className="text-muted-foreground">Nóżki siedziska:</span> <strong>{config.seat_leg_type ?? "from_sku"}, H{config.seat_leg_height_cm ?? "?"}cm</strong></div>
-            <div><span className="text-muted-foreground">Nóżki pufa:</span> <strong>{config.pufa_leg_type ?? "from_sku"}, H{config.pufa_leg_height_cm ?? "?"}cm</strong></div>
+            <div><span className="text-muted-foreground">Nóżki siedziska:</span> <strong>{formatLegType(config.seat_leg_type, config.seat_leg_height_cm)}</strong></div>
+            <div><span className="text-muted-foreground">Nóżki pufa:</span> <strong>{formatLegType(config.pufa_leg_type, config.pufa_leg_height_cm)}</strong></div>
             <div><span className="text-muted-foreground">Stały automat:</span> <strong>{config.fixed_automat ?? "brak"}</strong></div>
             <div><span className="text-muted-foreground">Stałe oparcie:</span> <strong>{config.fixed_backrest ?? "brak"}</strong></div>
             <div><span className="text-muted-foreground">Stała skrzynia:</span> <strong>{config.fixed_chest ?? "brak"}</strong></div>

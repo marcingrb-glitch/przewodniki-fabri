@@ -1,32 +1,38 @@
 
 
-## Plan: Format leg type labels in KierownikSheet and SeriesOverview
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Changes
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-**1. `src/pages/AdminPanel/cheatsheets/KierownikSheet.tsx`**
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-Add `formatLegType` helper function (after existing `formatColors`):
-```typescript
-const formatLegType = (type: string | null, height: number | null): string => {
-  if (!type) return '—';
-  switch (type) {
-    case 'built_in_plastic': return `N4 plastikowe wbudowane, H${height}cm`;
-    case 'plastic_2_5': return `N4 plastikowe, H${height}cm`;
-    case 'from_sku': return `Z segmentu N (z SKU), H${height}cm`;
-    default: return `${type}, H${height}cm`;
-  }
-};
-```
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Replace lines 148-149:
-- Line 148: `{config.seat_leg_type ?? "from_sku"}, H{...}cm` → `{formatLegType(config.seat_leg_type, config.seat_leg_height_cm)}`
-- Line 149: `{config.pufa_leg_type ?? "from_sku"}, H{...}cm` → `{formatLegType(config.pufa_leg_type, config.pufa_leg_height_cm)}`
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-**2. `src/pages/AdminPanel/spec/SeriesOverview.tsx`**
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Replace the existing `LEG_TYPE_LABELS` approach (lines 22-26, 99-104) with `formatLegType`. The current code splits type and height into separate lines — consolidate into a single display using the same helper. Replace the "Typ" and "Wysokość" lines with a single formatted string per leg type.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### No changes to
-- `skuParser.ts`, `skuDecoder.ts`, `utils/pdfGenerators/*`
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
