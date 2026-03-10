@@ -242,12 +242,30 @@ export default function GuideTemplates() {
     reorderMutation.mutate({ id: other.id, newOrder: s.sort_order });
   };
 
-  const addColumn = () => setForm({ ...form, columns: [...form.columns, { header: "", field: "" }] });
+  const toggleField = (fieldValue: string) => {
+    const exists = form.columns.find(c => c.field === fieldValue);
+    if (exists) {
+      setForm({ ...form, columns: form.columns.filter(c => c.field !== fieldValue) });
+    } else {
+      const fieldDef = AVAILABLE_FIELDS.find(f => f.value === fieldValue);
+      const groupDef = FIELD_GROUPS.find(g => g.key === fieldDef?.group);
+      const defaultHeader = fieldDef ? `${groupDef?.label || ""} — ${fieldDef.label}` : fieldValue;
+      setForm({ ...form, columns: [...form.columns, { header: defaultHeader, field: fieldValue }] });
+    }
+  };
   const removeColumn = (i: number) => setForm({ ...form, columns: form.columns.filter((_, idx) => idx !== i) });
-  const updateColumn = (i: number, key: keyof GuideColumn, val: string) => {
+  const updateColumnHeader = (i: number, val: string) => {
     const cols = [...form.columns];
-    cols[i] = { ...cols[i], [key]: val };
+    cols[i] = { ...cols[i], header: val };
     setForm({ ...form, columns: cols });
+  };
+  const moveColumn = (i: number, direction: "up" | "down") => {
+    const cols = [...form.columns];
+    const swapIdx = direction === "up" ? i - 1 : i + 1;
+    if (swapIdx < 0 || swapIdx >= cols.length) return;
+    [cols[i], cols[swapIdx]] = [cols[swapIdx], cols[i]];
+    setForm({ ...form, columns: cols });
+  };
   };
 
   const getSeriesName = (id: string | null) => {
