@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
+  /** Allow workers who have specific permission */
+  requiredPermission?: "can_view_cheatsheets" | "can_view_specs";
 }
 
-export function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
-  const { user, isLoading, isAdmin, isApproved, signOut } = useAuth();
+export function ProtectedRoute({ children, adminOnly = false, requiredPermission }: ProtectedRouteProps) {
+  const { user, isLoading, isAdmin, isApproved, permissions, signOut } = useAuth();
 
   if (isLoading) {
     return (
@@ -41,7 +43,28 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     );
   }
 
-  if (adminOnly && !isAdmin) {
+  // Admin always has access
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  // Check permission-based access
+  if (requiredPermission) {
+    if (permissions[requiredPermission]) {
+      return <>{children}</>;
+    }
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center space-y-3">
+          <ShieldAlert className="h-16 w-16 mx-auto text-destructive/60" />
+          <h2 className="text-xl font-semibold">Brak dostępu</h2>
+          <p className="text-muted-foreground">Nie masz uprawnień do tej sekcji.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (adminOnly) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center space-y-3">
