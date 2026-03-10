@@ -1,5 +1,6 @@
 import { useState } from "react";
 import GuidePreview from "./GuidePreview";
+import GuideSettings from "./guides/GuideSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, Copy } from "lucide-react";
 
 interface GuideColumn {
   header: string;
@@ -201,10 +202,39 @@ export default function GuideTemplates() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["guide-sections"] }),
   });
 
+  const copyForSeriesMutation = useMutation({
+    mutationFn: async ({ productType, seriesId }: { productType: string; seriesId: string }) => {
+      const globals = sections.filter(
+        (s) => s.product_type === productType && s.series_id === null
+      );
+      const inserts = globals.map((s) => ({
+        product_type: s.product_type,
+        section_name: s.section_name,
+        sort_order: s.sort_order,
+        is_conditional: s.is_conditional,
+        condition_field: s.condition_field,
+        columns: s.columns as any,
+        enabled: s.enabled,
+        series_id: seriesId,
+      }));
+      if (inserts.length === 0) return;
+      const { error } = await supabase.from("guide_sections").insert(inserts);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guide-sections"] });
+      toast.success("Skopiowano sekcje globalne dla serii");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const filtered = sections.filter(s =>
     s.product_type === activeTab &&
     (selectedSeriesId === "__global__" ? s.series_id === null : s.series_id === selectedSeriesId)
   );
+
+  const hasOverrides = selectedSeriesId !== "__global__" && filtered.length > 0;
+  const canCopy = selectedSeriesId !== "__global__" && filtered.length === 0;
 
   const openAdd = () => {
     const maxOrder = filtered.length > 0 ? Math.max(...filtered.map(s => s.sort_order)) : 0;
@@ -297,6 +327,8 @@ export default function GuideTemplates() {
         Sekcje globalne (bez serii) obowiązują dla wszystkich. Można nadpisać per seria.
       </p>
 
+      <GuideSettings />
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="sofa">SOFA</TabsTrigger>
@@ -318,6 +350,16 @@ export default function GuideTemplates() {
                     ))}
                   </SelectContent>
                 </Select>
+                {canCopy && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyForSeriesMutation.mutate({ productType: activeTab, seriesId: selectedSeriesId })}
+                    disabled={copyForSeriesMutation.isPending}
+                  >
+                    <Copy className="mr-1 h-4 w-4" /> Nadpisz dla tej serii
+                  </Button>
+                )}
               </div>
               <Button onClick={openAdd} size="sm"><Plus className="mr-1 h-4 w-4" /> Dodaj sekcję</Button>
             </div>
@@ -325,7 +367,11 @@ export default function GuideTemplates() {
             {isLoading ? (
               <p className="text-muted-foreground">Ładowanie...</p>
             ) : filtered.length === 0 ? (
-              <p className="text-muted-foreground">Brak sekcji dla tego typu.</p>
+              <p className="text-muted-foreground">
+                {selectedSeriesId !== "__global__"
+                  ? 'Brak nadpisań — używane są sekcje globalne. Kliknij "Nadpisz dla tej serii" aby skopiować globalne sekcje.'
+                  : "Brak sekcji dla tego typu."}
+              </p>
             ) : (
               <Table>
                 <TableHeader>

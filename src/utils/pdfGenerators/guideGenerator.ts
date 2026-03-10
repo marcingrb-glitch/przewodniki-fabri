@@ -168,13 +168,32 @@ async function fetchSections(productType: string, seriesCode: string): Promise<G
 }
 
 /**
+ * Fetch guide settings from DB (singleton).
+ */
+async function fetchGuideSettings() {
+  const { data } = await supabase
+    .from("guide_settings")
+    .select("*")
+    .limit(1)
+    .single();
+  return data ? {
+    font_size_header: Number(data.font_size_header) || 11,
+    font_size_table: Number(data.font_size_table) || 9,
+    table_row_height: Number(data.table_row_height) || 8,
+  } : { font_size_header: 11, font_size_table: 9, table_row_height: 8 };
+}
+
+/**
  * Universal PDF guide generator — replaces sofaGuide, pufaGuide, fotelGuide.
  */
 export async function generateGuidePDF(
   decoded: DecodedSKU,
   productType: "sofa" | "pufa" | "fotel"
 ): Promise<Blob> {
-  const doc = await createDoc("portrait", "a4");
+  const [doc, guideSettings] = await Promise.all([
+    createDoc("portrait", "a4"),
+    fetchGuideSettings(),
+  ]);
   const seriesInfo = `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`;
   const orderNumber = decoded.orderNumber || "";
   const date = decoded.orderDate || "";
@@ -193,7 +212,7 @@ export async function generateGuidePDF(
     pufa: decoded.pufaSKU || "",
     fotel: decoded.fotelSKU || "",
   };
-  doc.setFontSize(9);
+  doc.setFontSize(guideSettings.font_size_table);
   doc.setFont("Roboto", "normal");
   doc.setTextColor(0, 0, 0);
   doc.text(`SKU: ${skuMap[productType]}`, 15, y);
@@ -214,7 +233,7 @@ export async function generateGuidePDF(
     if (cols.length <= MAX_COLS) {
       const headers = cols.map(c => c.header);
       const row = cols.map(c => resolveField(decoded, c.field));
-      y = addTable(doc, y, headers, [row]);
+      y = addTable(doc, y, headers, [row], undefined, 8, guideSettings.font_size_table, guideSettings.table_row_height);
     } else {
       // Split into chunks to prevent overflow
       for (let i = 0; i < cols.length; i += MAX_COLS) {
@@ -222,7 +241,7 @@ export async function generateGuidePDF(
         const headers = chunk.map(c => c.header);
         const row = chunk.map(c => resolveField(decoded, c.field));
         const isLastChunk = i + MAX_COLS >= cols.length;
-        y = addTable(doc, y, headers, [row], undefined, isLastChunk ? 8 : 2);
+        y = addTable(doc, y, headers, [row], undefined, isLastChunk ? 8 : 2, guideSettings.font_size_table, guideSettings.table_row_height);
       }
     }
   }
