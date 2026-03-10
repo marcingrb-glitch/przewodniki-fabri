@@ -222,35 +222,44 @@ export default function GuidePreview({ sections, productType }: GuidePreviewProp
                       )}
                     </div>
 
-                    {/* Mini table */}
-                    <table className="w-full text-[9px]">
-                      <thead>
-                        <tr className="bg-muted/30">
-                          {cols.map((col, ci) => (
-                            <th
-                              key={ci}
-                              className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate"
-                              style={{ maxWidth: `${100 / cols.length}%` }}
-                            >
-                              {col.header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          {cols.map((col, ci) => (
-                            <td
-                              key={ci}
-                              className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground"
-                              style={{ maxWidth: `${100 / cols.length}%` }}
-                            >
-                              {resolveExampleValue(col.field, exampleData)}
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
+                    {/* Mini table(s) — chunked if >6 columns */}
+                    {(() => {
+                      const MAX_COLS = 6;
+                      const chunks: GuideColumn[][] = [];
+                      for (let i = 0; i < cols.length; i += MAX_COLS) {
+                        chunks.push(cols.slice(i, i + MAX_COLS));
+                      }
+                      return chunks.map((chunk, chunkIdx) => (
+                        <table key={chunkIdx} className="w-full text-[9px]">
+                          <thead>
+                            <tr className="bg-muted/30">
+                              {chunk.map((col, ci) => (
+                                <th
+                                  key={ci}
+                                  className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate"
+                                  style={{ maxWidth: `${100 / chunk.length}%` }}
+                                >
+                                  {col.header}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              {chunk.map((col, ci) => (
+                                <td
+                                  key={ci}
+                                  className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground"
+                                  style={{ maxWidth: `${100 / chunk.length}%` }}
+                                >
+                                  {resolveExampleValue(col.field, exampleData)}
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
+                      ));
+                    })()}
                   </div>
                 );
               })

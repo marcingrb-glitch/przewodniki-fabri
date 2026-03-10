@@ -94,6 +94,7 @@ export function addTable(
   headers: string[],
   rows: string[][],
   columnStyles?: ColumnStyles,
+  spacing: number = 8,
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
@@ -135,7 +136,7 @@ export function addTable(
     },
   });
 
-  return (doc as any).lastAutoTable.finalY + 8;
+  return (doc as any).lastAutoTable.finalY + spacing;
 }
 
 export function addInfoBox(doc: jsPDF, y: number, text: string): number {
