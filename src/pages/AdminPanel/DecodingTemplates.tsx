@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,119 +8,9 @@ import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
 import { DecodedSKU } from "@/types";
 import { Eye, Download } from "lucide-react";
 import PDFPreview from "@/components/PDFPreview";
+import DecodingPreview from "./DecodingPreview";
 import { toast } from "sonner";
-
-function buildExampleDecoded(data: any): DecodedSKU {
-  const finish = data.finish || { code: "A", name: "Zwykłe" };
-  const seat = data.seat || {};
-  const side = data.side || {};
-  const backrest = data.backrest || {};
-  const chest = data.chest || {};
-  const automat = data.automat || {};
-  const series = data.series || { code: "S1", name: "Seria", collection: "Kolekcja" };
-  const leg = data.leg || {};
-  const pillow = data.pillow || null;
-  const jaski = data.jaski || null;
-  const walek = data.walek || null;
-  const pufaSeat = data.pufaSeat || null;
-
-  let legColor = "";
-  let legColorName = "";
-  if (leg?.colors && Array.isArray(leg.colors) && leg.colors.length > 0) {
-    legColor = leg.colors[0]?.code || "";
-    legColorName = leg.colors[0]?.name || "";
-  }
-
-  const decoded: DecodedSKU = {
-    series: { code: series.code, name: series.name, collection: series.collection || "" },
-    fabric: { code: "N01", name: "Novell", color: "12", colorName: "Szary", group: 3 },
-    seat: {
-      code: seat.code || "N01",
-      type: seat.type || "N",
-      finish: finish.code,
-      finishName: finish.name,
-      frame: seat.frame || "-",
-      foam: "T25",
-      front: seat.front || "-",
-      midStrip: seat.center_strip || false,
-      springType: seat.spring_type || "B",
-      frameModification: seat.frame_modification || "",
-    },
-    side: {
-      code: side.code || "B01",
-      name: side.name || "Boczek standardowy",
-      frame: side.frame || "-",
-      finish: finish.code,
-      finishName: finish.name,
-    },
-    backrest: {
-      code: backrest.code || "O01",
-      height: backrest.height_cm || "90",
-      frame: backrest.frame || "-",
-      foam: "HR35",
-      top: backrest.top || "-",
-      finish: finish.code,
-      finishName: finish.name,
-      springType: backrest.spring_type || "B",
-    },
-    chest: {
-      code: chest.code || "SK15",
-      name: chest.name || "Skrzynia 15",
-      legHeight: chest.leg_height_cm || 5,
-      legCount: chest.leg_count || 4,
-    },
-    automat: {
-      code: automat.code || "AU01",
-      name: automat.name || "Automat standardowy",
-      type: automat.type || "DL",
-      seatLegs: false,
-      seatLegHeight: 0,
-      seatLegCount: 0,
-    },
-    legs: leg?.code ? {
-      code: leg.code,
-      name: leg.name || "",
-      material: leg.material || "",
-      color: legColor,
-      colorName: legColorName,
-    } : undefined,
-    pillow: pillow ? {
-      code: pillow.code,
-      name: pillow.name,
-      finish: finish.code,
-      finishName: finish.name,
-    } : undefined,
-    jaski: jaski ? {
-      code: jaski.code,
-      name: jaski.name,
-      finish: finish.code,
-      finishName: finish.name,
-    } : undefined,
-    walek: walek ? {
-      code: walek.code,
-      name: walek.name || "",
-      finish: finish.code,
-      finishName: finish.name,
-    } : undefined,
-    extras: [],
-    legHeights: {
-      sofa_chest: leg?.code ? { leg: leg.code, height: chest.leg_height_cm || 5, count: chest.leg_count || 4 } : null,
-      sofa_seat: null,
-    },
-    pufaSeat: pufaSeat ? {
-      frontBack: pufaSeat.front_back || "-",
-      sides: pufaSeat.sides || "-",
-      foam: pufaSeat.base_foam || "-",
-      box: pufaSeat.box_height || "-",
-    } : undefined,
-    pufaSKU: pufaSeat ? `${series.code}-PUFA-EXAMPLE` : undefined,
-    orderNumber: "12345",
-    orderDate: new Date().toISOString().slice(0, 10),
-    rawSKU: `${series.code}-N0112-${seat.code || "N01"}${finish.code}-${side.code || "B01"}${finish.code}-${backrest.code || "O01"}${finish.code}-${chest.code || "SK15"}-${automat.code || "AU01"}-${leg?.code || "N01"}BK`,
-  };
-
-  return decoded;
-}
+import { buildExampleDecoded } from "./decodingHelpers";
 
 export default function DecodingTemplates() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("__any__");
@@ -171,14 +61,18 @@ export default function DecodingTemplates() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const decoded = useMemo(() => {
+    if (!exampleData) return null;
+    return buildExampleDecoded(exampleData);
+  }, [exampleData]);
+
   const handlePreview = async () => {
-    if (!exampleData) {
+    if (!decoded) {
       toast.error("Brak danych do wygenerowania podglądu");
       return;
     }
     setGenerating(true);
     try {
-      const decoded = buildExampleDecoded(exampleData);
       const blob = await generateDecodingPDF(decoded);
       setPdfBlob(blob);
       setShowPreview(true);
@@ -191,10 +85,9 @@ export default function DecodingTemplates() {
   };
 
   const handleDownload = async () => {
-    if (!exampleData) return;
+    if (!decoded) return;
     setGenerating(true);
     try {
-      const decoded = buildExampleDecoded(exampleData);
       const blob = await generateDecodingPDF(decoded);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -231,13 +124,16 @@ export default function DecodingTemplates() {
           </Select>
         </div>
 
-        <Button onClick={handlePreview} disabled={generating || !exampleData} variant="outline" size="sm">
-          <Eye className="mr-1 h-4 w-4" /> Podgląd
+        <Button onClick={handlePreview} disabled={generating || !decoded} variant="outline" size="sm">
+          <Eye className="mr-1 h-4 w-4" /> Podgląd PDF
         </Button>
-        <Button onClick={handleDownload} disabled={generating || !exampleData} variant="outline" size="sm">
+        <Button onClick={handleDownload} disabled={generating || !decoded} variant="outline" size="sm">
           <Download className="mr-1 h-4 w-4" /> Pobierz PDF
         </Button>
       </div>
+
+      {/* Inline preview — renders automatically */}
+      {decoded && <DecodingPreview decoded={decoded} />}
 
       {showPreview && (
         <PDFPreview
