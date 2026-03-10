@@ -184,7 +184,7 @@ export default function LabelConfigurator({
     for (let i = 0; i < lines.length; i++) {
       const lineFields = lines[i];
       const values = lineFields
-        .map((f) => EXAMPLE_VALUES[f] || "???")
+        .map((f) => exampleValues[f] || "(brak)")
         .filter((v) => v !== "-");
       const prefix = i === 0 ? `${template.label_name}: ` : "";
       if (values.length > 0 || i === 0) {
