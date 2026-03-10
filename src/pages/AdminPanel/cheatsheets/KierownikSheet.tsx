@@ -299,7 +299,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                 <th className="border border-border px-1 py-1 text-left">Kod</th>
                 <th className="border border-border px-1 py-1 text-left">Nazwa</th>
                 <th className="border border-border px-1 py-1 text-left">Typ</th>
-                <th className="border border-border px-1 py-1 text-left">Nóżki sid.</th>
+                <th className="border border-border px-1 py-1 text-left">Nóżki siedziska</th>
               </tr>
             </thead>
             <tbody>
