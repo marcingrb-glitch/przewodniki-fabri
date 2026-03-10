@@ -19,7 +19,15 @@ function resolveField(decoded: DecodedSKU, path: string): string {
     return lines.length > 0 ? lines.join("\n") : "-";
   }
 
-  const parts = path.split(".");
+  // Legacy leg.* aliases → map to legHeights.sofa_chest.*
+  const legAliases: Record<string, string> = {
+    "leg.code": "legHeights.sofa_chest.leg",
+    "leg.height": "legHeights.sofa_chest.height",
+    "leg.count": "legHeights.sofa_chest.count",
+  };
+  const resolvedPath = legAliases[path] || path;
+
+  const parts = resolvedPath.split(".");
   let current: unknown = decoded;
   for (const part of parts) {
     if (current == null || typeof current !== "object") return "-";
