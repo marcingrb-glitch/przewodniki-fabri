@@ -196,7 +196,8 @@ export default function LabelTemplates() {
       <div>
         <h1 className="text-2xl font-bold">🏷️ Szablony etykiet</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Konfiguracja etykiet generowanych dla każdego typu produktu
+          Konfiguracja etykiet generowanych dla każdego typu produktu.
+          Pola typu „Kod" (np. „Kod siedziska") są automatycznie skracane do samej nazwy (np. „Siedzisko: SD02ND").
         </p>
       </div>
 

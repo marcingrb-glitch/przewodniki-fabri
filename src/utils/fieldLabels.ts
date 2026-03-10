@@ -79,7 +79,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "pillow.finishName": "Wykończenie poduszki (nazwa)",
 
   // Legs (common)
-  "legs.code": "Kod nogi",
+  "legs.code": "Noga",
   "legs.name": "Nazwa nogi",
   "legs.material": "Materiał nogi",
   "legs.color": "Kolor nogi (kod)",
