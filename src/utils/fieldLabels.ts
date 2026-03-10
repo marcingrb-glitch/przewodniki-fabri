@@ -21,7 +21,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "automat.type": "Typ automatu",
 
   // Side
-  "side.code": "Kod boczka",
+  "side.code": "Boczek",
   "side.name": "Nazwa boczka",
   "side.frame": "Rama boczka",
   "side.finish": "Wykończenie (kod)",
