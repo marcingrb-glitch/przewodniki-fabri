@@ -64,6 +64,7 @@ export default function SeriesSpecification() {
           <TabsTrigger value="models">Modele / Siedziska</TabsTrigger>
           <TabsTrigger value="sides">Boczki</TabsTrigger>
           <TabsTrigger value="backrests">Oparcia</TabsTrigger>
+          <TabsTrigger value="automats">Automaty</TabsTrigger>
           <TabsTrigger value="legs">Nóżki & Montaż</TabsTrigger>
           <TabsTrigger value="pufa">Pufa</TabsTrigger>
           {seriesCode !== "S2" && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
