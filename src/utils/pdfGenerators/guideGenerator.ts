@@ -33,6 +33,8 @@ function resolveField(decoded: DecodedSKU, field: string): string {
       return decoded.seat.finishName;
     case "seat.code_finish":
       return `${decoded.seat.code} (${decoded.seat.finishName})`;
+    case "seat.type":
+      return decoded.seat.type || "-";
     case "seat.foams_summary":
       return formatFoamsSummary(decoded.seat.foams);
     case "seat.midStrip_yn":
