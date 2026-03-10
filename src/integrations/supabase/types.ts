@@ -264,7 +264,7 @@ export type Database = {
           condition_field: string | null
           content_template: string
           created_at: string
-          display_fields: string[]
+          display_fields: Json
           id: string
           is_conditional: boolean
           label_name: string
@@ -278,7 +278,7 @@ export type Database = {
           condition_field?: string | null
           content_template: string
           created_at?: string
-          display_fields?: string[]
+          display_fields?: Json
           id?: string
           is_conditional?: boolean
           label_name: string
@@ -292,7 +292,7 @@ export type Database = {
           condition_field?: string | null
           content_template?: string
           created_at?: string
-          display_fields?: string[]
+          display_fields?: Json
           id?: string
           is_conditional?: boolean
           label_name?: string
