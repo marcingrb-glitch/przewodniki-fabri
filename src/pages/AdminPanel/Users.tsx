@@ -255,12 +255,14 @@ export default function Users() {
 function UserTable({
   users,
   permMap,
+  adminIds,
   onToggle,
   onPermChange,
   isPending,
 }: {
   users: UserProfile[];
   permMap: Map<string, UserPerm>;
+  adminIds: Set<string>;
   onToggle: (id: string, approved: boolean) => void;
   onPermChange: (userId: string, field: string, value: boolean) => void;
   isPending: boolean;
