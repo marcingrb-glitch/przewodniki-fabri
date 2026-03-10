@@ -521,6 +521,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       front: seatFront,
       midStrip: seatMidStrip,
       springType: seatSpringType || undefined,
+      foams: seatFoams.length > 0 ? seatFoams : undefined,
     },
     side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish || (sidesRes.data?.default_finish ?? ""), finishName: FINISHES[parsed.side.finish || (sidesRes.data?.default_finish ?? "")] || parsed.side.finish },
     backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: backrestFoam, top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish, springType: backrestsRes.data?.spring_type || undefined },
