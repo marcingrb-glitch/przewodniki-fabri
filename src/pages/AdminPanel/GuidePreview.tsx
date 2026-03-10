@@ -230,43 +230,58 @@ export default function GuidePreview({ sections, productType, seriesId }: GuideP
                       )}
                     </div>
 
-                    {/* Mini table(s) — chunked if >6 columns */}
+                    {/* Mini table(s) — with subgroup splitting for seat fields */}
                     {(() => {
+                      const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
                       const MAX_COLS = 4;
-                      const chunks: GuideColumn[][] = [];
-                      for (let i = 0; i < cols.length; i += MAX_COLS) {
-                        chunks.push(cols.slice(i, i + MAX_COLS));
+
+                      const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
+                      const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
+                      const otherCols = cols.filter(c => !c.field.startsWith("seat."));
+
+                      const hasSplit = frameCols.length > 0 && foamCols.length > 0;
+
+                      const renderChunkedTable = (columns: GuideColumn[], keyPrefix: string) => {
+                        const chunks: GuideColumn[][] = [];
+                        for (let i = 0; i < columns.length; i += MAX_COLS) {
+                          chunks.push(columns.slice(i, i + MAX_COLS));
+                        }
+                        return chunks.map((chunk, chunkIdx) => (
+                          <table key={`${keyPrefix}-${chunkIdx}`} className="w-full text-[9px]">
+                            <thead>
+                              <tr className="bg-muted/30">
+                                {chunk.map((col, ci) => (
+                                  <th key={ci} className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate" style={{ maxWidth: `${100 / chunk.length}%` }}>
+                                    {col.header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                {chunk.map((col, ci) => (
+                                  <td key={ci} className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground" style={{ maxWidth: `${100 / chunk.length}%` }}>
+                                    {resolveExampleValue(col.field, exampleData)}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        ));
+                      };
+
+                      if (hasSplit) {
+                        return (
+                          <>
+                            <div className="text-[9px] font-semibold italic bg-muted/20 px-2 py-0.5 text-muted-foreground border-b border-border">Stolarka</div>
+                            {renderChunkedTable(frameCols, "frame")}
+                            <div className="text-[9px] font-semibold italic bg-muted/20 px-2 py-0.5 text-muted-foreground border-y border-border">Pianki</div>
+                            {renderChunkedTable(foamCols, "foam")}
+                          </>
+                        );
                       }
-                      return chunks.map((chunk, chunkIdx) => (
-                        <table key={chunkIdx} className="w-full text-[9px]">
-                          <thead>
-                            <tr className="bg-muted/30">
-                              {chunk.map((col, ci) => (
-                                <th
-                                  key={ci}
-                                  className="px-2 py-1 text-left font-semibold border-r border-border last:border-r-0 truncate"
-                                  style={{ maxWidth: `${100 / chunk.length}%` }}
-                                >
-                                  {col.header}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              {chunk.map((col, ci) => (
-                                <td
-                                  key={ci}
-                                  className="px-2 py-1 border-r border-border last:border-r-0 truncate text-muted-foreground"
-                                  style={{ maxWidth: `${100 / chunk.length}%` }}
-                                >
-                                  {resolveExampleValue(col.field, exampleData)}
-                                </td>
-                              ))}
-                            </tr>
-                          </tbody>
-                        </table>
-                      ));
+
+                      return renderChunkedTable(otherCols.length > 0 ? (frameCols.length > 0 || foamCols.length > 0 ? [...frameCols, ...foamCols, ...otherCols] : cols) : cols, "all");
                     })()}
                   </div>
                 );

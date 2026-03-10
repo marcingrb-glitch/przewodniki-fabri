@@ -223,28 +223,52 @@ export async function generateGuidePDF(
   // Fetch sections from DB
   const sections = await fetchSections(productType, decoded.series.code);
 
+  const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
+
+  const renderColumns = (colsToRender: GuideColumn[], spacing: number) => {
+    const MAX_COLS = 4;
+    if (colsToRender.length <= MAX_COLS) {
+      const headers = colsToRender.map(c => c.header);
+      const row = colsToRender.map(c => resolveField(decoded, c.field));
+      y = addTable(doc, y, headers, [row], undefined, spacing, guideSettings.font_size_table, guideSettings.table_row_height);
+    } else {
+      for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
+        const chunk = colsToRender.slice(i, i + MAX_COLS);
+        const headers = chunk.map(c => c.header);
+        const row = chunk.map(c => resolveField(decoded, c.field));
+        const isLastChunk = i + MAX_COLS >= colsToRender.length;
+        y = addTable(doc, y, headers, [row], undefined, isLastChunk ? spacing : 2, guideSettings.font_size_table, guideSettings.table_row_height);
+      }
+    }
+  };
+
   for (const section of sections) {
-    // Check condition
     if (section.is_conditional && section.condition_field) {
       if (!checkCondition(decoded, section.condition_field)) continue;
     }
 
     const cols = section.columns as GuideColumn[];
-    const MAX_COLS = 4;
+    const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
+    const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
+    const hasSplit = frameCols.length > 0 && foamCols.length > 0;
 
-    if (cols.length <= MAX_COLS) {
-      const headers = cols.map(c => c.header);
-      const row = cols.map(c => resolveField(decoded, c.field));
-      y = addTable(doc, y, headers, [row], undefined, 8, guideSettings.font_size_table, guideSettings.table_row_height);
+    if (hasSplit) {
+      // Subgroup label: Stolarka
+      doc.setFontSize(guideSettings.font_size_table);
+      doc.setFont("Roboto", "italic");
+      doc.setTextColor(100, 100, 100);
+      doc.text("Stolarka", 15, y);
+      y += 3;
+      renderColumns(frameCols, 4);
+
+      // Subgroup label: Pianki
+      doc.setFont("Roboto", "italic");
+      doc.setTextColor(100, 100, 100);
+      doc.text("Pianki", 15, y);
+      y += 3;
+      renderColumns(foamCols, 8);
     } else {
-      // Split into chunks to prevent overflow
-      for (let i = 0; i < cols.length; i += MAX_COLS) {
-        const chunk = cols.slice(i, i + MAX_COLS);
-        const headers = chunk.map(c => c.header);
-        const row = chunk.map(c => resolveField(decoded, c.field));
-        const isLastChunk = i + MAX_COLS >= cols.length;
-        y = addTable(doc, y, headers, [row], undefined, isLastChunk ? 8 : 2, guideSettings.font_size_table, guideSettings.table_row_height);
-      }
+      renderColumns(cols, 8);
     }
   }
 
