@@ -10,6 +10,7 @@ const sharedLinks = [
   { to: "/admin/fabrics", label: "Tkaniny" },
   { to: "/admin/finishes", label: "Wykończenia" },
   { to: "/admin/chests", label: "Skrzynie" },
+  { to: "/admin/legs", label: "Nóżki" },
   { to: "/admin/pillows", label: "Poduszki" },
   { to: "/admin/jaskis", label: "Jaśki" },
   { to: "/admin/waleks", label: "Wałki" },

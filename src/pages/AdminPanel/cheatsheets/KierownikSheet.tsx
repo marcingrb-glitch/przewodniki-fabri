@@ -75,9 +75,9 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
   });
 
   const { data: legs = [] } = useQuery({
-    queryKey: ["cheat-legs", seriesId],
+    queryKey: ["cheat-legs-global"],
     queryFn: async () => {
-      const { data } = await supabase.from("legs").select("*").eq("series_id", seriesId).order("code");
+      const { data } = await supabase.from("legs").select("*").order("code");
       return data ?? [];
     }
   });

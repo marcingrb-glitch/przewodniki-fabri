@@ -113,6 +113,7 @@ export type Database = {
           code: string
           created_at: string
           id: string
+          leg_count: number | null
           leg_height_cm: number
           name: string
         }
@@ -120,6 +121,7 @@ export type Database = {
           code: string
           created_at?: string
           id?: string
+          leg_count?: number | null
           leg_height_cm?: number
           name: string
         }
@@ -127,6 +129,7 @@ export type Database = {
           code?: string
           created_at?: string
           id?: string
+          leg_count?: number | null
           leg_height_cm?: number
           name?: string
         }
@@ -240,39 +243,31 @@ export type Database = {
         Row: {
           code: string
           colors: Json
+          completed_by: string | null
           created_at: string
           id: string
           material: string | null
           name: string
-          series_id: string
         }
         Insert: {
           code: string
           colors?: Json
+          completed_by?: string | null
           created_at?: string
           id?: string
           material?: string | null
           name: string
-          series_id: string
         }
         Update: {
           code?: string
           colors?: Json
+          completed_by?: string | null
           created_at?: string
           id?: string
           material?: string | null
           name?: string
-          series_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "legs_series_id_fkey"
-            columns: ["series_id"]
-            isOneToOne: false
-            referencedRelation: "series"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       order_files: {
         Row: {
@@ -701,6 +696,7 @@ export type Database = {
           fixed_chest: string | null
           id: string
           notes: string | null
+          pufa_leg_count: number | null
           pufa_leg_height_cm: number | null
           pufa_leg_type: string | null
           seat_leg_height_cm: number | null
@@ -717,6 +713,7 @@ export type Database = {
           fixed_chest?: string | null
           id?: string
           notes?: string | null
+          pufa_leg_count?: number | null
           pufa_leg_height_cm?: number | null
           pufa_leg_type?: string | null
           seat_leg_height_cm?: number | null
@@ -733,6 +730,7 @@ export type Database = {
           fixed_chest?: string | null
           id?: string
           notes?: string | null
+          pufa_leg_count?: number | null
           pufa_leg_height_cm?: number | null
           pufa_leg_type?: string | null
           seat_leg_height_cm?: number | null

@@ -149,9 +149,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seriesId && parsed.automat
       ? supabase.from("automats").select("code, name, type, has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("code", parsed.automat).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Legs (series-specific)
-    seriesId && parsed.legs
-      ? supabase.from("legs").select("code, name, material, colors").eq("code", parsed.legs.code).eq("series_id", seriesId).maybeSingle()
+    // Legs (global)
+    parsed.legs
+      ? supabase.from("legs").select("code, name, material, colors").eq("code", parsed.legs.code).maybeSingle()
       : Promise.resolve({ data: null }),
     // Pillows (no series_id)
     parsed.pillow
