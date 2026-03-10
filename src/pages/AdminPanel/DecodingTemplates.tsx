@@ -424,11 +424,20 @@ export default function DecodingTemplates() {
       {isLoading ? (
         <p className="text-muted-foreground">Ładowanie...</p>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground">
-          {selectedSeriesId !== "__global__"
-            ? 'Brak nadpisań — używane są sekcje globalne. Kliknij "Nadpisz dla tej serii" aby skopiować.'
-            : 'Brak sekcji. Kliknij "Dodaj sekcję" aby rozpocząć konfigurację.'}
-        </p>
+        <div className="space-y-3">
+          <p className="text-muted-foreground">
+            {selectedSeriesId !== "__global__"
+              ? 'Brak nadpisań — używane są sekcje globalne. Kliknij "Nadpisz dla tej serii" aby skopiować.'
+              : 'Brak sekcji. Wstaw domyślne lub dodaj ręcznie.'}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => seedDefaultsMutation.mutate()}
+            disabled={seedDefaultsMutation.isPending}
+          >
+            <Plus className="mr-1 h-4 w-4" /> Wstaw domyślne sekcje
+          </Button>
+        </div>
       ) : (
         <Table>
           <TableHeader>
