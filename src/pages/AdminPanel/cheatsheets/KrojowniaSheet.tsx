@@ -44,6 +44,14 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
     },
   });
 
+  const { data: finishes = [] } = useQuery({
+    queryKey: ["cheat-finishes"],
+    queryFn: async () => {
+      const { data } = await supabase.from("finishes").select("*").order("code");
+      return data ?? [];
+    },
+  });
+
   const { data: sewingVariants = [] } = useQuery({
     queryKey: ["cheat-sewing-variants", seriesId],
     queryFn: async () => {
@@ -57,6 +65,12 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">
         ŚCIĄGAWKA — Krojownia — {seriesCode} {seriesName}
       </h1>
+
+      {finishes.length > 0 && (
+        <div className="border-2 border-border rounded p-2 bg-muted text-sm font-bold">
+          LEGENDA WYKOŃCZEŃ: {finishes.map(f => `${f.code} = ${f.name}`).join(" | ")}
+        </div>
+      )}
 
       {/* Pułapki */}
       <section>

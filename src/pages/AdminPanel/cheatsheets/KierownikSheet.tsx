@@ -11,6 +11,11 @@ function NoData({ label }: { label: string }) {
   return <p className="text-destructive font-bold py-2">⚠️ BRAK DANYCH — {label} — uzupełnij w specyfikacji</p>;
 }
 
+const formatColors = (colors: any): string => {
+  if (!colors || typeof colors !== 'object' || Array.isArray(colors)) return '—';
+  return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(', ');
+};
+
 export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Props) {
   const { data: config } = useQuery({
     queryKey: ["cheat-config", seriesId],
@@ -76,6 +81,14 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
     },
   });
 
+  const { data: finishes = [] } = useQuery({
+    queryKey: ["cheat-finishes"],
+    queryFn: async () => {
+      const { data } = await supabase.from("finishes").select("*").order("code");
+      return data ?? [];
+    },
+  });
+
   const availableChests: string[] = (config as any)?.available_chests ?? [];
 
   const { data: chests = [] } = useQuery({
@@ -95,6 +108,12 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">
         SPECYFIKACJA PRODUKCYJNA — {seriesCode} {seriesName}
       </h1>
+
+      {finishes.length > 0 && (
+        <div className="border-2 border-border rounded p-2 bg-muted text-sm font-bold">
+          LEGENDA WYKOŃCZEŃ: {finishes.map(f => `${f.code} = ${f.name}`).join(" | ")}
+        </div>
+      )}
 
       {/* Konfiguracja ogólna */}
       <section>
@@ -254,7 +273,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                   <td className="border border-border px-1 py-0.5 font-mono">{l.code}</td>
                   <td className="border border-border px-1 py-0.5">{l.name}</td>
                   <td className="border border-border px-1 py-0.5">{l.material ?? "—"}</td>
-                  <td className="border border-border px-1 py-0.5">{(l.colors && typeof l.colors === "object" && !Array.isArray(l.colors)) ? Object.entries(l.colors).map(([k, v]) => `${k}=${v}`).join(", ") : Array.isArray(l.colors) ? (l.colors as string[]).join(", ") : "—"}</td>
+                  <td className="border border-border px-1 py-0.5">{formatColors(l.colors)}</td>
                 </tr>
               ))}
             </tbody>
