@@ -72,6 +72,7 @@ const App = () => (
                   <Route path="parse-rules" element={<ProtectedRoute adminOnly><ParseRules /></ProtectedRoute>} />
                   <Route path="side-exceptions" element={<ProtectedRoute adminOnly><SideExceptions /></ProtectedRoute>} />
                   <Route path="label-templates" element={<ProtectedRoute adminOnly><LabelTemplates /></ProtectedRoute>} />
+                  <Route path="guide-templates" element={<ProtectedRoute adminOnly><GuideTemplates /></ProtectedRoute>} />
                   {/* Permission-based routes */}
                   <Route path="spec/:seriesCode" element={<ProtectedRoute requiredPermission="can_view_specs"><SeriesSpecification /></ProtectedRoute>} />
                   <Route path="cheatsheets" element={<ProtectedRoute requiredPermission="can_view_cheatsheets"><Cheatsheets /></ProtectedRoute>} />
