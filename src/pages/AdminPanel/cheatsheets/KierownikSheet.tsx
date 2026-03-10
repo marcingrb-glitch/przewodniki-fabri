@@ -346,8 +346,8 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                     <td className="border border-border px-1 py-0.5">{sa.has_seat_legs ? `Tak, ${sa.seat_leg_count}szt, H${sa.seat_leg_height_cm}cm` : "Nie"}</td>
                   </tr>
                 );
-              })
-            )}
+              }
+            
             </tbody>
           </table>
         </section>
