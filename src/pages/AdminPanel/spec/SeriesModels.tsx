@@ -25,7 +25,7 @@ const seatFields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
   { name: "model_name", label: "Model", type: "text" },
   { name: "type", label: "Typ (kod)", type: "text" },
-  { name: "type_name", label: "Typ (nazwa)", type: "text" },
+  
   { name: "frame", label: "Stelaż", type: "text" },
   { name: "foam", label: "Pianka", type: "text" },
   { name: "front", label: "Przód", type: "text" },
