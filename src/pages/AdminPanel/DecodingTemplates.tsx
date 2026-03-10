@@ -72,7 +72,7 @@ export default function DecodingTemplates() {
     queryKey: ["decoding-example-data", seriesFilter],
     queryFn: async () => {
       const sid = seriesFilter;
-      const [seatRes, sideRes, backrestRes, chestRes, automatRes, legRes, pufaSeatRes, pillowRes, finishRes, jaskiRes, walekRes] = await Promise.all([
+      const [seatRes, sideRes, backrestRes, chestRes, automatRes, legRes, pufaSeatRes, pillowRes, finishRes, jaskiRes, walekRes, fabricRes] = await Promise.all([
         supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip, frame_modification").eq("series_id", sid!).limit(1).maybeSingle(),
         supabase.from("sides").select("code, name, frame").eq("series_id", sid!).limit(1).maybeSingle(),
         supabase.from("backrests").select("code, height_cm, frame, top, spring_type").eq("series_id", sid!).limit(1).maybeSingle(),
@@ -84,6 +84,7 @@ export default function DecodingTemplates() {
         supabase.from("finishes").select("code, name").limit(1).maybeSingle(),
         supabase.from("jaskis").select("code, name").limit(1).maybeSingle(),
         supabase.from("waleks").select("code, name").limit(1).maybeSingle(),
+        supabase.from("fabrics").select("code, name, price_group, colors").limit(1).maybeSingle(),
       ]);
 
       const selectedSeries = seriesList.find(s => s.id === sid);
