@@ -104,7 +104,7 @@ const OrderDetailsPage = () => {
 
   const hasPufa = !!decoded.pufaSKU;
   const hasFotel = !!decoded.fotelSKU;
-  const pufaSeat = SEATS_PUFA[decoded.seat.code];
+  const pufaSeat = decoded.pufaSeat;
 
   const ActionBtn = ({ icon: Icon, label, loadKey, onClick }: { icon: typeof Eye; label: string; loadKey: string; onClick: () => Promise<void> | void }) => (
     <Button variant="outline" size="sm" className="gap-1.5" disabled={loading === loadKey} onClick={() => withLoading(loadKey, async () => { await onClick(); })}>
