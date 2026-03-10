@@ -258,8 +258,8 @@ const OrderDetailsPage = () => {
               </AccordionItem>
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
-              <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="fotel-preview" onClick={async () => preview(await generateFotelGuidePDF(decoded), "Przewodnik Fotela", `fotel_przewodnik_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="fotel-dl" onClick={async () => downloadAndSave(await generateFotelGuidePDF(decoded), `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")} />
+              <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="fotel-preview" onClick={async () => preview(await generateGuidePDF(decoded, "fotel"), "Przewodnik Fotela", `fotel_przewodnik_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="fotel-dl" onClick={async () => downloadAndSave(await generateGuidePDF(decoded, "fotel"), `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")} />
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="fotel-labels-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
             </div>
