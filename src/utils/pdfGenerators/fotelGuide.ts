@@ -1,5 +1,6 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
+import { formatFoamsSummary } from "@/utils/foamHelpers";
 
 export async function generateFotelGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const doc = await createDoc("portrait", "a4");
