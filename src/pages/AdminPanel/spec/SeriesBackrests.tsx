@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
@@ -29,25 +31,11 @@ interface SewingVariant {
   created_at: string;
 }
 
-const backrestFields: FieldDefinition[] = [
-  { name: "code", label: "Kod", type: "text", required: true },
-  { name: "model_name", label: "Model (np. Modena / Sienna)", type: "text" },
-  { name: "height_cm", label: "Wysokość (cm)", type: "text" },
-  { name: "frame", label: "Stelaż", type: "text" },
-  { name: "foam", label: "Pianka", type: "text" },
-  { name: "top", label: "Góra", type: "text" },
-  { name: "spring_type", label: "Sprężyna", type: "text" },
-  { name: "allowed_finishes", label: "Wykończenia", type: "multi-select", options: [
-    { value: "A", label: "A" }, { value: "B", label: "B" }, { value: "C", label: "C" },
-    { value: "D", label: "D" }, { value: "E", label: "E" },
-  ]},
-  { name: "default_finish", label: "Domyślne wykończenie", type: "text" },
-];
-
 export default function SeriesBackrests({ seriesId }: Props) {
   const [backrests, setBackrests] = useState<Backrest[]>([]);
   const [foams, setFoams] = useState<Foam[]>([]);
   const [sewingVariants, setSewingVariants] = useState<SewingVariant[]>([]);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Backrest | null>(null);
@@ -55,18 +43,42 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [backrestsRes, foamsRes, variantsRes] = await Promise.all([
+    const [backrestsRes, foamsRes, variantsRes, seatsRes] = await Promise.all([
       supabase.from("backrests").select("*").eq("series_id", seriesId).order("code"),
       supabase.from("product_foams").select("*").eq("series_id", seriesId).order("position_number"),
       supabase.from("sewing_variants").select("*").eq("series_id", seriesId).eq("component_type", "backrest") as any,
+      supabase.from("seats_sofa").select("model_name").eq("series_id", seriesId).not("model_name", "is", null),
     ]);
     setBackrests((backrestsRes.data ?? []) as Backrest[]);
     setFoams((foamsRes.data ?? []) as Foam[]);
     setSewingVariants((variantsRes.data ?? []) as SewingVariant[]);
+    
+    // Extract unique model names from seats_sofa
+    const models = [...new Set(
+      (seatsRes.data ?? []).map((s: any) => s.model_name as string).filter(Boolean)
+    )].sort();
+    setAvailableModels(models);
+    
     setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, [seriesId]);
+
+  // Dynamic backrest fields with model multi-select
+  const getBackrestFields = (): FieldDefinition[] => [
+    { name: "code", label: "Kod", type: "text", required: true },
+    { name: "model_name", label: "Model (np. Modena / Sienna)", type: "multi-select", options: availableModels.map(m => ({ value: m, label: m })) },
+    { name: "height_cm", label: "Wysokość (cm)", type: "text" },
+    { name: "frame", label: "Stelaż", type: "text" },
+    { name: "foam", label: "Pianka", type: "text" },
+    { name: "top", label: "Góra", type: "text" },
+    { name: "spring_type", label: "Sprężyna", type: "text" },
+    { name: "allowed_finishes", label: "Wykończenia", type: "multi-select", options: [
+      { value: "A", label: "A" }, { value: "B", label: "B" }, { value: "C", label: "C" },
+      { value: "D", label: "D" }, { value: "E", label: "E" },
+    ]},
+    { name: "default_finish", label: "Domyślne wykończenie", type: "text" },
+  ];
 
   const updateField = async (id: string, field: string, value: string) => {
     const { error } = await supabase.from("backrests").update({ [field]: value || null } as any).eq("id", id);
@@ -74,10 +86,23 @@ export default function SeriesBackrests({ seriesId }: Props) {
     else { toast.success("Zapisano"); fetchAll(); }
   };
 
+  // Parse model_name string to array
+  const parseModels = (modelName: string | null | undefined): string[] => {
+    if (!modelName) return [];
+    return modelName.split(/\s*\/\s*/).map(m => m.trim()).filter(Boolean);
+  };
+
+  // Join model array to string
+  const joinModels = (models: string[]): string => models.join(" / ");
+
   const handleSubmit = async (data: any) => {
     setSubmitting(true);
     try {
       const { sewing_notes, ...cleanData } = data;
+      // Convert model_name from array to string if it's an array
+      if (Array.isArray(cleanData.model_name)) {
+        cleanData.model_name = joinModels(cleanData.model_name);
+      }
       if (editingItem) {
         const { error } = await supabase.from("backrests").update(cleanData).eq("id", editingItem.id);
         if (error) throw error;
@@ -152,9 +177,9 @@ export default function SeriesBackrests({ seriesId }: Props) {
   // Get matching sewing variants for a backrest card based on model_name overlap
   const getMatchingVariants = (b: Backrest) => {
     const variants = sewingVariants.filter((v) => v.component_code === b.code);
-    if (!b.model_name) return variants; // no model_name = show all variants for this code
+    if (!b.model_name) return variants;
 
-    const cardModels = b.model_name.split(/\s*\/\s*/).map((m) => m.trim());
+    const cardModels = parseModels(b.model_name);
     return variants.filter((v) =>
       v.models.length === 0 || v.models.some((m) => cardModels.includes(m))
     );
@@ -162,13 +187,57 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
   // Get foams for a specific backrest card
   const getBackrestFoams = (b: Backrest) => {
-    // If backrest_id is set on foams, filter by it; otherwise fall back to seat_code
     const foamsByBackrestId = foams.filter((f) => f.backrest_id === b.id);
     if (foamsByBackrestId.length > 0) return foamsByBackrestId;
-    // Fallback: only if no backrest has backrest_id-linked foams for this code
     const anyLinked = foams.some((f) => f.seat_code === b.code && f.backrest_id);
-    if (anyLinked) return []; // other backrest owns these foams
+    if (anyLinked) return [];
     return foams.filter((f) => f.seat_code === b.code);
+  };
+
+  // Multi-select popover for models
+  const ModelMultiSelect = ({ selected, onChange, label = "Modele" }: { selected: string[]; onChange: (models: string[]) => void; label?: string }) => {
+    const toggleModel = (model: string) => {
+      const updated = selected.includes(model)
+        ? selected.filter(m => m !== model)
+        : [...selected, model];
+      onChange(updated);
+    };
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-auto min-h-[28px] px-2 py-1 text-xs font-normal">
+            {selected.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {selected.map(m => (
+                  <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>
+                ))}
+              </div>
+            ) : (
+              <span className="text-muted-foreground italic">wybierz {label.toLowerCase()}</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-2" align="start">
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
+            {availableModels.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">Brak modeli w siedziskach</p>
+            ) : (
+              availableModels.map(model => (
+                <label key={model} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-accent cursor-pointer text-sm">
+                  <Checkbox
+                    checked={selected.includes(model)}
+                    onCheckedChange={() => toggleModel(model)}
+                  />
+                  {model}
+                </label>
+              ))
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   const renderSewingSection = (b: Backrest) => {
@@ -203,11 +272,11 @@ export default function SeriesBackrests({ seriesId }: Props) {
                     <InlineEditCell value={v.description} onSave={(val) => updateSewingVariant(v.id, "description", val || null)} placeholder="uzupełnij" />
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {v.models.map((m) => (
-                        <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>
-                      ))}
-                    </div>
+                    <ModelMultiSelect
+                      selected={v.models}
+                      onChange={(models) => updateSewingVariant(v.id, "models", models)}
+                      label="Modele"
+                    />
                   </TableCell>
                   <TableCell>
                     <AlertDialog>
@@ -235,9 +304,17 @@ export default function SeriesBackrests({ seriesId }: Props) {
     );
   };
 
+  // Prepare editing item with model_name converted to array for the form
+  const openEditForm = (b: Backrest) => {
+    const editData = { ...b, model_name: parseModels(b.model_name) } as any;
+    setEditingItem(editData);
+    setFormOpen(true);
+  };
+
   const renderBackrestCard = (b: Backrest) => {
     const backrestFoams = getBackrestFoams(b);
     const matchingVariants = getMatchingVariants(b);
+    const currentModels = parseModels(b.model_name);
 
     return (
       <Card key={b.id} className="mb-4">
@@ -245,16 +322,13 @@ export default function SeriesBackrests({ seriesId }: Props) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <InlineEditCell value={b.code} onSave={(v) => updateField(b.id, "code", v)} />
-              {b.model_name && (
-                <span className="text-muted-foreground font-normal">— {b.model_name}</span>
-              )}
               {b.spring_type && <Badge variant="outline">Sprężyna: {b.spring_type}</Badge>}
               {matchingVariants.map((v) => v.description && (
                 <Badge key={v.id} variant="secondary">Szycie: {v.description}</Badge>
               ))}
             </CardTitle>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={() => { setEditingItem(b); setFormOpen(true); }}>
+              <Button variant="ghost" size="icon" onClick={() => openEditForm(b)}>
                 <Pencil className="h-4 w-4" />
               </Button>
               <AlertDialog>
@@ -297,7 +371,11 @@ export default function SeriesBackrests({ seriesId }: Props) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-muted-foreground w-36 shrink-0">Model:</span>
-                <InlineEditCell value={b.model_name} onSave={(v) => updateField(b.id, "model_name", v)} />
+                <ModelMultiSelect
+                  selected={currentModels}
+                  onChange={(models) => updateField(b.id, "model_name", joinModels(models))}
+                  label="Modele"
+                />
               </div>
             </div>
           </div>
@@ -381,8 +459,8 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
       <ComponentForm
         open={formOpen}
-        title={editingItem ? `Edytuj oparcie ${editingItem.code}` : "Dodaj oparcie"}
-        fields={backrestFields}
+        title={editingItem ? `Edytuj oparcie ${(editingItem as any).code}` : "Dodaj oparcie"}
+        fields={getBackrestFields()}
         initialData={editingItem}
         onSubmit={handleSubmit}
         onCancel={() => { setFormOpen(false); setEditingItem(null); }}

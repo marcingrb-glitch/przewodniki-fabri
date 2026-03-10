@@ -1,26 +1,38 @@
 
 
-## Plan: Model name jako multi-select z siedzisk
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Problem
-Pole `model_name` w oparciach jest wpisywane ręcznie jako tekst. Powinno być multi-selectem z unikalnymi nazwami modeli pobranymi z tabeli `seats_sofa` dla danej serii.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiany w `SeriesBackrests.tsx`
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-1. **Fetch modeli z `seats_sofa`** — w `fetchAll` dodaj query:
-```typescript
-supabase.from("seats_sofa").select("model_name").eq("series_id", seriesId).not("model_name", "is", null)
-```
-Wyciągnij unikalne wartości → np. `["Modena", "Sienna", "Porto", "Ravenna", "Barga"]`
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-2. **Zmień pole `model_name` w `backrestFields`** — z `type: "text"` na `type: "multi-select"` z dynamicznymi opcjami pobranymi z seats_sofa. Opcje generowane przy renderze formularza.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-3. **Zmień format zapisu** — `model_name` zapisywany jako `"Modena / Sienna / Porto"` (join z ` / `) żeby zachować kompatybilność z istniejącym kodem (renderowanie, matching wariantów szycia).
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-4. **Inline edit w karcie** — zamień `InlineEditCell` dla modelu na Popover z checkboxami (analogicznie do planu na warianty szycia). Badge'e z wybranymi modelami + możliwość zmiany.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-5. **Kolumna Modele w wariantach szycia** — ten sam mechanizm: Popover z checkboxami z listy modeli z `seats_sofa`, zamiast statycznych badge'ów.
+### Krok 4: App.tsx — routing
 
-### Plik do edycji
-- `src/pages/AdminPanel/spec/SeriesBackrests.tsx`
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
