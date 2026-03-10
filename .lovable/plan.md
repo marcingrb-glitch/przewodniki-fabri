@@ -1,38 +1,24 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Usunięcie nazwy grupy z nagłówków kolumn w dekodowaniu
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem
+Gdy dodajesz pole np. "Wygląd" z grupy "Poduszka", nagłówek kolumny generuje się jako "Poduszka — Wygląd". To redundantne, bo sekcja już nazywa się "PODUSZKA".
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Rozwiązanie
+Zmienić logikę generowania domyślnego nagłówka w `GuideTemplates.tsx` — zamiast `"Grupa — Pole"` ustawić po prostu `"Pole"` (sam label pola).
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+**Zmiana w `src/pages/AdminPanel/GuideTemplates.tsx` (linia ~201):**
+```typescript
+// Przed:
+const defaultHeader = fieldDef ? `${groupDef?.label || ""} — ${fieldDef.label}` : fieldValue;
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+// Po:
+const defaultHeader = fieldDef ? fieldDef.label : fieldValue;
+```
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+Istniejące sekcje zapisane w bazie zachowają stare nagłówki — użytkownik może je ręcznie edytować lub usunąć i dodać ponownie. Nowe pola będą miały czyste nazwy.
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Pliki do edycji:
+- `src/pages/AdminPanel/GuideTemplates.tsx` — zmiana domyślnego nagłówka kolumny
 
