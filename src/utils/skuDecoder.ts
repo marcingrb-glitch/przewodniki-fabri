@@ -290,6 +290,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
     seatType = seatSofaRes.data.type ?? "";
     seatSpringType = seatSofaRes.data.spring_type ?? "";
+    seatFrameModification = seatSofaRes.data.frame_modification ?? "";
   } else {
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {
