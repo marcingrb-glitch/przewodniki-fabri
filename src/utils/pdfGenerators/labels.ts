@@ -111,10 +111,10 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
     };
   }
 
-  return {
+    return {
     leftZoneWidth: Number(data.left_zone_width) || 16,
     leftZoneFields: (data.left_zone_fields as string[]) || ["series.code", "series.name", "series.collection"],
-    headerTemplate: data.header_template || "{TYPE} | Zam: {ORDER}",
+    headerTemplate: data.header_template || "{TYPE} | {LABEL} | {ORDER}",
     seriesCodeSize: Number(data.series_code_size) || 18,
     seriesNameSize: Number(data.series_name_size) || 9,
     seriesCollectionSize: Number(data.series_collection_size) || 7,
