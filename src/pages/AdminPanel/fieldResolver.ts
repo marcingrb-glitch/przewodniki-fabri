@@ -129,7 +129,17 @@ export function resolveExampleValue(field: string, data: any): string {
     legColor = (data.leg.colors as any[])[0]?.code || "—";
   }
 
+  const fabricColors = data.fabric?.colors;
+  let fabricColorName = "—";
+  if (Array.isArray(fabricColors) && fabricColors.length > 0) {
+    fabricColorName = fabricColors[0]?.name || fabricColors[0]?.code || "—";
+  }
+
   const map: Record<string, string> = {
+    "fabric.code": v(data.fabric?.code),
+    "fabric.name": v(data.fabric?.name),
+    "fabric.color": fabricColorName,
+    "fabric.group": data.fabric?.price_group != null ? `Grupa ${data.fabric.price_group}` : "—",
     "seat.code": v(data.seat?.code),
     "seat.finish_name": finishName,
     "seat.code_finish": `${v(data.seat?.code)} (${finishName})`,
