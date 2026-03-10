@@ -237,7 +237,6 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
   const renderSewingSection = (b: Backrest) => {
     const variants = getMatchingVariants(b);
-    if (variants.length === 0) return null;
 
     return (
       <div className="rounded-md border p-4 space-y-3">
