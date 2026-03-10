@@ -67,15 +67,21 @@ function resolveExampleValue(field: string, data: any): string {
   }
 
   const map: Record<string, string> = {
+    "seat.code": v(data.seat?.code),
+    "seat.finish_name": finishName,
     "seat.code_finish": `${v(data.seat?.code)} (${finishName})`,
     "seat.frame": v(data.seat?.frame),
     "seat.foams_summary": "T25 40×50×10 (1 szt)",
     "seat.front": v(data.seat?.front),
     "seat.midStrip_yn": data.seat?.center_strip ? "TAK" : "NIE",
+    "backrest.code": v(data.backrest?.code),
+    "backrest.finish_name": finishName,
     "backrest.code_finish": `${v(data.backrest?.code)}${finishCode} (${finishName})`,
     "backrest.frame": v(data.backrest?.frame),
     "backrest.foams_summary": "HR35 30×40×8 (1 szt)",
     "backrest.top": v(data.backrest?.top),
+    "side.code": v(data.side?.code),
+    "side.finish_name": finishName,
     "side.code_finish": `${v(data.side?.code)}${finishCode} (${finishName})`,
     "side.frame": v(data.side?.frame),
     "side.foam": "—",

@@ -27,16 +27,28 @@ interface GuideSection {
 function resolveField(decoded: DecodedSKU, field: string): string {
   // Special computed fields
   switch (field) {
+    case "seat.code":
+      return decoded.seat.code;
+    case "seat.finish_name":
+      return decoded.seat.finishName;
     case "seat.code_finish":
       return `${decoded.seat.code} (${decoded.seat.finishName})`;
     case "seat.foams_summary":
       return formatFoamsSummary(decoded.seat.foams);
     case "seat.midStrip_yn":
       return decoded.seat.midStrip ? "TAK" : "NIE";
+    case "backrest.code":
+      return decoded.backrest.code;
+    case "backrest.finish_name":
+      return decoded.backrest.finishName;
     case "backrest.code_finish":
       return `${decoded.backrest.code}${decoded.backrest.finish} (${decoded.backrest.finishName})`;
     case "backrest.foams_summary":
       return formatFoamsSummary(decoded.backrest.foams);
+    case "side.code":
+      return decoded.side.code;
+    case "side.finish_name":
+      return decoded.side.finishName;
     case "side.code_finish":
       return `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`;
     case "side.foam":
