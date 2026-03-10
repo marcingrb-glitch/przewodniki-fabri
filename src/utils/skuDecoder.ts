@@ -283,7 +283,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   if (seatSofaRes.data) {
     seatFrame = seatSofaRes.data.frame ?? "";
-    seatFoam = seatSofaRes.data.foam ?? "";
     seatFront = seatSofaRes.data.front ?? "";
     seatMidStrip = seatSofaRes.data.center_strip ?? false;
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
