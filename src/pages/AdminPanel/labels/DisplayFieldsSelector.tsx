@@ -61,9 +61,6 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "legHeights.sofa_chest.leg", label: "Typ nogi (skrzynia)", source: "chests + series_config" },
     { value: "legHeights.sofa_chest.height", label: "Wysokość nogi (skrzynia)", source: "chests.leg_height_cm" },
     { value: "legHeights.sofa_chest.count", label: "Ilość nóg (skrzynia)", source: "chests.leg_count" },
-    { value: "leg.code", label: "Kod nogi (legacy)", source: "legHeights.sofa_chest" },
-    { value: "leg.height", label: "Wysokość nogi (legacy)", source: "legHeights.sofa_chest" },
-    { value: "leg.count", label: "Ilość nóg (legacy)", source: "legHeights.sofa_chest" },
   ],
   leg_seat: [
     { value: "legHeights.sofa_seat.leg", label: "Typ nogi (siedzisko)", source: "series_automats" },
