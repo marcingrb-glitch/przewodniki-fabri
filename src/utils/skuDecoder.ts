@@ -195,7 +195,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let seatMidStrip = staticSeat.midStrip;
   let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
   let seatType = "";
-  let seatTypeName = "";
+  let seatSpringType = "";
 
   if (seatSofaRes.data) {
     seatFrame = seatSofaRes.data.frame ?? "";
