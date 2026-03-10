@@ -12,7 +12,7 @@ interface FieldDef {
 }
 
 // Available fields per component — with DB source info
-const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
+export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   seat: [
     { value: "seat.code", label: "Kod siedziska", source: "seats_sofa" },
     { value: "seat.type", label: "Typ siedziska (kod)", source: "seats_sofa.type" },

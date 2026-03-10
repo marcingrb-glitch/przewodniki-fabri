@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Plus, GripVertical, Copy } from "lucide-react";
 import InlineEditCell from "./spec/InlineEditCell";
 import { toast } from "sonner";
-import DisplayFieldsSelector from "./labels/DisplayFieldsSelector";
 import ComponentSelector from "./labels/ComponentSelector";
+import LabelConfigurator from "./labels/LabelConfigurator";
 
 interface LabelTemplate {
   id: string;
