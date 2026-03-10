@@ -145,6 +145,8 @@ export default function LabelConfigurator({
 }: LabelConfiguratorProps) {
   const lines = useMemo(() => normalizeFields(template.display_fields), [template.display_fields]);
   const { data: labelSettings } = useLabelSettings();
+  const { data: exampleData } = useExampleData();
+  const exampleValues = useMemo(() => buildExampleValues(exampleData), [exampleData]);
 
   const productLabel = template.product_type.toUpperCase();
   const availableFields = COMPONENT_FIELDS[template.component] || [];
