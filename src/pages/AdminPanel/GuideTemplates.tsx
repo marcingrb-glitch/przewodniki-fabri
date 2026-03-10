@@ -406,33 +406,83 @@ export default function GuideTemplates() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Kolumny tabeli</Label>
-                <Button variant="outline" size="sm" onClick={addColumn}><Plus className="mr-1 h-3 w-3" /> Kolumna</Button>
-              </div>
-              {form.columns.map((col, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <Input
-                    placeholder="Nagłówek"
-                    value={col.header}
-                    onChange={e => updateColumn(i, "header", e.target.value)}
-                    className="flex-1"
-                  />
-                  <Select value={col.field} onValueChange={v => updateColumn(i, "field", v)}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Pole danych" /></SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_FIELDS.map(f => (
-                        <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="icon" onClick={() => removeColumn(i)} disabled={form.columns.length <= 1}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
+            <div className="space-y-3">
+              <Label>Kolumny tabeli</Label>
+              
+              {/* Field selector popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-between text-xs font-normal">
+                    <span className="flex flex-wrap gap-1">
+                      {form.columns.length === 0 ? (
+                        <span className="text-muted-foreground italic">wybierz pola...</span>
+                      ) : (
+                        <span>{form.columns.length} pól wybrano</span>
+                      )}
+                    </span>
+                    <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
                   </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[380px] p-2 max-h-[400px] overflow-y-auto" align="start">
+                  <div className="space-y-0.5">
+                    {FIELD_GROUPS.map((group, gi) => {
+                      const groupFields = AVAILABLE_FIELDS.filter(f => f.group === group.key);
+                      if (groupFields.length === 0) return null;
+                      return (
+                        <div key={group.key}>
+                          {gi > 0 && <Separator className="my-1.5" />}
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide px-2 pt-1 pb-0.5">
+                            {group.label}
+                          </p>
+                          {groupFields.map(field => (
+                            <label
+                              key={field.value}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-sm"
+                            >
+                              <Checkbox
+                                checked={form.columns.some(c => c.field === field.value)}
+                                onCheckedChange={() => toggleField(field.value)}
+                              />
+                              <span className="truncate">{field.label}</span>
+                              <span className="text-muted-foreground text-[10px] ml-auto font-mono shrink-0">{field.value}</span>
+                            </label>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Selected columns list */}
+              {form.columns.length > 0 && (
+                <div className="space-y-1.5 border rounded-md p-2">
+                  {form.columns.map((col, i) => (
+                    <div key={`${col.field}-${i}`} className="flex gap-1.5 items-center">
+                      <div className="flex flex-col gap-0.5 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => moveColumn(i, "up")} disabled={i === 0}>
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => moveColumn(i, "down")} disabled={i === form.columns.length - 1}>
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono shrink-0 max-w-[140px] truncate">
+                        {col.field}
+                      </Badge>
+                      <Input
+                        value={col.header}
+                        onChange={e => updateColumnHeader(i, e.target.value)}
+                        placeholder="Nagłówek"
+                        className="h-7 text-xs flex-1"
+                      />
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeColumn(i)}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
