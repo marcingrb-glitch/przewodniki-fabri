@@ -27,6 +27,7 @@ export interface FieldDef {
 }
 
 export const FIELD_GROUPS: { key: string; label: string }[] = [
+  { key: "fabric", label: "Tkanina" },
   { key: "seat_frame", label: "Siedzisko — Stolarka" },
   { key: "seat_foam", label: "Siedzisko — Pianki" },
   { key: "backrest", label: "Oparcie" },
