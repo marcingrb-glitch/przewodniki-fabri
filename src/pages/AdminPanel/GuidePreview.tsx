@@ -162,7 +162,11 @@ export default function GuidePreview({ sections, productType, seriesId }: GuideP
   return (
     <Card className="mt-4">
       <CardHeader className="py-3 px-4">
-        <CardTitle className="text-sm font-semibold">📄 Podgląd przewodnika ({prefix})</CardTitle>
+        <CardTitle className="text-sm font-semibold">
+          📄 Podgląd przewodnika ({prefix})
+          {seriesId && <Badge variant="secondary" className="ml-2 text-[10px]">Seria: {seriesLabel}</Badge>}
+          {!seriesId && <Badge variant="outline" className="ml-2 text-[10px]">Globalny</Badge>}
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {/* A4 mockup container — scaled proportionally */}

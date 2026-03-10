@@ -375,7 +375,7 @@ export default function GuideTemplates() {
         ))}
       </Tabs>
 
-      <GuidePreview sections={filtered} productType={activeTab} />
+      <GuidePreview sections={filtered} productType={activeTab} seriesId={selectedSeriesId === "__global__" ? null : selectedSeriesId} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
