@@ -455,6 +455,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
         sides: seatPufaRes.data.sides ?? "-",
         foam: seatPufaRes.data.base_foam ?? "-",
         box: seatPufaRes.data.box_height ?? "-",
+        foams: pufaFoams.length > 0 ? pufaFoams : undefined,
       };
     } else {
       const staticPufa = STATIC_SEATS_PUFA[seatCode];
