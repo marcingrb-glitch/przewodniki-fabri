@@ -178,7 +178,6 @@ export default function LabelConfigurator({
     updateLine(lineIdx, lines[lineIdx].filter((f) => f !== fieldValue));
   };
 
-  // Build preview lines
   const previewLines = useMemo(() => {
     const result: string[] = [];
     for (let i = 0; i < lines.length; i++) {
@@ -192,13 +191,13 @@ export default function LabelConfigurator({
       }
     }
     return result;
-  }, [lines, template.label_name]);
+  }, [lines, template.label_name, exampleValues]);
 
   // Left zone fields from settings
   const LEFT_FIELD_EXAMPLES: Record<string, string> = {
-    "series.code": "S1",
-    "series.name": "Sofa Mar",
-    "series.collection": "Vienne",
+    "series.code": exampleData?.series?.code || "(brak)",
+    "series.name": exampleData?.series?.name || "(brak)",
+    "series.collection": exampleData?.series?.collection || "(brak)",
     "product_type": productLabel,
     "order_number": "12345",
   };
