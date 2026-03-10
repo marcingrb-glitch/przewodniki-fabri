@@ -15,6 +15,24 @@ export default function DecodingPreview({ sections, exampleData, seriesId }: Dec
     [sections]
   );
 
+  // Group consecutive sections with identical column headers into multi-row groups
+  const groupedSections = useMemo(() => {
+    const groups: { sections: GuideSection[] }[] = [];
+    for (const section of enabledSections) {
+      const headersKey = (section.columns as GuideColumn[]).map(c => c.header).join("|");
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup) {
+        const lastHeaders = (lastGroup.sections[0].columns as GuideColumn[]).map(c => c.header).join("|");
+        if (headersKey === lastHeaders && lastGroup.sections[0].is_conditional && section.is_conditional) {
+          lastGroup.sections.push(section);
+          continue;
+        }
+      }
+      groups.push({ sections: [section] });
+    }
+    return groups;
+  }, [enabledSections]);
+
   const seriesLabel = exampleData?.series
     ? `${exampleData.series.code} - ${exampleData.series.name} [${exampleData.series.collection || ""}]`
     : "S1 - Seria przykładowa [Kolekcja]";
