@@ -1,38 +1,74 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Analiza: co jest zduplikowane / hardkodowane
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+**Duplikacja znaleziona:**
+1. **`labels.ts`** — cała logika generowania etykiet jest hardkodowana (jakie etykiety, ile sztuk, co na nich). Tabela `label_templates` została dodana jako konfiguracja, ale generator PDF jej jeszcze **nie używa** — to dwa niezależne źródła prawdy.
+2. **`content_template`** w `label_templates` — wolny tekst z placeholderami (`{seat.code}`, `{backrest.finish}`), bez walidacji czy te pola istnieją. Łatwo o literówkę.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+**Co działa dobrze:**
+- Dane na etykietach pochodzą z obiektu `DecodedSKU`, który jest budowany z tabel DB (seats_sofa, sides, backrests, chests, legs, automats, series_config itd.)
+- Tabela `label_templates` jest globalna (sofa/pufa/fotel) — nie per seria.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+---
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+## Czy dzielić szablony per seria?
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**Tak — warto dodać opcjonalne `series_id`:**
+- Seria S2 nie ma fotela → nie potrzebuje etykiet fotela
+- Różne serie mogą mieć inne nóżki, inne automaty, inne dane na etykietach
+- `series_id = NULL` → szablon domyślny dla wszystkich serii
+- `series_id = konkretna` → nadpisanie dla tej serii
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+---
 
-### Krok 4: App.tsx — routing
+## Plan zmian
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+### 1. Dodać `series_id` do `label_templates`
+- Nullable UUID, FK do `series`
+- NULL = szablon globalny (domyślny), konkretne ID = override per seria
 
-### Krok 5: skuDecoder.ts — uprość seat types
+### 2. Zamienić wolny tekst `content_template` na strukturalne pola
+Zamiast `"Siedzisko: {seat.code}\nAutomat: {automat.code}"` → lista pól do wyświetlenia wybierana z dropdowna.
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+Dostępne pola per komponent (z tabel Wspólne + Specyfikacje):
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+| Komponent | Źródło tabeli | Dostępne pola |
+|---|---|---|
+| seat | seats_sofa | code, type_name, model_name, frame, foam, front, spring_type |
+| side | sides | code, name, frame, finish (z SKU) |
+| backrest | backrests | code, height_cm, frame, foam, top, finish (z SKU) |
+| chest | chests | code, name, leg_height_cm, leg_count |
+| automat | automats | code, name, type |
+| leg | legs | code, name, material, color |
+| pufa_seat | seats_pufa | code, front_back, sides, base_foam, box_height |
+| pillow | pillows | code, name, finish |
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
+W UI: multi-select pól per etykieta, z podglądem jak będzie wyglądać.
 
-### Krok 7: Usuń SKUConfig.tsx
+### 3. Dodać filtr po serii w UI
+- Dropdown "Seria" obok tabów SOFA/PUFA/FOTEL
+- Pokazuje szablony globalne + specyficzne dla wybranej serii
+- Przycisk "Nadpisz dla tej serii" kopiuje globalny szablon jako override
 
-Plik nie jest już potrzebny.
+### 4. Podłączyć generator PDF do szablonów z bazy
+- `labels.ts` będzie czytać `label_templates` z bazy zamiast hardkodu
+- Buduje etykiety dynamicznie na podstawie szablonów
+- Używa `DecodedSKU` jako źródła wartości
+
+### Implementacja krok po kroku:
+
+**Migracja DB:**
+- Dodać kolumnę `series_id uuid REFERENCES series(id)` (nullable) do `label_templates`
+- Dodać kolumnę `display_fields text[]` (tablica nazw pól do wyświetlenia, np. `['seat.code', 'automat.code']`)
+
+**UI (`LabelTemplates.tsx`):**
+- Dodać dropdown serii na górze
+- Zamienić pole tekstowe `content_template` na multi-select z dostępnych pól per komponent
+- Podgląd wygenerowanego tekstu etykiety
+
+**Generator (`labels.ts`):**
+- Fetch szablonów z `label_templates` (filtr: seria + product_type)
+- Iteracja po szablonach, budowanie etykiet z `DecodedSKU` wg `display_fields`
+- Usunięcie hardkodowanych funkcji `generateSofaLabelsPDF` / `generatePufaLabelsPDF` / `generateFotelLabelsPDF` → jedna uniwersalna `generateLabelsPDF(decoded, productType)`
 
