@@ -43,6 +43,7 @@ const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "backrest.top", label: "Góra oparcia", source: "backrests.top" },
     { value: "backrest.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "backrest.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
+    { value: "backrest.springType", label: "Sprężyna oparcia", source: "backrests.spring_type" },
   ],
   chest: [
     { value: "chest.code", label: "Kod skrzyni", source: "chests (wspólne)" },
