@@ -182,12 +182,16 @@ export default function LabelConfigurator({
     const result: string[] = [];
     for (let i = 0; i < lines.length; i++) {
       const lineFields = lines[i];
-      const values = lineFields
-        .map((f) => exampleValues[f] || "(brak)")
-        .filter((v) => v !== "-");
+      const parts = lineFields
+        .map((f) => {
+          const val = exampleValues[f] || "(brak)";
+          if (val === "-") return null;
+          return formatFieldWithLabel(f, val);
+        })
+        .filter(Boolean) as string[];
       const prefix = i === 0 ? `${template.label_name}: ` : "";
-      if (values.length > 0 || i === 0) {
-        result.push(`${prefix}${values.join(" ")}`);
+      if (parts.length > 0 || i === 0) {
+        result.push(`${prefix}${parts.join(" | ")}`);
       }
     }
     return result;
