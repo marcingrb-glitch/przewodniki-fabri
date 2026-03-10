@@ -189,7 +189,8 @@ export default function SeriesBackrests({ seriesId }: Props) {
   };
 
   // Multi-select popover for models
-  const ModelMultiSelect = ({ selected, onChange, label = "Modele" }: { selected: string[]; onChange: (models: string[]) => void; label?: string }) => {
+  const ModelMultiSelect = ({ selected, onChange, label = "Modele", allowedModels }: { selected: string[]; onChange: (models: string[]) => void; label?: string; allowedModels?: string[] }) => {
+    const modelsToShow = allowedModels ?? availableModels;
     const toggleModel = (model: string) => {
       const updated = selected.includes(model)
         ? selected.filter(m => m !== model)
@@ -215,8 +216,8 @@ export default function SeriesBackrests({ seriesId }: Props) {
         <PopoverContent className="w-56 p-2" align="start">
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
-            {availableModels.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">Brak modeli w siedziskach</p>
+            {modelsToShow.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">Brak modeli</p>
             ) : (
               availableModels.map(model => (
                 <label key={model} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-accent cursor-pointer text-sm">
