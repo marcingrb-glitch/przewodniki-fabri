@@ -11,6 +11,7 @@ import InlineEditCell from "./spec/InlineEditCell";
 import { toast } from "sonner";
 import ComponentSelector from "./labels/ComponentSelector";
 import LabelConfigurator from "./labels/LabelConfigurator";
+import LabelSettings from "./labels/LabelSettings";
 
 interface LabelTemplate {
   id: string;
@@ -198,6 +199,8 @@ export default function LabelTemplates() {
           Konfiguracja etykiet generowanych dla każdego typu produktu
         </p>
       </div>
+
+      <LabelSettings />
 
       <div className="flex items-center gap-4">
         <div className="w-[220px]">

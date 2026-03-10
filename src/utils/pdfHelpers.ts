@@ -150,11 +150,68 @@ export function addInfoBox(doc: jsPDF, y: number, text: string): number {
   return y + 14;
 }
 
+export interface LabelSettings {
+  leftZoneWidth: number;
+  leftZoneFields: string[];
+  headerTemplate: string;
+  seriesCodeSize: number;
+  seriesNameSize: number;
+  seriesCollectionSize: number;
+  contentMaxSize: number;
+  contentMinSize: number;
+}
+
+const DEFAULT_LABEL_SETTINGS: LabelSettings = {
+  leftZoneWidth: 16,
+  leftZoneFields: ["series.code", "series.name", "series.collection"],
+  headerTemplate: "{TYPE} | Zam: {ORDER}",
+  seriesCodeSize: 18,
+  seriesNameSize: 9,
+  seriesCollectionSize: 7,
+  contentMaxSize: 14,
+  contentMinSize: 7,
+};
+
+/** Resolve a left-zone field value from label context */
+function resolveLeftField(
+  field: string,
+  seriesCode: string,
+  seriesName: string,
+  seriesCollection: string,
+  productType: string,
+  orderNumber: string
+): string {
+  switch (field) {
+    case "series.code": return seriesCode;
+    case "series.name": return seriesName;
+    case "series.collection": return seriesCollection ? `[${seriesCollection}]` : "";
+    case "product_type": return productType.toUpperCase();
+    case "order_number": return orderNumber;
+    default: return "";
+  }
+}
+
+/** Get font size for a left-zone field based on its type */
+function getLeftFieldFontSize(field: string, settings: LabelSettings): number {
+  if (field === "series.code") return settings.seriesCodeSize;
+  if (field === "series.name") return settings.seriesNameSize;
+  return settings.seriesCollectionSize;
+}
+
+/** Get font style for a left-zone field */
+function getLeftFieldFontStyle(field: string): "bold" | "normal" {
+  if (field === "series.code" || field === "series.name") return "bold";
+  return "normal";
+}
+
 export function addLabel(
   doc: jsPDF,
   lines: string[],
-  isFirst: boolean
+  isFirst: boolean,
+  settings?: LabelSettings
 ) {
+  const s = settings || DEFAULT_LABEL_SETTINGS;
+
   if (!isFirst) {
     doc.addPage([100, 30]);
   }
@@ -169,54 +226,34 @@ export function addLabel(
   const seriesText = lines[0];
   const mainLines = lines.slice(1);
 
-  // --- Left rotated series info (three-part: code, name, collection) ---
-  const leftZoneWidth = 16; // mm reserved for rotated text
+  // --- Left rotated zone ---
+  const leftZoneWidth = s.leftZoneWidth;
   const maxSeriesLen = pageH - 2 * marginY;
 
-  // Split series text: "S1|Sofa Mar|Viena" → code="S1", name="Sofa Mar", collection="Viena"
+  // Parse series text: "S1|Sofa Mar|Viena|SOFA|12345"
   const parts = seriesText.split("|");
-  const seriesCode = parts[0] || "";
-  const seriesName = parts[1] || "";
-  const seriesCollection = parts[2] ? `[${parts[2]}]` : "";
 
-  // Draw large series code (e.g. "S1") rotated 90° CCW
-  doc.setFont("Roboto", "bold");
-  let codeFontSize = 18;
-  doc.setFontSize(codeFontSize);
-  while (doc.getTextWidth(seriesCode) > maxSeriesLen && codeFontSize > 8) {
-    codeFontSize -= 0.5;
-    doc.setFontSize(codeFontSize);
-  }
-  const codeX = codeFontSize * 0.35 + 1;
-  const codeY = pageH / 2 + doc.getTextWidth(seriesCode) / 2;
-  doc.text(seriesCode, codeX, codeY, { angle: 90 });
+  // Render each field in left zone
+  let nextX = 1;
+  for (let fi = 0; fi < s.leftZoneFields.length; fi++) {
+    const fieldValue = parts[fi] || "";
+    if (!fieldValue) continue;
 
-  // Draw name (e.g. "Sofa Mar") rotated 90° CCW
-  let nextX = codeX + codeFontSize * 0.35 + 1;
-  if (seriesName) {
-    doc.setFont("Roboto", "bold");
-    let nameFontSize = 9;
-    doc.setFontSize(nameFontSize);
-    while (doc.getTextWidth(seriesName) > maxSeriesLen && nameFontSize > 4) {
-      nameFontSize -= 0.5;
-      doc.setFontSize(nameFontSize);
+    const field = s.leftZoneFields[fi];
+    const fontStyle = getLeftFieldFontStyle(field);
+    let fontSize = getLeftFieldFontSize(field, s);
+
+    doc.setFont("Roboto", fontStyle);
+    doc.setFontSize(fontSize);
+    while (doc.getTextWidth(fieldValue) > maxSeriesLen && fontSize > 4) {
+      fontSize -= 0.5;
+      doc.setFontSize(fontSize);
     }
-    const nameY = pageH / 2 + doc.getTextWidth(seriesName) / 2;
-    doc.text(seriesName, nextX, nameY, { angle: 90 });
-    nextX += nameFontSize * 0.35 + 0.8;
-  }
 
-  // Draw collection (e.g. "[Viena]") rotated 90° CCW
-  if (seriesCollection) {
-    doc.setFont("Roboto", "normal");
-    let collFontSize = 7;
-    doc.setFontSize(collFontSize);
-    while (doc.getTextWidth(seriesCollection) > maxSeriesLen && collFontSize > 4) {
-      collFontSize -= 0.5;
-      doc.setFontSize(collFontSize);
-    }
-    const collY = pageH / 2 + doc.getTextWidth(seriesCollection) / 2;
-    doc.text(seriesCollection, nextX, collY, { angle: 90 });
+    const x = nextX + fontSize * 0.35;
+    const y = pageH / 2 + doc.getTextWidth(fieldValue) / 2;
+    doc.text(fieldValue, x, y, { angle: 90 });
+    nextX = x + fontSize * 0.35 + (fi === 0 ? 1 : 0.8);
   }
 
   // --- Main content (shifted right) ---
@@ -229,9 +266,9 @@ export function addLabel(
 
   doc.setFont("Roboto", "bold");
   const availableHeight = pageH - 2 * marginY;
-  let mainFontSize = Math.min(14, availableHeight / mainLines.length * 2);
+  let mainFontSize = Math.min(s.contentMaxSize, availableHeight / mainLines.length * 2);
   let fits = false;
-  while (!fits && mainFontSize > 7) {
+  while (!fits && mainFontSize > s.contentMinSize) {
     doc.setFontSize(mainFontSize);
     fits = mainLines.every(line => doc.getTextWidth(line) <= contentWidth);
     if (!fits) mainFontSize -= 0.5;

@@ -1,10 +1,20 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
+import { createDoc, addLabel, toBlob, LabelSettings } from "@/utils/pdfHelpers";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFoamsDetailed } from "@/utils/foamHelpers";
 
-function seriesLine(decoded: DecodedSKU): string {
-  return `${decoded.series.code}|${decoded.series.name}|${decoded.series.collection}`;
+function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string): string {
+  // Build pipe-separated values matching leftZoneFields order
+  return leftZoneFields.map((field) => {
+    switch (field) {
+      case "series.code": return decoded.series.code || "";
+      case "series.name": return decoded.series.name || "";
+      case "series.collection": return decoded.series.collection || "";
+      case "product_type": return productType.toUpperCase();
+      case "order_number": return decoded.orderNumber || "";
+      default: return "";
+    }
+  }).join("|");
 }
 
 /** Resolve a dotted path like "seat.code" from DecodedSKU */
@@ -84,6 +94,38 @@ async function fetchTemplates(
   return (data as LabelTemplate[]) || [];
 }
 
+async function fetchLabelSettings(): Promise<LabelSettings> {
+  const { data } = await supabase
+    .from("label_settings")
+    .select("*")
+    .limit(1)
+    .single();
+
+  if (!data) {
+    return {
+      leftZoneWidth: 16,
+      leftZoneFields: ["series.code", "series.name", "series.collection"],
+      headerTemplate: "{TYPE} | Zam: {ORDER}",
+      seriesCodeSize: 18,
+      seriesNameSize: 9,
+      seriesCollectionSize: 7,
+      contentMaxSize: 14,
+      contentMinSize: 7,
+    };
+  }
+
+  return {
+    leftZoneWidth: Number(data.left_zone_width) || 16,
+    leftZoneFields: (data.left_zone_fields as string[]) || ["series.code", "series.name", "series.collection"],
+    headerTemplate: data.header_template || "{TYPE} | Zam: {ORDER}",
+    seriesCodeSize: Number(data.series_code_size) || 18,
+    seriesNameSize: Number(data.series_name_size) || 9,
+    seriesCollectionSize: Number(data.series_collection_size) || 7,
+    contentMaxSize: Number(data.content_max_size) || 14,
+    contentMinSize: Number(data.content_min_size) || 7,
+  };
+}
+
 function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
   if (!tpl.is_conditional || !tpl.condition_field) return true;
   const val = resolveField(decoded, tpl.condition_field);
@@ -97,10 +139,16 @@ function normalizeDisplayFields(fields: unknown): string[][] {
   return fields as string[][];
 }
 
-function buildLabelLines(decoded: DecodedSKU, tpl: LabelTemplate, productType: string): string[] {
-  const s = seriesLine(decoded);
-  const typeLabel = productType.toUpperCase();
-  const header = `${typeLabel} | Zam: ${decoded.orderNumber || ""}`;
+function buildLabelLines(
+  decoded: DecodedSKU,
+  tpl: LabelTemplate,
+  productType: string,
+  settings: LabelSettings
+): string[] {
+  const s = seriesLine(decoded, settings.leftZoneFields, productType);
+  const header = settings.headerTemplate
+    .replace("{TYPE}", productType.toUpperCase())
+    .replace("{ORDER}", decoded.orderNumber || "");
 
   const lineGroups = normalizeDisplayFields(tpl.display_fields);
   const contentLines: string[] = [];
@@ -126,22 +174,30 @@ export async function generateLabelsPDF(
   decoded: DecodedSKU,
   productType: "sofa" | "pufa" | "fotel"
 ): Promise<Blob> {
-  const templates = await fetchTemplates(productType, decoded.series.code);
+  const [templates, settings] = await Promise.all([
+    fetchTemplates(productType, decoded.series.code),
+    fetchLabelSettings(),
+  ]);
+
   const doc = await createDoc("landscape", [100, 30]);
 
   let isFirst = true;
   for (const tpl of templates) {
     if (!shouldShow(decoded, tpl)) continue;
-    const lines = buildLabelLines(decoded, tpl, productType);
+    const lines = buildLabelLines(decoded, tpl, productType, settings);
     for (let i = 0; i < tpl.quantity; i++) {
-      addLabel(doc, lines, isFirst);
+      addLabel(doc, lines, isFirst, settings);
       isFirst = false;
     }
   }
 
-  // Fallback if no templates found — generate at least one empty label
+  // Fallback if no templates found
   if (isFirst) {
-    addLabel(doc, [seriesLine(decoded), `${productType.toUpperCase()} | Zam: ${decoded.orderNumber || ""}`, "Brak szablonów etykiet"], true);
+    const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType);
+    const fallbackHeader = settings.headerTemplate
+      .replace("{TYPE}", productType.toUpperCase())
+      .replace("{ORDER}", decoded.orderNumber || "");
+    addLabel(doc, [fallbackSeries, fallbackHeader, "Brak szablonów etykiet"], true, settings);
   }
 
   return toBlob(doc);

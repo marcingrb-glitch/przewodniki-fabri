@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Plus, Trash2 } from "lucide-react";
 import { COMPONENT_FIELDS } from "./DisplayFieldsSelector";
+import { useLabelSettings, type LabelSettingsData } from "./LabelSettings";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -103,6 +104,7 @@ export default function LabelConfigurator({
   onClose,
 }: LabelConfiguratorProps) {
   const lines = useMemo(() => normalizeFields(template.display_fields), [template.display_fields]);
+  const { data: labelSettings } = useLabelSettings();
 
   const productLabel = template.product_type.toUpperCase();
   const availableFields = COMPONENT_FIELDS[template.component] || [];
@@ -150,6 +152,22 @@ export default function LabelConfigurator({
     return result;
   }, [lines, template.label_name]);
 
+  // Left zone fields from settings
+  const LEFT_FIELD_EXAMPLES: Record<string, string> = {
+    "series.code": "S1",
+    "series.name": "Sofa Mar",
+    "series.collection": "Vienne",
+    "product_type": productLabel,
+    "order_number": "12345",
+  };
+
+  const leftFields = labelSettings?.left_zone_fields || ["series.code", "series.name", "series.collection"];
+  const leftZoneWidthPx = ((labelSettings?.left_zone_width || 16) / 100) * 400;
+
+  const headerText = (labelSettings?.header_template || "{TYPE} | Zam: {ORDER}")
+    .replace("{TYPE}", productLabel)
+    .replace("{ORDER}", "12345");
+
   return (
     <Card className="mt-4 border-primary/20">
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
@@ -173,7 +191,7 @@ export default function LabelConfigurator({
             {/* Left zone — series info rotated */}
             <div
               className="bg-muted flex items-center justify-center shrink-0 relative"
-              style={{ width: 64, height: 120 }}
+              style={{ width: leftZoneWidthPx, height: 120 }}
             >
               <div
                 className="absolute flex flex-col items-center gap-0.5"
@@ -182,15 +200,31 @@ export default function LabelConfigurator({
                   whiteSpace: "nowrap",
                 }}
               >
-                <span className="text-sm font-bold">S1</span>
-                <span className="text-[9px] font-semibold">Sofa Mar</span>
-                <span className="text-[7px] text-muted-foreground">Vienne</span>
+                {leftFields.map((field, i) => {
+                  const example = LEFT_FIELD_EXAMPLES[field] || field;
+                  const isCode = field === "series.code";
+                  const isName = field === "series.name";
+                  const fontSize = isCode
+                    ? `${Math.min((labelSettings?.series_code_size || 18) * 0.7, 16)}px`
+                    : isName
+                    ? `${Math.min((labelSettings?.series_name_size || 9) * 0.9, 12)}px`
+                    : `${Math.min((labelSettings?.series_collection_size || 7) * 0.9, 10)}px`;
+                  return (
+                    <span
+                      key={i}
+                      className={isCode || isName ? "font-bold" : "text-muted-foreground"}
+                      style={{ fontSize }}
+                    >
+                      {field === "series.collection" ? `[${example}]` : example}
+                    </span>
+                  );
+                })}
               </div>
             </div>
             {/* Main zone */}
             <div className="flex-1 px-3 py-2 flex flex-col justify-center gap-0.5 min-w-0">
               <p className="text-xs font-bold truncate">
-                {productLabel} | Zam: 12345
+                {headerText}
               </p>
               {previewLines.map((line, i) => (
                 <p key={i} className="text-[11px] truncate leading-tight">
@@ -215,7 +249,7 @@ export default function LabelConfigurator({
           <div className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/50 mb-1">
             <span className="text-xs text-muted-foreground">Nagłówek (auto):</span>
             <span className="text-xs font-medium">
-              „{productLabel} | Zam: &#123;nr&#125;"
+              „{headerText}"
             </span>
           </div>
 
