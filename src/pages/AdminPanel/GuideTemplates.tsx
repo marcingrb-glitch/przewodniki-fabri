@@ -202,10 +202,39 @@ export default function GuideTemplates() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["guide-sections"] }),
   });
 
+  const copyForSeriesMutation = useMutation({
+    mutationFn: async ({ productType, seriesId }: { productType: string; seriesId: string }) => {
+      const globals = sections.filter(
+        (s) => s.product_type === productType && s.series_id === null
+      );
+      const inserts = globals.map((s) => ({
+        product_type: s.product_type,
+        section_name: s.section_name,
+        sort_order: s.sort_order,
+        is_conditional: s.is_conditional,
+        condition_field: s.condition_field,
+        columns: s.columns as any,
+        enabled: s.enabled,
+        series_id: seriesId,
+      }));
+      if (inserts.length === 0) return;
+      const { error } = await supabase.from("guide_sections").insert(inserts);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guide-sections"] });
+      toast.success("Skopiowano sekcje globalne dla serii");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const filtered = sections.filter(s =>
     s.product_type === activeTab &&
     (selectedSeriesId === "__global__" ? s.series_id === null : s.series_id === selectedSeriesId)
   );
+
+  const hasOverrides = selectedSeriesId !== "__global__" && filtered.length > 0;
+  const canCopy = selectedSeriesId !== "__global__" && filtered.length === 0;
 
   const openAdd = () => {
     const maxOrder = filtered.length > 0 ? Math.max(...filtered.map(s => s.sort_order)) : 0;
