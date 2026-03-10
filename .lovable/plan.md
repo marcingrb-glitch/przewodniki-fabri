@@ -1,38 +1,22 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Dodaj pianki do oparcia OP68 (Ravenna / Barga, sprężyna 54A) w S2
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Na podstawie screenshota — 3 rekordy pianek do dodania do backrest_id `1608086a-0b5e-4c09-a77e-1775478ce845`:
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+| Poz. | Nazwa | Wys. | Szer. | Dł. | Materiał | Ilość |
+|------|-------|------|-------|-----|----------|-------|
+| 5 | OPARCIE 6x68x191 | 6 | 68 | 191 | T-35-38 | 1 |
+| 6 | OPARCIE 3x69x192 | 3 | 69 | 192 | T-35-38 | 1 |
+| 7 | OPARCIE CZAPA 3D 2x64x187 | 2 | 64 | 187 | T-35-38 | 1 |
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Realizacja
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+Jedna migracja SQL — INSERT 3 rekordów do `product_foams` z:
+- `series_id` = ID serii S2
+- `seat_code` = `'OP68'`
+- `component` = `'oparcie'`
+- `backrest_id` = `'1608086a-0b5e-4c09-a77e-1775478ce845'`
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
-
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+Bez zmian w kodzie — dane pojawią się automatycznie w karcie OP68 Ravenna/Barga.
 
