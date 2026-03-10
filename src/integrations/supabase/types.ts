@@ -245,6 +245,30 @@ export type Database = {
           },
         ]
       }
+      guide_settings: {
+        Row: {
+          font_size_header: number | null
+          font_size_table: number | null
+          id: string
+          table_row_height: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          font_size_header?: number | null
+          font_size_table?: number | null
+          id?: string
+          table_row_height?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          font_size_header?: number | null
+          font_size_table?: number | null
+          id?: string
+          table_row_height?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       jaskis: {
         Row: {
           code: string
