@@ -54,7 +54,11 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   ],
   automat: [
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
-    { value: "automat.name", label: "Nazwa", source: "automats (wspólne)" },
+    { value: "automat.name", label: "Automat", source: "automats (wspólne)" },
+  ],
+  automat: [
+    { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
+    { value: "automat.name", label: "Automat", source: "automats (wspólne)" },
     { value: "automat.type", label: "Typ", source: "automats.type (wspólne)" },
   ],
   leg_chest: [
