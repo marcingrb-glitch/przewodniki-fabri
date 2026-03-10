@@ -49,7 +49,8 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
       availableChests.length > 0
         ? supabase.from("chests").select("*").in("code", availableChests).order("code")
         : Promise.resolve({ data: [] as ChestRow[] }),
-      supabase.from("automats").select("*").eq("series_id", seriesId).order("code"),
+      supabase.from("series_automats" as any).select("*").eq("series_id", seriesId).order("automat_code"),
+      supabase.from("automats").select("code, name, type").order("code"),
     ]);
     setLegs((legsRes.data as any) ?? []);
     setChests((chestsRes.data as any) ?? []);
