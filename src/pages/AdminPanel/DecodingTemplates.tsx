@@ -95,6 +95,7 @@ export default function DecodingTemplates() {
         series: selectedSeries || { code: "S1", name: "Seria", collection: "Kolekcja" },
         leg: legRes.data, pufaSeat: pufaSeatRes.data, pillow: pillowRes.data,
         finish: finishRes.data, jaski: jaskiRes.data, walek: walekRes.data,
+        fabric: fabricRes.data,
       };
     },
     enabled: !!seriesFilter,
