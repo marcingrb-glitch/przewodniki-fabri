@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ArrowUp, ArrowDown, Settings } from "lucide-react";
 import { toast } from "sonner";
-import useDebounce from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export interface LabelSettingsData {
   id: string;
