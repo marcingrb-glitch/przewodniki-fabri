@@ -19,9 +19,7 @@ import { getOrderById } from "@/utils/supabaseQueries";
 import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
 
 import { downloadBlob } from "@/utils/pdfHelpers";
-import { generateSofaGuidePDF } from "@/utils/pdfGenerators/sofaGuide";
-import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
-import { generateFotelGuidePDF } from "@/utils/pdfGenerators/fotelGuide";
+import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
 import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
 import { uploadAndSaveOrderFile } from "@/utils/storage";
