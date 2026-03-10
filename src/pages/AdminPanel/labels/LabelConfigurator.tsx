@@ -209,8 +209,9 @@ export default function LabelConfigurator({
   const leftFields = labelSettings?.left_zone_fields || ["series.code", "series.name", "series.collection"];
   const leftZoneWidthPx = ((labelSettings?.left_zone_width || 16) / 100) * 400;
 
-  const headerText = (labelSettings?.header_template || "{TYPE} | Zam: {ORDER}")
+  const headerText = (labelSettings?.header_template || "{TYPE} | {LABEL} | {ORDER}")
     .replace("{TYPE}", productLabel)
+    .replace("{LABEL}", template.label_name)
     .replace("{ORDER}", "12345");
 
   return (
