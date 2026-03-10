@@ -12,6 +12,7 @@ import SeriesBackrests from "./spec/SeriesBackrests";
 import SeriesLegs from "./spec/SeriesLegs";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
+import SeriesAutomats from "./spec/SeriesAutomats";
 
 export default function SeriesSpecification() {
   const { seriesCode } = useParams<{ seriesCode: string }>();
