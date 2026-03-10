@@ -12,6 +12,7 @@ import SeriesBackrests from "./spec/SeriesBackrests";
 import SeriesLegs from "./spec/SeriesLegs";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
+import SeriesAutomats from "./spec/SeriesAutomats";
 
 export default function SeriesSpecification() {
   const { seriesCode } = useParams<{ seriesCode: string }>();
@@ -63,6 +64,7 @@ export default function SeriesSpecification() {
           <TabsTrigger value="models">Modele / Siedziska</TabsTrigger>
           <TabsTrigger value="sides">Boczki</TabsTrigger>
           <TabsTrigger value="backrests">Oparcia</TabsTrigger>
+          <TabsTrigger value="automats">Automaty</TabsTrigger>
           <TabsTrigger value="legs">Nóżki & Montaż</TabsTrigger>
           <TabsTrigger value="pufa">Pufa</TabsTrigger>
           {seriesCode !== "S2" && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
@@ -79,6 +81,9 @@ export default function SeriesSpecification() {
         </TabsContent>
         <TabsContent value="backrests">
           <SeriesBackrests seriesId={series.id} />
+        </TabsContent>
+        <TabsContent value="automats">
+          <SeriesAutomats seriesId={series.id} />
         </TabsContent>
         <TabsContent value="legs">
           <SeriesLegs seriesId={series.id} config={config} seriesCode={seriesCode} />

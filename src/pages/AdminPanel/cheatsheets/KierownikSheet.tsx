@@ -82,11 +82,19 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
     }
   });
 
-  const { data: automats = [] } = useQuery({
-    queryKey: ["cheat-automats", seriesId],
+  const { data: seriesAutomats = [] } = useQuery({
+    queryKey: ["cheat-series-automats", seriesId],
     queryFn: async () => {
-      const { data } = await supabase.from("automats").select("*").eq("series_id", seriesId).order("code");
-      return data ?? [];
+      const { data } = await supabase.from("series_automats" as any).select("*").eq("series_id", seriesId).order("automat_code");
+      return (data ?? []) as unknown as { automat_code: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null }[];
+    }
+  });
+
+  const { data: globalAutomats = [] } = useQuery({
+    queryKey: ["cheat-global-automats"],
+    queryFn: async () => {
+      const { data } = await supabase.from("automats").select("code, name, type").order("code");
+      return (data ?? []) as { code: string; name: string; type: string | null }[];
     }
   });
 
@@ -315,9 +323,9 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Automaty */}
-      {automats.length > 0 &&
+      {seriesAutomats.length > 0 &&
       <section className="page-break">
-          <h2 className="text-lg font-bold mb-2">🔧 Automaty ({automats.length})</h2>
+          <h2 className="text-lg font-bold mb-2">🔧 Automaty ({seriesAutomats.length})</h2>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-muted">
@@ -328,14 +336,18 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
               </tr>
             </thead>
             <tbody>
-              {automats.map((a) =>
-            <tr key={a.id}>
-                  <td className="border border-border px-1 py-0.5 font-mono">{a.code}</td>
-                  <td className="border border-border px-1 py-0.5">{a.name}</td>
-                  <td className="border border-border px-1 py-0.5">{a.type ?? "—"}</td>
-                  <td className="border border-border px-1 py-0.5">{a.has_seat_legs ? `Tak, ${a.seat_leg_count}szt, H${a.seat_leg_height_cm}cm` : "Nie"}</td>
-                </tr>
-            )}
+              {seriesAutomats.map((sa, i) => {
+                const ga = globalAutomats.find(g => g.code === sa.automat_code);
+                return (
+              <tr key={i}>
+                    <td className="border border-border px-1 py-0.5 font-mono">{sa.automat_code}</td>
+                    <td className="border border-border px-1 py-0.5">{ga?.name ?? "?"}</td>
+                    <td className="border border-border px-1 py-0.5">{ga?.type ?? "—"}</td>
+                    <td className="border border-border px-1 py-0.5">{sa.has_seat_legs ? `Tak, ${sa.seat_leg_count}szt, H${sa.seat_leg_height_cm}cm` : "Nie"}</td>
+                  </tr>
+                );
+              })}
+
             </tbody>
           </table>
         </section>

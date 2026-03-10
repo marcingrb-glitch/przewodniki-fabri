@@ -30,28 +30,32 @@ const formatColors = (colors: Json): string => {
 
 interface LegRow { id: string; code: string; name: string; material: string | null; colors: Json; completed_by: string | null; }
 interface ChestRow { id: string; code: string; name: string; leg_height_cm: number; leg_count: number; }
-interface AutomatRow { id: string; code: string; name: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null; }
+interface SeriesAutomatRow { id: string; automat_code: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null; }
+interface AutomatGlobal { code: string; name: string; type: string | null; }
 
 export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
   const [legs, setLegs] = useState<LegRow[]>([]);
   const [chests, setChests] = useState<ChestRow[]>([]);
-  const [automats, setAutomats] = useState<AutomatRow[]>([]);
+  const [seriesAutomats, setSeriesAutomats] = useState<SeriesAutomatRow[]>([]);
+  const [globalAutomats, setGlobalAutomats] = useState<AutomatGlobal[]>([]);
   const [loading, setLoading] = useState(true);
 
   const availableChests: string[] = config?.available_chests ?? [];
 
   const fetchAll = async () => {
     setLoading(true);
-    const [legsRes, chestsRes, automatsRes] = await Promise.all([
+    const [legsRes, chestsRes, seriesAutomatsRes, globalAutomatsRes] = await Promise.all([
       supabase.from("legs").select("*").order("code"),
       availableChests.length > 0
         ? supabase.from("chests").select("*").in("code", availableChests).order("code")
         : Promise.resolve({ data: [] as ChestRow[] }),
-      supabase.from("automats").select("*").eq("series_id", seriesId).order("code"),
+      supabase.from("series_automats" as any).select("*").eq("series_id", seriesId).order("automat_code"),
+      supabase.from("automats").select("code, name, type").order("code"),
     ]);
     setLegs((legsRes.data as any) ?? []);
     setChests((chestsRes.data as any) ?? []);
-    setAutomats((automatsRes.data as any) ?? []);
+    setSeriesAutomats((seriesAutomatsRes.data as any) ?? []);
+    setGlobalAutomats((globalAutomatsRes.data as any) ?? []);
     setLoading(false);
   };
 
@@ -76,24 +80,26 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
     });
   }
 
-  for (const a of automats) {
-    if (a.has_seat_legs) {
+  const automatNameMap = Object.fromEntries(globalAutomats.map(a => [a.code, a.name]));
+
+  for (const sa of seriesAutomats) {
+    if (sa.has_seat_legs) {
       const seatType = config?.seat_leg_type ?? "from_sku";
       const isPlastic = seatType === "plastic_2_5";
       mountRows.push({
         element: "Pod siedziskiem",
-        detail: a.code,
+        detail: `${sa.automat_code} (${automatNameMap[sa.automat_code] ?? "?"})`,
         type: isPlastic ? "N4 plastikowe" : "N z SKU",
-        height: isPlastic ? "2.5 cm" : `${a.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`,
-        count: `${a.seat_leg_count ?? 2} szt`,
+        height: isPlastic ? "2.5 cm" : `${sa.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`,
+        count: `${sa.seat_leg_count ?? 2} szt`,
         who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
       });
     } else {
-      mountRows.push({ element: "Pod siedziskiem", detail: a.code, type: "BRAK", height: "—", count: "—", who: "—" });
+      mountRows.push({ element: "Pod siedziskiem", detail: `${sa.automat_code} (${automatNameMap[sa.automat_code] ?? "?"})`, type: "BRAK", height: "—", count: "—", who: "—" });
     }
   }
 
-  if (automats.length === 0 && config) {
+  if (seriesAutomats.length === 0 && config) {
     const seatType = config.seat_leg_type ?? "from_sku";
     const isPlastic = seatType === "plastic_2_5";
     mountRows.push({

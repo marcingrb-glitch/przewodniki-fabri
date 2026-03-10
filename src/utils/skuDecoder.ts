@@ -123,7 +123,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // Fetch all relevant data from Supabase in parallel
   const [
     seriesRes, fabricsRes, seatSofaRes, sidesRes, backrestsRes,
-    chestsRes, automatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
+    chestsRes, automatsRes, seriesAutomatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
   ] = await Promise.all([
     // Series
     supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
@@ -145,9 +145,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     parsed.chest
       ? supabase.from("chests").select("code, name, leg_height_cm").eq("code", parsed.chest).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Automats (series-specific)
+    // Automats (global)
+    parsed.automat
+      ? supabase.from("automats").select("code, name, type").eq("code", parsed.automat).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Series-specific automat config
     seriesId && parsed.automat
-      ? supabase.from("automats").select("code, name, type, has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("code", parsed.automat).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("series_automats" as any).select("has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("automat_code", parsed.automat).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     // Legs (global)
     parsed.legs
@@ -264,9 +268,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   if (automatsRes.data) {
     automatName = automatsRes.data.name ?? "";
     automatType = automatsRes.data.type ?? "";
-    automatSeatLegs = automatsRes.data.has_seat_legs ?? false;
-    automatSeatLegHeight = (automatsRes.data as any).seat_leg_height_cm ?? automatSeatLegHeight;
-    automatSeatLegCount = (automatsRes.data as any).seat_leg_count ?? automatSeatLegCount;
+  }
+  const saData = seriesAutomatsRes.data as any;
+  if (saData) {
+    automatSeatLegs = saData.has_seat_legs ?? automatSeatLegs;
+    automatSeatLegHeight = saData.seat_leg_height_cm ?? automatSeatLegHeight;
+    automatSeatLegCount = saData.seat_leg_count ?? automatSeatLegCount;
   }
 
   // ---- LEGS (fallback to static) ----
