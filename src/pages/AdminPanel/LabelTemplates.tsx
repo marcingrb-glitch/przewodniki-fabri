@@ -295,13 +295,32 @@ export default function LabelTemplates() {
                             />
                           </TableCell>
                           <TableCell>
-                            {tpl.is_conditional ? (
-                              <Badge variant="outline" className="text-xs">
-                                {tpl.condition_field || "tak"}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">nie</span>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              <Checkbox
+                                checked={tpl.is_conditional}
+                                onCheckedChange={(checked) =>
+                                  updateMutation.mutate({
+                                    id: tpl.id,
+                                    field: "is_conditional",
+                                    value: !!checked,
+                                  })
+                                }
+                              />
+                              {tpl.is_conditional && (
+                                <Input
+                                  className="h-7 text-xs w-[140px]"
+                                  placeholder="np. legHeights.sofa_seat"
+                                  value={tpl.condition_field || ""}
+                                  onChange={(e) =>
+                                    updateMutation.mutate({
+                                      id: tpl.id,
+                                      field: "condition_field",
+                                      value: e.target.value || null,
+                                    })
+                                  }
+                                />
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Button
