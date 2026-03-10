@@ -1,38 +1,57 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Eliminacja hardcode'ów z dekodera SKU (nowe zamówienia)
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Istniejące zamówienia (z `decoded_data`) pozostają bez zmian. Zmiana dotyczy tylko procesu dekodowania w `decodeSKU()` i konsumentów (`OrderDetailsPage`, generatory PDF).
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Co jest hardcoded i skąd powinno brać dane
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+| Hardcode | Gdzie | Źródło DB |
+|----------|-------|-----------|
+| `FINISHES` mapa (A→Szyty, B→Klejony...) | skuDecoder.ts (6 miejsc), labels, guides | tabela `finishes` |
+| `SEATS_PUFA` (frontBack, sides, foam, box) | OrderDetailsPage, pufaGuide, labels | tabela `seats_pufa` |
+| Pufa nóżki "H 16cm", "4 szt" | OrderDetailsPage, pufaGuide, fotelGuide, labels | tabela `series_config` (pufa_leg_height_cm, pufa_leg_count) |
+| Fotel nóżki "H 16cm", "4 szt" | OrderDetailsPage, fotelGuide, labels | tabela `series_config` |
+| SK23 → N4 H=2.5cm | skuDecoder.ts linia 308 | tabela `chests` (już ma leg_height_cm) — logika OK, ale N4 hardcoded |
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+---
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+### Krok 1: Rozszerz `DecodedSKU` w `types/index.ts`
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+Dodaj pola:
+```typescript
+pufaSeat?: { frontBack: string; sides: string; foam: string; box: string };
+pufaLegs?: { code: string; height: number; count: number };
+fotelLegs?: { code: string; height: number; count: number };
+```
 
-### Krok 4: App.tsx — routing
+### Krok 2: `skuDecoder.ts` — fetch `finishes`, `seats_pufa`, `series_config`
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+- Dodaj do `Promise.all`: fetch `finishes` (all), `seats_pufa` (by seatCode + seriesId), `series_config` (by seriesId)
+- Zbuduj dynamiczną mapę `finishesMap` z DB, fallback na statyczny `FINISHES`
+- Użyj `finishesMap` zamiast `FINISHES` we wszystkich miejscach (seatFinishName, sideFinishName, backrestFinishName, pillowFinishName, jaskiFinishName, walekFinishName)
+- Wypełnij `pufaSeat` z danych `seats_pufa`
+- Wypełnij `pufaLegs` i `fotelLegs` z `series_config` (pufa_leg_height_cm, pufa_leg_count, pufa_leg_type)
+- Zwróć nowe pola w obiekcie wynikowym
 
-### Krok 5: skuDecoder.ts — uprość seat types
+### Krok 3: `OrderDetailsPage.tsx` — usuń `SEATS_PUFA` import
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+- Zamień `const pufaSeat = SEATS_PUFA[decoded.seat.code]` na `const pufaSeat = decoded.pufaSeat`
+- Zamień hardcoded "H 16cm (4 szt)" na `decoded.pufaLegs` / `decoded.fotelLegs`
+- Usuń import `SEATS_PUFA` z `@/data/mappings`
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+### Krok 4: Generatory PDF — użyj danych z `DecodedSKU`
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
+**`pufaGuide.ts`**: Usuń import `SEATS_PUFA`, użyj `decoded.pufaSeat` i `decoded.pufaLegs`
 
-### Krok 7: Usuń SKUConfig.tsx
+**`fotelGuide.ts`**: Użyj `decoded.fotelLegs` zamiast "H 16cm", "4 szt"
 
-Plik nie jest już potrzebny.
+**`labels.ts`**: Usuń import `SEATS_PUFA`, użyj `decoded.pufaSeat`, `decoded.pufaLegs`, `decoded.fotelLegs`
+
+### Co się NIE zmienia
+
+- Stare zamówienia — `decoded_data` z bazy wyświetlane jak dotąd
+- Parser SKU (`skuParser.ts`) — regexy bez zmian
+- Tabele i migracje — żadnych zmian w schemacie (wszystkie potrzebne kolumny już istnieją)
+- Statyczne mappingi w `mappings.ts` — zostają jako fallback awaryjny w dekoderze
 
