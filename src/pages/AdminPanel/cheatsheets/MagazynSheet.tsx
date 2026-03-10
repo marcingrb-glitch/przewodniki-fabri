@@ -104,7 +104,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
                   <div className="grid grid-cols-2 gap-2 text-sm mt-1">
                     <div><span className="text-muted-foreground">Stelaż:</span> {seat.frame ?? "—"}</div>
                     <div><span className="text-muted-foreground">Modyfikacja:</span> {seat.frame_modification ?? "brak"}</div>
-                    <div><span className="text-muted-foreground">Pianka (ogólna):</span> {seat.foam ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Front:</span> {seat.front ?? "—"}</div>
                     <div><span className="text-muted-foreground">Front:</span> {seat.front ?? "—"}</div>
                     <div><span className="text-muted-foreground">Pasek środkowy:</span> <strong>{seat.center_strip ? "TAK ✅" : "NIE"}</strong></div>
                   </div>
@@ -153,7 +153,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
                     <div><span className="text-muted-foreground">Stelaż:</span> {b.frame ?? "—"}</div>
                     <div><span className="text-muted-foreground">Wys. (cm):</span> {b.height_cm ?? "—"}</div>
                     <div><span className="text-muted-foreground">Góra:</span> {b.top ?? "—"}</div>
-                    <div><span className="text-muted-foreground">Pianka (ogólna):</span> {b.foam ?? "—"}</div>
+                    
                   </div>
                   {backrestFoams.length > 0 && (
                     <table className="w-full text-xs mt-2 border-collapse">

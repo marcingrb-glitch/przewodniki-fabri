@@ -236,7 +236,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                     <td className="border border-border px-1 py-0.5">{s.frame ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5">{s.frame_modification ?? "—"}</td>
                     <td className="border border-border px-1 py-0.5 font-bold">{spring}</td>
-                    <td className="border border-border px-1 py-0.5">{formatFoamsForCode(s.code, "siedzisko") !== "—" ? formatFoamsForCode(s.code, "siedzisko") : s.foam ?? "—"}</td>
+                    <td className="border border-border px-1 py-0.5">{formatFoamsForCode(s.code, "siedzisko")}</td>
                     <td className="border border-border px-1 py-0.5 font-bold">{s.center_strip ? "TAK" : "—"}</td>
                     <td className="border border-border px-1 py-0.5">{(s.allowed_finishes ?? []).join(",")}</td>
                   </tr>);
@@ -268,7 +268,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                   <td className="border border-border px-1 py-0.5 font-mono">{b.code}</td>
                   <td className="border border-border px-1 py-0.5">{b.height_cm ?? "—"}</td>
                   <td className="border border-border px-1 py-0.5">{b.frame ?? "—"}</td>
-                  <td className="border border-border px-1 py-0.5">{formatFoamsForCode(b.code, "oparcie") !== "—" ? formatFoamsForCode(b.code, "oparcie") : b.foam ?? "—"}</td>
+                  <td className="border border-border px-1 py-0.5">{formatFoamsForCode(b.code, "oparcie")}</td>
                   <td className="border border-border px-1 py-0.5">{b.top ?? "—"}</td>
                   <td className="border border-border px-1 py-0.5">{(b.allowed_finishes ?? []).join(",")}</td>
                 </tr>

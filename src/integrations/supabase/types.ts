@@ -44,7 +44,6 @@ export type Database = {
           code: string
           created_at: string
           default_finish: string | null
-          foam: string | null
           frame: string | null
           height_cm: string | null
           id: string
@@ -58,7 +57,6 @@ export type Database = {
           code: string
           created_at?: string
           default_finish?: string | null
-          foam?: string | null
           frame?: string | null
           height_cm?: string | null
           id?: string
@@ -72,7 +70,6 @@ export type Database = {
           code?: string
           created_at?: string
           default_finish?: string | null
-          foam?: string | null
           frame?: string | null
           height_cm?: string | null
           id?: string
@@ -653,7 +650,6 @@ export type Database = {
           code: string
           created_at: string
           default_finish: string | null
-          foam: string | null
           frame: string | null
           frame_modification: string | null
           front: string | null
@@ -669,7 +665,6 @@ export type Database = {
           code: string
           created_at?: string
           default_finish?: string | null
-          foam?: string | null
           frame?: string | null
           frame_modification?: string | null
           front?: string | null
@@ -685,7 +680,6 @@ export type Database = {
           code?: string
           created_at?: string
           default_finish?: string | null
-          foam?: string | null
           frame?: string | null
           frame_modification?: string | null
           front?: string | null

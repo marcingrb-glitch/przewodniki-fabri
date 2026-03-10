@@ -1,5 +1,6 @@
 import { ParsedSKU, DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { formatFoamsSummary } from "@/utils/foamHelpers";
 import { resolveSeriesId } from "@/utils/supabaseQueries";
 import {
   SERIES, FABRICS, SEAT_TYPES as STATIC_SEAT_TYPES, SEATS_SOFA_S1, BACKRESTS, SIDES,
@@ -273,9 +274,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const colorName = fabricColors[parsed.fabric.color] || parsed.fabric.color;
 
   // ---- SEAT (fallback to static) ----
-  const staticSeat = SEATS_SOFA_S1[seatCode] || { frame: "?", foam: "?", front: "?", midStrip: false };
+  const staticSeat = SEATS_SOFA_S1[seatCode] || { frame: "?", front: "?", midStrip: false };
   let seatFrame = staticSeat.frame;
-  let seatFoam = staticSeat.foam;
   let seatFront = staticSeat.front;
   let seatMidStrip = staticSeat.midStrip;
   let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
@@ -284,7 +284,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   if (seatSofaRes.data) {
     seatFrame = seatSofaRes.data.frame ?? "";
-    seatFoam = seatSofaRes.data.foam ?? "";
     seatFront = seatSofaRes.data.front ?? "";
     seatMidStrip = seatSofaRes.data.center_strip ?? false;
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
@@ -311,15 +310,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- BACKREST (fallback to static) ----
-  const staticBackrest = BACKRESTS[parsed.backrest.code] || { frame: "?", foam: "?", top: "?", height: "?" };
+  const staticBackrest = BACKRESTS[parsed.backrest.code] || { frame: "?", top: "?", height: "?" };
   let backrestFrame = staticBackrest.frame;
-  let backrestFoam = staticBackrest.foam;
   let backrestTop = staticBackrest.top;
   let backrestHeight = staticBackrest.height;
 
   if (backrestsRes.data) {
     backrestFrame = backrestsRes.data.frame ?? "";
-    backrestFoam = backrestsRes.data.foam ?? "";
     backrestTop = backrestsRes.data.top ?? "";
     backrestHeight = backrestsRes.data.height_cm ?? "";
   }
@@ -518,14 +515,14 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       finish: seatFinish,
       finishName: seatFinishName,
       frame: seatFrame,
-      foam: seatFoam,
+      foam: formatFoamsSummary(seatFoams),
       front: seatFront,
       midStrip: seatMidStrip,
       springType: seatSpringType || undefined,
       foams: seatFoams.length > 0 ? seatFoams : undefined,
     },
     side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish || (sidesRes.data?.default_finish ?? ""), finishName: FINISHES[parsed.side.finish || (sidesRes.data?.default_finish ?? "")] || parsed.side.finish },
-    backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: backrestFoam, top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish, springType: backrestsRes.data?.spring_type || undefined, foams: backrestFoams.length > 0 ? backrestFoams : undefined },
+    backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: formatFoamsSummary(backrestFoams), top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish, springType: backrestsRes.data?.spring_type || undefined, foams: backrestFoams.length > 0 ? backrestFoams : undefined },
     chest: { code: parsed.chest, name: chestName, legHeight: chestLegHeight, legCount: chestLegCount },
     automat: { code: parsed.automat, name: automatName, type: automatType, seatLegs: automatSeatLegs, seatLegHeight: automatSeatLegHeight, seatLegCount: automatSeatLegCount },
     legs: legsDecoded,
