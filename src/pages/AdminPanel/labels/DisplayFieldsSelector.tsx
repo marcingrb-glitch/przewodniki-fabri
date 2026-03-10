@@ -50,16 +50,13 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "chest.legHeight", label: "Wys. nóżki", source: "chests.leg_height_cm" },
     { value: "chest.legCount", label: "Ilość nóżek", source: "chests.leg_count" },
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
-    { value: "automat.name", label: "Nazwa", source: "automats (wspólne)" },
-  ],
-  automat: [
-    { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
     { value: "automat.name", label: "Automat", source: "automats (wspólne)" },
   ],
   automat: [
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
     { value: "automat.name", label: "Automat", source: "automats (wspólne)" },
     { value: "automat.type", label: "Typ", source: "automats.type (wspólne)" },
+  ],
   ],
   leg_chest: [
     { value: "legHeights.sofa_chest.leg", label: "Typ nogi (skrzynia)", source: "chests + series_config" },
