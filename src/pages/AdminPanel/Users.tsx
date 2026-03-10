@@ -69,7 +69,19 @@ export default function Users() {
     },
   });
 
+  const { data: roles = [] } = useQuery({
+    queryKey: ["admin-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+      if (error) throw error;
+      return data as { user_id: string; role: string }[];
+    },
+  });
+
   const permMap = new Map(permissions.map(p => [p.user_id, p]));
+  const adminIds = new Set(roles.filter(r => r.role === "admin").map(r => r.user_id));
 
   const toggleApproval = useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
@@ -162,6 +174,7 @@ export default function Users() {
           <UserTable
             users={pending}
             permMap={permMap}
+            adminIds={adminIds}
             onToggle={(id, approved) => toggleApproval.mutate({ id, approved })}
             onPermChange={(userId, field, value) => updatePermission.mutate({ userId, field, value })}
             isPending={toggleApproval.isPending}
@@ -177,6 +190,7 @@ export default function Users() {
           <UserTable
             users={approved}
             permMap={permMap}
+            adminIds={adminIds}
             onToggle={(id, approved) => toggleApproval.mutate({ id, approved })}
             onPermChange={(userId, field, value) => updatePermission.mutate({ userId, field, value })}
             isPending={toggleApproval.isPending}
@@ -241,12 +255,14 @@ export default function Users() {
 function UserTable({
   users,
   permMap,
+  adminIds,
   onToggle,
   onPermChange,
   isPending,
 }: {
   users: UserProfile[];
   permMap: Map<string, UserPerm>;
+  adminIds: Set<string>;
   onToggle: (id: string, approved: boolean) => void;
   onPermChange: (userId: string, field: string, value: boolean) => void;
   isPending: boolean;
@@ -268,6 +284,7 @@ function UserTable({
         <TableBody>
           {users.map((user) => {
             const perm = permMap.get(user.id);
+            const isUserAdmin = adminIds.has(user.id);
             return (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.email}</TableCell>
@@ -278,20 +295,28 @@ function UserTable({
                     : "—"}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Checkbox
-                    checked={perm?.can_view_cheatsheets ?? false}
-                    onCheckedChange={(checked) =>
-                      onPermChange(user.id, "can_view_cheatsheets", !!checked)
-                    }
-                  />
+                  {isUserAdmin ? (
+                    <Badge variant="outline" className="text-xs">Admin</Badge>
+                  ) : (
+                    <Checkbox
+                      checked={perm?.can_view_cheatsheets ?? false}
+                      onCheckedChange={(checked) =>
+                        onPermChange(user.id, "can_view_cheatsheets", !!checked)
+                      }
+                    />
+                  )}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Checkbox
-                    checked={perm?.can_view_specs ?? false}
-                    onCheckedChange={(checked) =>
-                      onPermChange(user.id, "can_view_specs", !!checked)
-                    }
-                  />
+                  {isUserAdmin ? (
+                    <Badge variant="outline" className="text-xs">Admin</Badge>
+                  ) : (
+                    <Checkbox
+                      checked={perm?.can_view_specs ?? false}
+                      onCheckedChange={(checked) =>
+                        onPermChange(user.id, "can_view_specs", !!checked)
+                      }
+                    />
+                  )}
                 </TableCell>
                 <TableCell>
                   {user.is_approved ? (
