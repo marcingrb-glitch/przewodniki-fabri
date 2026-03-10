@@ -219,6 +219,45 @@ export type Database = {
         }
         Relationships: []
       }
+      label_settings: {
+        Row: {
+          content_max_size: number | null
+          content_min_size: number | null
+          header_template: string | null
+          id: string
+          left_zone_fields: Json | null
+          left_zone_width: number | null
+          series_code_size: number | null
+          series_collection_size: number | null
+          series_name_size: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          content_max_size?: number | null
+          content_min_size?: number | null
+          header_template?: string | null
+          id?: string
+          left_zone_fields?: Json | null
+          left_zone_width?: number | null
+          series_code_size?: number | null
+          series_collection_size?: number | null
+          series_name_size?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          content_max_size?: number | null
+          content_min_size?: number | null
+          header_template?: string | null
+          id?: string
+          left_zone_fields?: Json | null
+          left_zone_width?: number | null
+          series_code_size?: number | null
+          series_collection_size?: number | null
+          series_name_size?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       label_templates: {
         Row: {
           component: string
