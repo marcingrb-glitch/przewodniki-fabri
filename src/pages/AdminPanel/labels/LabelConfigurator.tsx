@@ -191,7 +191,7 @@ export default function LabelConfigurator({
             {/* Left zone — series info rotated */}
             <div
               className="bg-muted flex items-center justify-center shrink-0 relative"
-              style={{ width: 64, height: 120 }}
+              style={{ width: leftZoneWidthPx, height: 120 }}
             >
               <div
                 className="absolute flex flex-col items-center gap-0.5"
@@ -200,15 +200,31 @@ export default function LabelConfigurator({
                   whiteSpace: "nowrap",
                 }}
               >
-                <span className="text-sm font-bold">S1</span>
-                <span className="text-[9px] font-semibold">Sofa Mar</span>
-                <span className="text-[7px] text-muted-foreground">Vienne</span>
+                {leftFields.map((field, i) => {
+                  const example = LEFT_FIELD_EXAMPLES[field] || field;
+                  const isCode = field === "series.code";
+                  const isName = field === "series.name";
+                  const fontSize = isCode
+                    ? `${Math.min((labelSettings?.series_code_size || 18) * 0.7, 16)}px`
+                    : isName
+                    ? `${Math.min((labelSettings?.series_name_size || 9) * 0.9, 12)}px`
+                    : `${Math.min((labelSettings?.series_collection_size || 7) * 0.9, 10)}px`;
+                  return (
+                    <span
+                      key={i}
+                      className={isCode || isName ? "font-bold" : "text-muted-foreground"}
+                      style={{ fontSize }}
+                    >
+                      {field === "series.collection" ? `[${example}]` : example}
+                    </span>
+                  );
+                })}
               </div>
             </div>
             {/* Main zone */}
             <div className="flex-1 px-3 py-2 flex flex-col justify-center gap-0.5 min-w-0">
               <p className="text-xs font-bold truncate">
-                {productLabel} | Zam: 12345
+                {headerText}
               </p>
               {previewLines.map((line, i) => (
                 <p key={i} className="text-[11px] truncate leading-tight">
