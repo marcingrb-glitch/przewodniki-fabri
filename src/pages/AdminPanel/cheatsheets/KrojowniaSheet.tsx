@@ -66,6 +66,12 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
         ŚCIĄGAWKA — Krojownia — {seriesCode} {seriesName}
       </h1>
 
+      {finishes.length > 0 && (
+        <div className="border-2 border-border rounded p-2 bg-muted text-sm font-bold">
+          LEGENDA WYKOŃCZEŃ: {finishes.map(f => `${f.code} = ${f.name}`).join(" | ")}
+        </div>
+      )}
+
       {/* Pułapki */}
       <section>
         <h2 className="text-lg font-bold mb-2">⚠️ PUŁAPKI — PRZECZYTAJ UWAŻNIE!</h2>

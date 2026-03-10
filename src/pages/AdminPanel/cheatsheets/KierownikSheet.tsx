@@ -109,6 +109,12 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
         SPECYFIKACJA PRODUKCYJNA — {seriesCode} {seriesName}
       </h1>
 
+      {finishes.length > 0 && (
+        <div className="border-2 border-border rounded p-2 bg-muted text-sm font-bold">
+          LEGENDA WYKOŃCZEŃ: {finishes.map(f => `${f.code} = ${f.name}`).join(" | ")}
+        </div>
+      )}
+
       {/* Konfiguracja ogólna */}
       <section>
         <h2 className="text-lg font-bold mb-2">⚙️ Konfiguracja</h2>
