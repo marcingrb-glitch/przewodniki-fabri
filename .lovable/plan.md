@@ -1,38 +1,37 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Zgrupowanie Poduszka/Jaśki/Wałek w jedną tabelę
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem
+Obecnie Poduszka, Jaśki i Wałek to 3 osobne sekcje, każda z identyczną strukturą (Kod | Nazwa | Wykończenie). Użytkownik chce je widzieć jako jedną tabelę z 3 wierszami.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Rozwiązanie
+W `DecodingPreview.tsx` dodac logikę grupowania: kolejne sekcje warunkowe o identycznych nagłówkach kolumn zostaną automatycznie scalone w jedną tabelę z wieloma wierszami. Nazwa sekcji stanie się pierwszą kolumną ("Typ").
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+Nie trzeba zmieniać danych w bazie ani seed defaults -- sekcje pozostaną osobne w konfiguracji (dla elastyczności), ale w podglądzie renderują się razem.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+### Zmiana w `src/pages/AdminPanel/DecodingPreview.tsx`
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+Przed renderowaniem sekcji, zgrupować kolejne sekcje o identycznych nagłówkach kolumn w "grupy":
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+```text
+Przed:
+  Poduszka  | Kod | Nazwa | Wykończenie  (1 wiersz)
+  Jaśki     | Kod | Nazwa | Wykończenie  (1 wiersz)  
+  Wałek     | Kod | Nazwa | Wykończenie  (1 wiersz)
 
-### Krok 4: App.tsx — routing
+Po (w podglądzie):
+  ┌──────────┬──────┬────────┬─────────────┐
+  │ Typ      │ Kod  │ Nazwa  │ Wykończenie  │
+  ├──────────┼──────┼────────┼─────────────┤
+  │ Poduszka │ P01  │ Nazwa  │ Wciąg       │
+  │ Jaśki    │ J01  │ Nazwa  │ Wciąg       │
+  │ Wałek    │ W01  │ Nazwa  │ Wciąg       │
+  └──────────┴──────┴────────┴─────────────┘
+```
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+Algorytm: iterować po `enabledSections`, porównywać nagłówki kolejnych sekcji — jeśli identyczne, łączyć w grupę. Grupa renderuje jedną tabelę z wieloma wierszami i nagłówkiem "Poduszka / Jaśki / Wałek".
 
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Pliki do edycji:
+- `src/pages/AdminPanel/DecodingPreview.tsx` — logika grupowania + rendering multi-row
 
