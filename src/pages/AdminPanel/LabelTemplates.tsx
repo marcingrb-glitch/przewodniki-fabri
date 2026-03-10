@@ -153,7 +153,7 @@ export default function LabelTemplates() {
     await updateMutation.mutateAsync({ id, field, value: parsed });
   };
 
-  const handleFieldsChange = async (id: string, fields: string[]) => {
+  const handleFieldsChange = async (id: string, fields: string[][] | string[]) => {
     await updateMutation.mutateAsync({ id, field: "display_fields", value: fields });
   };
 
