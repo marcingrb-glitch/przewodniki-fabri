@@ -1,19 +1,12 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Tables } from "@/integrations/supabase/types";
 import { Json } from "@/integrations/supabase/types";
-import InlineEditCell from "./InlineEditCell";
-import ComponentForm, { FieldDefinition } from "@/components/admin/ComponentForm";
 
 interface Props {
   seriesId: string;
-  config: Tables<"series_config"> | null;
+  config: any;
   seriesCode?: string;
 }
 
@@ -35,69 +28,34 @@ const formatColors = (colors: Json): string => {
   return String(colors);
 };
 
-const legFields: FieldDefinition[] = [
-  { name: "code", label: "Kod", type: "text", required: true },
-  { name: "name", label: "Nazwa", type: "text", required: true },
-  { name: "material", label: "Materiał", type: "text" },
-  { name: "colors", label: "Kolory", type: "colors" },
-];
+interface LegRow { id: string; code: string; name: string; material: string | null; colors: Json; completed_by: string | null; }
+interface ChestRow { id: string; code: string; name: string; leg_height_cm: number; leg_count: number; }
+interface AutomatRow { id: string; code: string; name: string; has_seat_legs: boolean; seat_leg_height_cm: number | null; seat_leg_count: number | null; }
 
 export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
-  const [legs, setLegs] = useState<Tables<"legs">[]>([]);
-  const [chests, setChests] = useState<Tables<"chests">[]>([]);
-  const [automats, setAutomats] = useState<Tables<"automats">[]>([]);
+  const [legs, setLegs] = useState<LegRow[]>([]);
+  const [chests, setChests] = useState<ChestRow[]>([]);
+  const [automats, setAutomats] = useState<AutomatRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingLeg, setEditingLeg] = useState<Tables<"legs"> | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  const availableChests: string[] = (config as any)?.available_chests ?? [];
+  const availableChests: string[] = config?.available_chests ?? [];
 
   const fetchAll = async () => {
     setLoading(true);
     const [legsRes, chestsRes, automatsRes] = await Promise.all([
-      supabase.from("legs").select("*").eq("series_id", seriesId).order("code"),
+      supabase.from("legs").select("*").order("code"),
       availableChests.length > 0
         ? supabase.from("chests").select("*").in("code", availableChests).order("code")
-        : Promise.resolve({ data: [] as Tables<"chests">[] }),
+        : Promise.resolve({ data: [] as ChestRow[] }),
       supabase.from("automats").select("*").eq("series_id", seriesId).order("code"),
     ]);
-    setLegs(legsRes.data ?? []);
-    setChests(chestsRes.data ?? []);
-    setAutomats(automatsRes.data ?? []);
+    setLegs((legsRes.data as any) ?? []);
+    setChests((chestsRes.data as any) ?? []);
+    setAutomats((automatsRes.data as any) ?? []);
     setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, [seriesId, config]);
-
-  const updateLegField = async (legId: string, field: string, value: string) => {
-    const { error } = await supabase.from("legs").update({ [field]: value || null }).eq("id", legId);
-    if (error) toast.error("Błąd zapisu");
-    else { toast.success("Zapisano"); fetchAll(); }
-  };
-
-  const handleSubmitLeg = async (data: any) => {
-    setSubmitting(true);
-    try {
-      if (editingLeg) {
-        const { error } = await supabase.from("legs").update(data).eq("id", editingLeg.id);
-        if (error) throw error;
-        toast.success("✅ Nóżka zaktualizowana");
-      } else {
-        const { error } = await supabase.from("legs").insert({ ...data, series_id: seriesId });
-        if (error) throw error;
-        toast.success("✅ Nóżka dodana");
-      }
-      setFormOpen(false); setEditingLeg(null); fetchAll();
-    } catch (err: any) { toast.error(`❌ ${err.message}`); }
-    finally { setSubmitting(false); }
-  };
-
-  const handleDeleteLeg = async (id: string) => {
-    const { error } = await supabase.from("legs").delete().eq("id", id);
-    if (error) toast.error("Błąd usuwania");
-    else { toast.success("✅ Nóżka usunięta"); fetchAll(); }
-  };
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
@@ -107,12 +65,13 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
 
   for (const c of chests) {
     const isPlastic = c.leg_height_cm <= 2.5;
+    const legCount = c.leg_count ?? 4;
     mountRows.push({
       element: "Pod skrzynią",
       detail: c.code,
       type: isPlastic ? "N4 plastikowe" : "N z SKU",
       height: `${c.leg_height_cm} cm`,
-      count: "4 szt",
+      count: `${legCount} szt`,
       who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
     });
   }
@@ -149,30 +108,29 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
   if (config) {
     const pufaType = config.pufa_leg_type ?? "from_sku";
     const isPlastic = pufaType === "plastic_2_5";
+    const pufaCount = config.pufa_leg_count ?? 4;
     mountRows.push({
       element: "Pufa", detail: "",
       type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—",
       height: config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—",
-      count: "4 szt",
+      count: `${pufaCount} szt`,
       who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
     });
   }
 
-  // Don't add Fotel row for S2
   if (seriesCode !== "S2") {
     mountRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: "15 cm", count: "4 szt", who: "Dziewczyny od nóżek (kompletacja do worka)" });
   }
 
   return (
     <div className="space-y-6">
+      {/* Read-only global legs table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Nóżki</CardTitle>
-            <Button size="sm" onClick={() => { setEditingLeg(null); setFormOpen(true); }}><Plus className="mr-1 h-4 w-4" /> Dodaj nóżkę</Button>
-          </div>
+          <CardTitle className="text-lg">Nóżki (katalog globalny)</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">Zarządzanie nóżkami w sekcji <strong>Wspólne → Nóżki</strong></p>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -181,7 +139,7 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
                   <TableHead>Nazwa</TableHead>
                   <TableHead>Materiał</TableHead>
                   <TableHead>Kolory</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
+                  <TableHead>Kto kompletuje</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -189,32 +147,11 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
                   <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4">Brak nóżek</TableCell></TableRow>
                 ) : legs.map((leg) => (
                   <TableRow key={leg.id}>
-                    <TableCell><InlineEditCell value={leg.code} onSave={(v) => updateLegField(leg.id, "code", v)} /></TableCell>
-                    <TableCell><InlineEditCell value={leg.name} onSave={(v) => updateLegField(leg.id, "name", v)} /></TableCell>
-                    <TableCell><InlineEditCell value={leg.material} onSave={(v) => updateLegField(leg.id, "material", v)} /></TableCell>
+                    <TableCell className="font-mono font-bold">{leg.code}</TableCell>
+                    <TableCell>{leg.name}</TableCell>
+                    <TableCell>{leg.material ?? "—"}</TableCell>
                     <TableCell>{formatColors(leg.colors)}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingLeg(leg); setFormOpen(true); }}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Usunąć nóżkę {leg.code}?</AlertDialogTitle>
-                              <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteLeg(leg.id)}>Usuń</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+                    <TableCell>{leg.completed_by ?? "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -256,16 +193,6 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
           </CardContent>
         </Card>
       )}
-
-      <ComponentForm
-        open={formOpen}
-        title={editingLeg ? `Edytuj nóżkę ${editingLeg.code}` : "Dodaj nóżkę"}
-        fields={legFields}
-        initialData={editingLeg}
-        onSubmit={handleSubmitLeg}
-        onCancel={() => { setFormOpen(false); setEditingLeg(null); }}
-        isLoading={submitting}
-      />
     </div>
   );
 }

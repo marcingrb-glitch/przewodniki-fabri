@@ -6,12 +6,14 @@ const columns = [
   { key: "code", label: "Kod" },
   { key: "name", label: "Nazwa" },
   { key: "leg_height_cm", label: "Wysokość nóżek (cm)" },
+  { key: "leg_count", label: "Ilość nóżek" },
 ];
 
 const fields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
   { name: "name", label: "Nazwa", type: "text", required: true },
   { name: "leg_height_cm", label: "Wysokość nóżek (cm)", type: "number", required: true },
+  { name: "leg_count", label: "Ilość nóżek", type: "number", required: true },
 ];
 
 export default function Chests() {
