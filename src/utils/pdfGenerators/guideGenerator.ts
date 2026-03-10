@@ -45,6 +45,10 @@ function resolveField(decoded: DecodedSKU, field: string): string {
       return `${decoded.backrest.code}${decoded.backrest.finish} (${decoded.backrest.finishName})`;
     case "backrest.foams_summary":
       return formatFoamsSummary(decoded.backrest.foams);
+    case "side.code":
+      return decoded.side.code;
+    case "side.finish_name":
+      return decoded.side.finishName;
     case "side.code_finish":
       return `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`;
     case "side.foam":
