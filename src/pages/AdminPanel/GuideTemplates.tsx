@@ -127,6 +127,7 @@ const emptySection = (productType: string): Omit<GuideSection, "id"> => ({
 
 export default function GuideTemplates() {
   const [activeTab, setActiveTab] = useState("sofa");
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>("__global__");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<GuideSection | null>(null);
   const [form, setForm] = useState<Omit<GuideSection, "id">>(emptySection("sofa"));
@@ -200,12 +201,19 @@ export default function GuideTemplates() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["guide-sections"] }),
   });
 
-  const filtered = sections.filter(s => s.product_type === activeTab);
+  const filtered = sections.filter(s =>
+    s.product_type === activeTab &&
+    (selectedSeriesId === "__global__" ? s.series_id === null : s.series_id === selectedSeriesId)
+  );
 
   const openAdd = () => {
     const maxOrder = filtered.length > 0 ? Math.max(...filtered.map(s => s.sort_order)) : 0;
     setEditingSection(null);
-    setForm({ ...emptySection(activeTab), sort_order: maxOrder + 1 });
+    setForm({
+      ...emptySection(activeTab),
+      sort_order: maxOrder + 1,
+      series_id: selectedSeriesId === "__global__" ? null : selectedSeriesId,
+    });
     setDialogOpen(true);
   };
 
@@ -298,7 +306,19 @@ export default function GuideTemplates() {
 
         {["sofa", "pufa", "fotel"].map(type => (
           <TabsContent key={type} value={type} className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm whitespace-nowrap">Seria:</Label>
+                <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
+                  <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__global__">Globalny (wszystkie serie)</SelectItem>
+                    {seriesList.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.code} - {s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button onClick={openAdd} size="sm"><Plus className="mr-1 h-4 w-4" /> Dodaj sekcję</Button>
             </div>
 
@@ -313,8 +333,7 @@ export default function GuideTemplates() {
                     <TableHead className="w-10">#</TableHead>
                     <TableHead>Nazwa sekcji</TableHead>
                     <TableHead>Kolumny</TableHead>
-                    <TableHead>Seria</TableHead>
-                    <TableHead>Warunkowa</TableHead>
+                     <TableHead>Warunkowa</TableHead>
                     <TableHead>Aktywna</TableHead>
                     <TableHead className="w-32">Akcje</TableHead>
                   </TableRow>
@@ -337,7 +356,6 @@ export default function GuideTemplates() {
                       <TableCell className="text-xs text-muted-foreground">
                         {(s.columns as GuideColumn[]).map(c => c.header).join(" | ")}
                       </TableCell>
-                      <TableCell className="text-xs">{getSeriesName(s.series_id)}</TableCell>
                       <TableCell className="text-xs">
                         {s.is_conditional ? `✓ (${s.condition_field})` : "—"}
                       </TableCell>
@@ -357,7 +375,7 @@ export default function GuideTemplates() {
         ))}
       </Tabs>
 
-      <GuidePreview sections={filtered} productType={activeTab} />
+      <GuidePreview sections={filtered} productType={activeTab} seriesId={selectedSeriesId === "__global__" ? null : selectedSeriesId} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

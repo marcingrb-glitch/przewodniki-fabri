@@ -24,6 +24,7 @@ interface GuideSection {
 interface GuidePreviewProps {
   sections: GuideSection[];
   productType: string;
+  seriesId?: string | null;
 }
 
 function useExampleData() {
@@ -134,7 +135,7 @@ const PRODUCT_LABELS: Record<string, string> = {
   fotel: "FOTEL",
 };
 
-export default function GuidePreview({ sections, productType }: GuidePreviewProps) {
+export default function GuidePreview({ sections, productType, seriesId }: GuidePreviewProps) {
   const { data: exampleData, isLoading } = useExampleData();
 
   const enabledSections = useMemo(
@@ -161,7 +162,11 @@ export default function GuidePreview({ sections, productType }: GuidePreviewProp
   return (
     <Card className="mt-4">
       <CardHeader className="py-3 px-4">
-        <CardTitle className="text-sm font-semibold">📄 Podgląd przewodnika ({prefix})</CardTitle>
+        <CardTitle className="text-sm font-semibold">
+          📄 Podgląd przewodnika ({prefix})
+          {seriesId && <Badge variant="secondary" className="ml-2 text-[10px]">Seria: {seriesLabel}</Badge>}
+          {!seriesId && <Badge variant="outline" className="ml-2 text-[10px]">Globalny</Badge>}
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {/* A4 mockup container — scaled proportionally */}
