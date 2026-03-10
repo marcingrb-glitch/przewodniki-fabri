@@ -6,7 +6,7 @@ import { useAdminCrud } from "@/hooks/useAdminCrud";
 const columns = [
   { key: "code", label: "Kod" },
   { key: "type", label: "Typ (kod)" },
-  { key: "type_name", label: "Typ (nazwa)" },
+  
   { key: "frame", label: "Stelaż" },
   { key: "foam", label: "Pianka" },
   { key: "front", label: "Front" },
