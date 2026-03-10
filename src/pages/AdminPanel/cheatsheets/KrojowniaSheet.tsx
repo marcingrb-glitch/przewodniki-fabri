@@ -229,6 +229,37 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
           </table>
         </section>
       )}
+
+      {/* Tkaniny */}
+      <section className="page-break">
+        <h2 className="text-lg font-bold mb-2">🧵 Tkaniny ({fabrics.length})</h2>
+        {fabrics.length === 0 ? <NoData label="tkaniny" /> : (
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-2 py-1 text-left">Kod</th>
+                <th className="border border-border px-2 py-1 text-left">Nazwa</th>
+                <th className="border border-border px-2 py-1 text-left">Grupa</th>
+                <th className="border border-border px-2 py-1 text-left">Kolory</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fabrics.map(f => (
+                <tr key={f.id}>
+                  <td className="border border-border px-2 py-1 font-mono font-bold">{f.code}</td>
+                  <td className="border border-border px-2 py-1">{f.name}</td>
+                  <td className="border border-border px-2 py-1">{f.price_group}</td>
+                  <td className="border border-border px-2 py-1 text-xs">
+                    {Array.isArray(f.colors) && f.colors.length > 0
+                      ? (f.colors as any[]).map((c: any) => `${c.code}=${c.name}`).join(", ")
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   );
 }
