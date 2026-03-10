@@ -24,6 +24,7 @@ interface GuideSection {
 interface GuidePreviewProps {
   sections: GuideSection[];
   productType: string;
+  seriesId?: string | null;
 }
 
 function useExampleData() {
