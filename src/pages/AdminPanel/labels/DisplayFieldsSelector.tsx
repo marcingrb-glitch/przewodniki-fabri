@@ -16,7 +16,7 @@ const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   seat: [
     { value: "seat.code", label: "Kod siedziska", source: "seats_sofa" },
     { value: "seat.type", label: "Typ siedziska (kod)", source: "seats_sofa.type" },
-    { value: "seat.typeName", label: "Typ siedziska (nazwa)", source: "seats_sofa.type_name" },
+    
     { value: "seat.frame", label: "Rama siedziska", source: "seats_sofa.frame" },
     { value: "seat.foam", label: "Pianka siedziska", source: "seats_sofa.foam" },
     { value: "seat.front", label: "Front siedziska", source: "seats_sofa.front" },

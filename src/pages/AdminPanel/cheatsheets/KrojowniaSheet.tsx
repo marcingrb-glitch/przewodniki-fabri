@@ -92,7 +92,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
             return finishes.length > 1;
           }).map(s => (
             <p key={s.id} className="warning font-bold underline">
-              {s.code} ({s.model_name ?? s.type_name ?? "—"}) — dozwolone: {(s.allowed_finishes ?? []).join(", ")} — uwaga na różne rysunki!
+              {s.code} ({s.model_name ?? "—"}) — dozwolone: {(s.allowed_finishes ?? []).join(", ")} — uwaga na różne rysunki!
             </p>
           ))}
         </div>
@@ -115,7 +115,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
               {seats.map(s => (
                 <tr key={s.id}>
                   <td className="border border-border px-2 py-1 font-mono">{s.code}</td>
-                  <td className="border border-border px-2 py-1">{s.model_name ?? s.type_name ?? "—"}</td>
+                  <td className="border border-border px-2 py-1">{s.model_name ?? "—"}</td>
                   <td className="border border-border px-2 py-1">{(s.allowed_finishes ?? []).join(", ") || "—"}</td>
                   <td className="border border-border px-2 py-1 font-bold">{s.default_finish ?? "—"}</td>
                 </tr>

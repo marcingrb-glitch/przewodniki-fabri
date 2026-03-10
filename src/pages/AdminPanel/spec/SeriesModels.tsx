@@ -25,7 +25,7 @@ const seatFields: FieldDefinition[] = [
   { name: "code", label: "Kod", type: "text", required: true },
   { name: "model_name", label: "Model", type: "text" },
   { name: "type", label: "Typ (kod)", type: "text" },
-  { name: "type_name", label: "Typ (nazwa)", type: "text" },
+  
   { name: "frame", label: "Stelaż", type: "text" },
   { name: "foam", label: "Pianka", type: "text" },
   { name: "front", label: "Przód", type: "text" },
@@ -172,7 +172,7 @@ export default function SeriesModels({ seriesId }: Props) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <InlineEditCell value={seat.code} onSave={(v) => updateSeatField(seat.id, "code", v)} />
-              {seat.type && <Badge variant="secondary">{seat.type_name || seat.type}</Badge>}
+              {seat.type && <Badge variant="secondary">{seat.type}</Badge>}
               {seat.spring_type && <Badge variant="outline">Sprężyna: {seat.spring_type}</Badge>}
             </CardTitle>
             <div className="flex gap-1">

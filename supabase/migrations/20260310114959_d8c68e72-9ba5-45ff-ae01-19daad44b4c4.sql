@@ -1,0 +1,1 @@
+ALTER TABLE public.seats_sofa DROP COLUMN type_name;
