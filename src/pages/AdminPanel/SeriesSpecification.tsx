@@ -82,6 +82,9 @@ export default function SeriesSpecification() {
         <TabsContent value="backrests">
           <SeriesBackrests seriesId={series.id} />
         </TabsContent>
+        <TabsContent value="automats">
+          <SeriesAutomats seriesId={series.id} />
+        </TabsContent>
         <TabsContent value="legs">
           <SeriesLegs seriesId={series.id} config={config} seriesCode={seriesCode} />
         </TabsContent>

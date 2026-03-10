@@ -80,24 +80,26 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
     });
   }
 
-  for (const a of automats) {
-    if (a.has_seat_legs) {
+  const automatNameMap = Object.fromEntries(globalAutomats.map(a => [a.code, a.name]));
+
+  for (const sa of seriesAutomats) {
+    if (sa.has_seat_legs) {
       const seatType = config?.seat_leg_type ?? "from_sku";
       const isPlastic = seatType === "plastic_2_5";
       mountRows.push({
         element: "Pod siedziskiem",
-        detail: a.code,
+        detail: `${sa.automat_code} (${automatNameMap[sa.automat_code] ?? "?"})`,
         type: isPlastic ? "N4 plastikowe" : "N z SKU",
-        height: isPlastic ? "2.5 cm" : `${a.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`,
-        count: `${a.seat_leg_count ?? 2} szt`,
+        height: isPlastic ? "2.5 cm" : `${sa.seat_leg_height_cm ?? config?.seat_leg_height_cm ?? "?"} cm`,
+        count: `${sa.seat_leg_count ?? 2} szt`,
         who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
       });
     } else {
-      mountRows.push({ element: "Pod siedziskiem", detail: a.code, type: "BRAK", height: "—", count: "—", who: "—" });
+      mountRows.push({ element: "Pod siedziskiem", detail: `${sa.automat_code} (${automatNameMap[sa.automat_code] ?? "?"})`, type: "BRAK", height: "—", count: "—", who: "—" });
     }
   }
 
-  if (automats.length === 0 && config) {
+  if (seriesAutomats.length === 0 && config) {
     const seatType = config.seat_leg_type ?? "from_sku";
     const isPlastic = seatType === "plastic_2_5";
     mountRows.push({

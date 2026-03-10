@@ -145,9 +145,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     parsed.chest
       ? supabase.from("chests").select("code, name, leg_height_cm").eq("code", parsed.chest).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Automats (series-specific)
+    // Automats (global)
+    parsed.automat
+      ? supabase.from("automats").select("code, name, type").eq("code", parsed.automat).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Series-specific automat config
     seriesId && parsed.automat
-      ? supabase.from("automats").select("code, name, type, has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("code", parsed.automat).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("series_automats" as any).select("has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("automat_code", parsed.automat).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     // Legs (global)
     parsed.legs
