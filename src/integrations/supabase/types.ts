@@ -222,6 +222,45 @@ export type Database = {
         }
         Relationships: []
       }
+      label_templates: {
+        Row: {
+          component: string
+          condition_field: string | null
+          content_template: string
+          created_at: string
+          id: string
+          is_conditional: boolean
+          label_name: string
+          product_type: string
+          quantity: number
+          sort_order: number
+        }
+        Insert: {
+          component: string
+          condition_field?: string | null
+          content_template: string
+          created_at?: string
+          id?: string
+          is_conditional?: boolean
+          label_name: string
+          product_type: string
+          quantity?: number
+          sort_order?: number
+        }
+        Update: {
+          component?: string
+          condition_field?: string | null
+          content_template?: string
+          created_at?: string
+          id?: string
+          is_conditional?: boolean
+          label_name?: string
+          product_type?: string
+          quantity?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
       legs: {
         Row: {
           code: string
