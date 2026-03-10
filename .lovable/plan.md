@@ -1,36 +1,38 @@
 
 
-## Problem
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-Nie wiesz kiedy checkbox "Warunkowa" powinien być zaznaczony. To normalne — system tego nie wyjaśnia.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-## Jak to działa
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-"Warunkowa" = **drukuj tę etykietę tylko jeśli dany element istnieje w zamówieniu**.
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Przykład: Sofa może mieć nóżki przy siedzisku, ale nie musi. Jeśli etykieta "Noga siedzisko" nie jest warunkowa, wydrukuje się zawsze — nawet gdy sofa nie ma nóżek. Z warunkiem `legHeights.sofa_seat` etykieta drukuje się **tylko gdy** zamówienie faktycznie ma nóżki siedziska.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-Obecnie warunkowe są tylko etykiety nóżek (bo nie każdy produkt je ma):
-- Noga siedzisko (sofa) → warunek: `legHeights.sofa_seat`
-- Noga (pufa) → warunek: `pufaLegs`
-- Noga (fotel) → warunek: `fotelLegs`
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-**Reguła**: Jeśli komponent **zawsze** występuje w danym typie produktu (np. siedzisko, oparcie) → **nie zaznaczaj**. Jeśli komponent jest **opcjonalny** (np. nóżki) → **zaznacz** i wybierz pole warunku.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-## Propozycja usprawnienia
+### Krok 4: App.tsx — routing
 
-Zamiast zostawiać to do ręcznej decyzji, system może **automatycznie ustawiać warunek** na podstawie komponentu:
-- Komponenty `leg_*` → automatycznie `is_conditional = true` z odpowiednim polem
-- Pozostałe komponenty → `is_conditional = false`
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-Albo prostsze: **ukryć checkbox** i wyświetlić przy nóżkach info "⚡ Drukowana tylko gdy produkt ma nóżki" — bo w praktyce warunkowe są tylko etykiety nóżek.
+### Krok 5: skuDecoder.ts — uprość seat types
 
-### Zmiany
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
 
-**`LabelTemplates.tsx`**:
-- Ukryć ręczny checkbox warunkowy
-- Automatycznie pokazywać badge "⚡ Warunkowa" przy komponentach `leg_*`
-- Logikę `is_conditional` ustawiać automatycznie przy zmianie komponentu na `leg_*`
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
 
-**`labels.ts`**: Bez zmian — `shouldShow()` nadal działa tak samo.
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

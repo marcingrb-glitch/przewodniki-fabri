@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Trash2, Plus, GripVertical, Copy } from "lucide-react";
 import InlineEditCell from "./spec/InlineEditCell";
 import { toast } from "sonner";
@@ -158,10 +156,28 @@ export default function LabelTemplates() {
     await updateMutation.mutateAsync({ id, field: "display_fields", value: fields });
   };
 
+  // Map leg components to their condition fields
+  const LEG_CONDITION_MAP: Record<string, string> = {
+    leg_chest: "legHeights.sofa_chest",
+    leg_seat: "legHeights.sofa_seat",
+    leg: "pufaLegs",
+    legs: "legHeights.sofa_chest",
+  };
+
+  const isLegComponent = (component: string) => component in LEG_CONDITION_MAP;
+
   const handleComponentChange = async (id: string, component: string) => {
     await updateMutation.mutateAsync({ id, field: "component", value: component });
     // Clear display_fields when component changes
     await updateMutation.mutateAsync({ id, field: "display_fields", value: [] });
+    // Auto-set conditional for leg components
+    const isLeg = isLegComponent(component);
+    await updateMutation.mutateAsync({ id, field: "is_conditional", value: isLeg });
+    await updateMutation.mutateAsync({
+      id,
+      field: "condition_field",
+      value: isLeg ? LEG_CONDITION_MAP[component] : null,
+    });
   };
 
   const filteredTemplates = templates.filter((t) => {
@@ -247,7 +263,7 @@ export default function LabelTemplates() {
                         <TableHead>Wyświetlane pola</TableHead>
                         <TableHead className="w-[80px]">Ilość</TableHead>
                         <TableHead className="w-[90px]">Kolejność</TableHead>
-                        <TableHead className="w-[100px]">Warunkowa</TableHead>
+                        <TableHead className="w-[120px]">Status</TableHead>
                         <TableHead className="w-[60px]" />
                       </TableRow>
                     </TableHeader>
@@ -295,32 +311,13 @@ export default function LabelTemplates() {
                             />
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1.5">
-                              <Checkbox
-                                checked={tpl.is_conditional}
-                                onCheckedChange={(checked) =>
-                                  updateMutation.mutate({
-                                    id: tpl.id,
-                                    field: "is_conditional",
-                                    value: !!checked,
-                                  })
-                                }
-                              />
-                              {tpl.is_conditional && (
-                                <Input
-                                  className="h-7 text-xs w-[140px]"
-                                  placeholder="np. legHeights.sofa_seat"
-                                  value={tpl.condition_field || ""}
-                                  onChange={(e) =>
-                                    updateMutation.mutate({
-                                      id: tpl.id,
-                                      field: "condition_field",
-                                      value: e.target.value || null,
-                                    })
-                                  }
-                                />
-                              )}
-                            </div>
+                            {tpl.is_conditional ? (
+                              <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                                ⚡ Tylko gdy ma nóżki
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Zawsze</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Button
