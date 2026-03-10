@@ -3,23 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface GuideColumn {
-  header: string;
-  field: string;
-}
-
-interface GuideSection {
-  id: string;
-  product_type: string;
-  series_id: string | null;
-  section_name: string;
-  sort_order: number;
-  is_conditional: boolean;
-  condition_field: string | null;
-  columns: GuideColumn[];
-  enabled: boolean;
-}
+import { GuideSection, GuideColumn, CONDITION_LABELS, resolveExampleValue } from "./fieldResolver";
 
 interface GuidePreviewProps {
   sections: GuideSection[];
@@ -55,82 +39,6 @@ function useExampleData() {
     staleTime: 5 * 60 * 1000,
   });
 }
-
-function resolveExampleValue(field: string, data: any): string {
-  if (!data) return "—";
-  const v = (val: unknown) => (val != null && val !== "" ? String(val) : "—");
-  const finishCode = v(data.finish?.code);
-  const finishName = v(data.finish?.name);
-
-  let legColor = "—";
-  if (data.leg?.colors && Array.isArray(data.leg.colors) && (data.leg.colors as any[]).length > 0) {
-    legColor = (data.leg.colors as any[])[0]?.code || "—";
-  }
-
-  const map: Record<string, string> = {
-    "seat.code": v(data.seat?.code),
-    "seat.finish_name": finishName,
-    "seat.code_finish": `${v(data.seat?.code)} (${finishName})`,
-    "seat.type": "Wciąg",
-    "seat.frame": v(data.seat?.frame),
-    "seat.foams_summary": "T25 40×50×10 (1 szt)",
-    "seat.front": v(data.seat?.front),
-    "seat.springType": v(data.seat?.spring_type),
-    "seat.frameModification": v(data.seat?.frame_modification),
-    "seat.midStrip_yn": data.seat?.center_strip ? "TAK" : "NIE",
-    "backrest.code": v(data.backrest?.code),
-    "backrest.finish_name": finishName,
-    "backrest.code_finish": `${v(data.backrest?.code)}${finishCode} (${finishName})`,
-    "backrest.frame": v(data.backrest?.frame),
-    "backrest.foams_summary": "HR35 30×40×8 (1 szt)",
-    "backrest.top": v(data.backrest?.top),
-    "backrest.springType": v(data.backrest?.spring_type),
-    "side.code": v(data.side?.code),
-    "side.finish_name": finishName,
-    "side.code_finish": `${v(data.side?.code)}${finishCode} (${finishName})`,
-    "side.frame": v(data.side?.frame),
-    "side.foam": "—",
-    "chest.name": v(data.chest?.name),
-    "chest_automat.label": `${v(data.chest?.code)} + ${v(data.automat?.code)}`,
-    "automat.code_name": `${v(data.automat?.code)} - ${v(data.automat?.name)}`,
-    "legs.code_color": `${v(data.leg?.code)}${legColor !== "—" ? legColor : ""}`,
-    "legHeights.sofa_chest_info": data.chest ? `${v(data.leg?.name)} H ${v(data.chest?.leg_height_cm)}cm (${v(data.chest?.leg_count)} szt)` : "—",
-    "legHeights.sofa_seat_info": "BRAK",
-    "pillow.code": v(data.pillow?.code),
-    "pillow.name": v(data.pillow?.name),
-    "pillow.finish_info": `${finishCode} (${finishName})`,
-    "jaski.code": v(data.jaski?.code),
-    "jaski.name": v(data.jaski?.name),
-    "jaski.finish_info": `${finishCode} (${finishName})`,
-    "walek.code": v(data.walek?.code),
-    "walek.name": v(data.walek?.name),
-    "walek.finish_info": `${finishCode} (${finishName})`,
-    "pufaSeat.frontBack": v(data.pufaSeat?.front_back),
-    "pufaSeat.sides": v(data.pufaSeat?.sides),
-    "pufaSeat.foam": v(data.pufaSeat?.base_foam),
-    "pufaSeat.box": v(data.pufaSeat?.box_height),
-    "pufaLegs.code": v(data.leg?.code),
-    "pufaLegs.count_info": "4 szt",
-    "pufaLegs.height_info": "H 15cm",
-    "fotelLegs.code": v(data.leg?.code),
-    "fotelLegs.count_info": "4 szt",
-    "fotelLegs.height_info": "H 15cm",
-    "extras.label": "Dodatki",
-    "extras.pufa_sku": "PUFA-SKU-001",
-    "extras.fotel_sku": "FOTEL-SKU-001",
-  };
-
-  return map[field] || field;
-}
-
-const CONDITION_LABELS: Record<string, string> = {
-  pillow: "poduszka",
-  jaski: "jaśki",
-  walek: "wałek",
-  pufaLegs: "nóżki pufy",
-  fotelLegs: "nóżki fotela",
-  extras_pufa_fotel: "pufa/fotel w dodatkach",
-};
 
 const PRODUCT_LABELS: Record<string, string> = {
   sofa: "SOFA",
@@ -172,12 +80,10 @@ export default function GuidePreview({ sections, productType, seriesId }: GuideP
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        {/* A4 mockup container — scaled proportionally */}
         <div
           className="border rounded-md bg-background mx-auto overflow-hidden shadow-sm"
           style={{ width: 500, minHeight: 300, maxHeight: 700 }}
         >
-          {/* Header section */}
           <div className="px-5 pt-4 pb-2 space-y-0.5">
             <div className="flex justify-between items-start">
               <div>
@@ -195,7 +101,6 @@ export default function GuidePreview({ sections, productType, seriesId }: GuideP
             </p>
           </div>
 
-          {/* Sections */}
           <div className="px-5 pb-4 space-y-3">
             {isLoading ? (
               <p className="text-xs text-muted-foreground py-4 text-center">Ładowanie danych przykładowych...</p>
@@ -216,7 +121,6 @@ export default function GuidePreview({ sections, productType, seriesId }: GuideP
                         : "border border-border"
                     }`}
                   >
-                    {/* Section name bar */}
                     <div className={`px-2 py-1 flex items-center gap-2 ${
                       isConditional ? "bg-muted/30" : "bg-muted/60"
                     }`}>
@@ -230,7 +134,6 @@ export default function GuidePreview({ sections, productType, seriesId }: GuideP
                       )}
                     </div>
 
-                    {/* Mini table(s) — with subgroup splitting for seat fields */}
                     {(() => {
                       const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
                       const MAX_COLS = 4;
