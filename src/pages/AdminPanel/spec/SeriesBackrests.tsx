@@ -271,6 +271,7 @@ export default function SeriesBackrests({ seriesId }: Props) {
                       selected={v.models}
                       onChange={(models) => updateSewingVariant(v.id, "models", models)}
                       label="Modele"
+                      allowedModels={parseModels(b.model_name)}
                     />
                   </TableCell>
                   <TableCell>
