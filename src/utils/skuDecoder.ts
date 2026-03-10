@@ -514,7 +514,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       finish: seatFinish,
       finishName: seatFinishName,
       frame: seatFrame,
-      foam: seatFoam,
+      foam: formatFoamsSummary(seatFoams),
       front: seatFront,
       midStrip: seatMidStrip,
       springType: seatSpringType || undefined,
