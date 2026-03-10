@@ -18,7 +18,6 @@ interface Props {
 
 const LEG_TYPE_LABELS: Record<string, string> = {
   from_sku: "Z kodu SKU (drewniane)",
-  built_in_plastic: "Wbudowane plastikowe",
   plastic_2_5: "Plastikowe 2.5cm",
 };
 
