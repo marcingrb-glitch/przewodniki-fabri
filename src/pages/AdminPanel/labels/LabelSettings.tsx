@@ -25,7 +25,7 @@ export interface LabelSettingsData {
 
 const DEFAULTS: Omit<LabelSettingsData, "id"> = {
   left_zone_fields: ["series.code", "series.name", "series.collection"],
-  header_template: "{TYPE} | Zam: {ORDER}",
+  header_template: "{TYPE} | {LABEL} | {ORDER}",
   left_zone_width: 16,
   series_code_size: 18,
   series_name_size: 9,
@@ -153,6 +153,7 @@ export default function LabelSettings() {
   // Preview
   const previewHeader = localHeader
     .replace("{TYPE}", "SOFA")
+    .replace("{LABEL}", "Siedzisko")
     .replace("{ORDER}", "12345");
 
   const previewLeftItems = localFields.map((f) => {
@@ -255,6 +256,7 @@ export default function LabelSettings() {
               />
               <p className="text-[10px] text-muted-foreground">
                 Dostępne zmienne: <code className="bg-muted px-1 rounded">{"{TYPE}"}</code>{" "}
+                <code className="bg-muted px-1 rounded">{"{LABEL}"}</code>{" "}
                 <code className="bg-muted px-1 rounded">{"{ORDER}"}</code>
               </p>
             </div>

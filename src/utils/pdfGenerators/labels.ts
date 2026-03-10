@@ -111,10 +111,10 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
     };
   }
 
-  return {
+    return {
     leftZoneWidth: Number(data.left_zone_width) || 16,
     leftZoneFields: (data.left_zone_fields as string[]) || ["series.code", "series.name", "series.collection"],
-    headerTemplate: data.header_template || "{TYPE} | Zam: {ORDER}",
+    headerTemplate: data.header_template || "{TYPE} | {LABEL} | {ORDER}",
     seriesCodeSize: Number(data.series_code_size) || 18,
     seriesNameSize: Number(data.series_name_size) || 9,
     seriesCollectionSize: Number(data.series_collection_size) || 7,
@@ -145,6 +145,7 @@ function buildLabelLines(
   const s = seriesLine(decoded, settings.leftZoneFields, productType);
   const header = settings.headerTemplate
     .replace("{TYPE}", productType.toUpperCase())
+    .replace("{LABEL}", tpl.label_name)
     .replace("{ORDER}", decoded.orderNumber || "");
 
   const lineGroups = normalizeDisplayFields(tpl.display_fields);
@@ -196,7 +197,9 @@ export async function generateLabelsPDF(
     const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType);
     const fallbackHeader = settings.headerTemplate
       .replace("{TYPE}", productType.toUpperCase())
-      .replace("{ORDER}", decoded.orderNumber || "");
+      .replace("{LABEL}", "")
+      .replace("{ORDER}", decoded.orderNumber || "")
+      .replace("| |", "|");
     addLabel(doc, [fallbackSeries, fallbackHeader, "Brak szablonów etykiet"], true, settings);
   }
 
