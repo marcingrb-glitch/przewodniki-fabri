@@ -120,7 +120,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   // Fetch all relevant data from Supabase in parallel
   const [
-    seriesRes, fabricsRes, seatSofaRes, sidesRes, backrestsRes,
+    seriesRes, fabricsRes, seatSofaRes, sidesRes,
     chestsRes, automatsRes, seriesAutomatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
     seatPufaRes, seriesConfigRes,
   ] = await Promise.all([
@@ -131,9 +131,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       : Promise.resolve({ data: null }),
     seriesId && parsed.side.code
       ? supabase.from("sides").select("code, name, frame, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
-      : Promise.resolve({ data: null }),
-    seriesId && parsed.backrest.code
-      ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.chest
       ? supabase.from("chests").select("code, name, leg_height_cm, leg_count").eq("code", parsed.chest).maybeSingle()
@@ -156,15 +153,60 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     parsed.walek
       ? supabase.from("waleks").select("code, name").eq("code", parsed.walek.code).maybeSingle()
       : Promise.resolve({ data: null }),
-    // seats_pufa (for pufa decoding)
     seriesId
       ? supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
-    // series_config (for pufa/fotel leg specs)
     seriesId
       ? supabase.from("series_config").select("pufa_leg_height_cm, pufa_leg_count, pufa_leg_type").eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  // ---- BACKREST query (depends on seat's model_name) ----
+  const seatModelName = seatSofaRes.data?.model_name ?? null;
+  let backrestsRes: { data: any } = { data: null };
+  if (seriesId && parsed.backrest.code) {
+    if (seatModelName) {
+      const { data: byModel } = await supabase
+        .from("backrests")
+        .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+        .eq("code", parsed.backrest.code)
+        .eq("series_id", seriesId)
+        .eq("model_name", seatModelName)
+        .maybeSingle();
+      if (byModel) {
+        backrestsRes = { data: byModel };
+      } else {
+        const { data: fallback } = await supabase
+          .from("backrests")
+          .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+          .eq("code", parsed.backrest.code)
+          .eq("series_id", seriesId)
+          .is("model_name", null)
+          .maybeSingle();
+        backrestsRes = { data: fallback };
+      }
+    } else {
+      const { data: defaultBackrest } = await supabase
+        .from("backrests")
+        .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+        .eq("code", parsed.backrest.code)
+        .eq("series_id", seriesId)
+        .is("model_name", null)
+        .maybeSingle();
+      if (defaultBackrest) {
+        backrestsRes = { data: defaultBackrest };
+      } else {
+        const { data: anyBackrest } = await supabase
+          .from("backrests")
+          .select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type")
+          .eq("code", parsed.backrest.code)
+          .eq("series_id", seriesId)
+          .limit(1)
+          .maybeSingle();
+        backrestsRes = { data: anyBackrest };
+      }
+    }
+  }
 
   // ---- SERIES (fallback to static) ----
   const seriesData = seriesRes.data
