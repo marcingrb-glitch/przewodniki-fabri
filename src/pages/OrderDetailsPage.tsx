@@ -288,9 +288,9 @@ const OrderDetailsPage = () => {
         <CardContent className="flex flex-wrap items-center gap-3">
           <ActionBtn icon={FileText} label="Pobierz wszystkie przewodniki" loadKey="all-guides" onClick={async () => {
             const blobs: { name: string; blob: Blob }[] = [];
-            blobs.push({ name: "sofa_przewodnik.pdf", blob: await generateSofaGuidePDF(decoded) });
-            if (hasPufa) blobs.push({ name: "pufa_przewodnik.pdf", blob: await generatePufaGuidePDF(decoded) });
-            if (hasFotel) blobs.push({ name: "fotel_przewodnik.pdf", blob: await generateFotelGuidePDF(decoded) });
+            blobs.push({ name: "sofa_przewodnik.pdf", blob: await generateGuidePDF(decoded, "sofa") });
+            if (hasPufa) blobs.push({ name: "pufa_przewodnik.pdf", blob: await generateGuidePDF(decoded, "pufa") });
+            if (hasFotel) blobs.push({ name: "fotel_przewodnik.pdf", blob: await generateGuidePDF(decoded, "fotel") });
             const zip = new JSZip();
             blobs.forEach(b => zip.file(b.name, b.blob));
             const zipBlob = await zip.generateAsync({ type: "blob" });
