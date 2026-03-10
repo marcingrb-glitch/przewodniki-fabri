@@ -327,6 +327,8 @@ export default function GuideTemplates() {
         Sekcje globalne (bez serii) obowiązują dla wszystkich. Można nadpisać per seria.
       </p>
 
+      <GuideSettings />
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="sofa">SOFA</TabsTrigger>
@@ -348,6 +350,16 @@ export default function GuideTemplates() {
                     ))}
                   </SelectContent>
                 </Select>
+                {canCopy && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyForSeriesMutation.mutate({ productType: activeTab, seriesId: selectedSeriesId })}
+                    disabled={copyForSeriesMutation.isPending}
+                  >
+                    <Copy className="mr-1 h-4 w-4" /> Nadpisz dla tej serii
+                  </Button>
+                )}
               </div>
               <Button onClick={openAdd} size="sm"><Plus className="mr-1 h-4 w-4" /> Dodaj sekcję</Button>
             </div>
@@ -355,7 +367,11 @@ export default function GuideTemplates() {
             {isLoading ? (
               <p className="text-muted-foreground">Ładowanie...</p>
             ) : filtered.length === 0 ? (
-              <p className="text-muted-foreground">Brak sekcji dla tego typu.</p>
+              <p className="text-muted-foreground">
+                {selectedSeriesId !== "__global__"
+                  ? "Brak nadpisań — używane są sekcje globalne. Kliknij „Nadpisz dla tej serii" aby skopiować globalne sekcje."
+                  : "Brak sekcji dla tego typu."}
+              </p>
             ) : (
               <Table>
                 <TableHeader>
