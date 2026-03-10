@@ -123,7 +123,7 @@ function buildExampleDecoded(data: any): DecodedSKU {
 
 export default function DecodingTemplates() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("__any__");
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
 
   const { data: seriesList = [] } = useQuery({
@@ -175,8 +175,9 @@ export default function DecodingTemplates() {
     try {
       const decoded = buildExampleDecoded(exampleData);
       const blob = await generateDecodingPDF(decoded);
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
+      const reader = new FileReader();
+      reader.onload = () => setPdfDataUri(reader.result as string);
+      reader.readAsDataURL(blob);
     } catch (err) {
       console.error("Error generating decoding PDF:", err);
     } finally {
@@ -203,20 +204,12 @@ export default function DecodingTemplates() {
     }
   };
 
-  // Auto-generate preview when data changes
   useEffect(() => {
     if (exampleData) {
       generatePreview();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exampleData]);
-
-  // Cleanup blob URL
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [pdfUrl]);
 
   return (
     <div className="space-y-4">
