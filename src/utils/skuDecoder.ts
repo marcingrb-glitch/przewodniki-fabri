@@ -4,7 +4,7 @@ import { resolveSeriesId } from "@/utils/supabaseQueries";
 import {
   SERIES, FABRICS, SEAT_TYPES as STATIC_SEAT_TYPES, SEATS_SOFA_S1, BACKRESTS, SIDES,
   CHESTS, AUTOMATS, LEGS, PILLOWS, JASKI, WALKI, EXTRAS as STATIC_EXTRAS,
-  FINISHES, DEFAULT_FINISHES,
+  FINISHES as STATIC_FINISHES, DEFAULT_FINISHES, SEATS_PUFA as STATIC_SEATS_PUFA,
 } from "@/data/mappings";
 
 /**
@@ -12,7 +12,6 @@ import {
  * Tries the full rawSegment as a code first, then strips the last letter as finish.
  */
 async function findSeatInDB(code: string, seriesId: string, zeroPadded?: boolean): Promise<string | null> {
-  // Try exact match
   const { data: exact } = await supabase
     .from("seats_sofa")
     .select("code")
@@ -21,7 +20,6 @@ async function findSeatInDB(code: string, seriesId: string, zeroPadded?: boolean
     .maybeSingle();
   if (exact) return exact.code;
 
-  // Try zero-padded variant (SD2N → SD02N) only if zeroPadded is not explicitly false
   if (zeroPadded !== false) {
     const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
     if (withZero !== code) {
@@ -44,17 +42,14 @@ async function resolveSeatCode(
   seriesId: string,
   zeroPadded?: boolean
 ): Promise<{ code: string; finish?: string }> {
-  // If parser already extracted a finish, try rawSegment as code
   if (parsedFinish) {
     const found = await findSeatInDB(rawSegment, seriesId, zeroPadded);
     if (found) return { code: found, finish: parsedFinish };
   }
 
-  // Try full rawSegment as code (no finish)
   const fullMatch = await findSeatInDB(rawSegment, seriesId, zeroPadded);
   if (fullMatch) return { code: fullMatch, finish: parsedFinish };
 
-  // Try stripping last letter as finish (only if A-D)
   if (!parsedFinish && rawSegment.length >= 3) {
     const possibleFinish = rawSegment.slice(-1);
     const possibleCode = rawSegment.slice(0, -1);
@@ -64,26 +59,24 @@ async function resolveSeatCode(
     }
   }
 
-  // Fallback: return as-is
   return { code: rawSegment, finish: parsedFinish };
 }
 
 export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
-  // Resolve series UUID for DB queries
   const seriesId = await resolveSeriesId(parsed.series);
 
-  // Fetch SKU config from DB (side_exceptions, parse_rules, seat_types, extras) in parallel
-  const [sideExceptionsRes, parseRulesRes, seatTypesRes, extrasDbRes] = await Promise.all([
+  // Fetch SKU config from DB in parallel
+  const [sideExceptionsRes, parseRulesRes, extrasDbRes, finishesDbRes] = await Promise.all([
     seriesId
       ? supabase.from("side_exceptions" as any).select("original_code, mapped_code").eq("series_id", seriesId).eq("active", true)
       : Promise.resolve({ data: null }),
     seriesId
       ? supabase.from("sku_parse_rules" as any).select("component_type, zero_padded").eq("series_id", seriesId)
       : Promise.resolve({ data: null }),
-    Promise.resolve({ data: null }),
     seriesId
       ? supabase.from("extras").select("code, name, type").eq("series_id", seriesId)
       : Promise.resolve({ data: null }),
+    supabase.from("finishes").select("code, name"),
   ]);
 
   // Build side exceptions map from DB
@@ -109,8 +102,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     }
   }
 
-  // Note: sideExceptions should be passed to parseSKU() by the caller before calling decodeSKU().
-  // The decoder exports a helper to fetch them: fetchSideExceptions()
+  // Build finishes map from DB (fallback to static)
+  const FINISHES: Record<string, string> = { ...STATIC_FINISHES };
+  if (finishesDbRes.data) {
+    for (const f of finishesDbRes.data) {
+      FINISHES[f.code] = f.name;
+    }
+  }
 
   // Resolve seat code against database with zeroPadded rule
   const seatResolved = seriesId
@@ -124,50 +122,47 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const [
     seriesRes, fabricsRes, seatSofaRes, sidesRes, backrestsRes,
     chestsRes, automatsRes, seriesAutomatsRes, legsRes, pillowsRes, jaskisRes, waleksRes,
+    seatPufaRes, seriesConfigRes,
   ] = await Promise.all([
-    // Series
     supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
-    // Fabrics
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
-    // Seats sofa (series-specific)
     seriesId
       ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type, type_name").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Sides (series-specific)
     seriesId && parsed.side.code
       ? supabase.from("sides").select("code, name, frame, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Backrests (series-specific)
     seriesId && parsed.backrest.code
       ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Chests (no series_id)
     parsed.chest
-      ? supabase.from("chests").select("code, name, leg_height_cm").eq("code", parsed.chest).maybeSingle()
+      ? supabase.from("chests").select("code, name, leg_height_cm, leg_count").eq("code", parsed.chest).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Automats (global)
     parsed.automat
       ? supabase.from("automats").select("code, name, type").eq("code", parsed.automat).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Series-specific automat config
     seriesId && parsed.automat
       ? supabase.from("series_automats" as any).select("has_seat_legs, seat_leg_height_cm, seat_leg_count").eq("automat_code", parsed.automat).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Legs (global)
     parsed.legs
       ? supabase.from("legs").select("code, name, material, colors").eq("code", parsed.legs.code).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Pillows (no series_id)
     parsed.pillow
       ? supabase.from("pillows").select("code, name, default_finish, allowed_finishes").eq("code", parsed.pillow.code).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Jaskis (no series_id)
     parsed.jaski
       ? supabase.from("jaskis").select("code, name").eq("code", parsed.jaski.code).maybeSingle()
       : Promise.resolve({ data: null }),
-    // Waleks (no series_id)
     parsed.walek
       ? supabase.from("waleks").select("code, name").eq("code", parsed.walek.code).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // seats_pufa (for pufa decoding)
+    seriesId
+      ? supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // series_config (for pufa/fotel leg specs)
+    seriesId
+      ? supabase.from("series_config").select("pufa_leg_height_cm, pufa_leg_count, pufa_leg_type").eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -211,7 +206,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatType = seatSofaRes.data.type ?? "";
     seatTypeName = (seatSofaRes.data as any).type_name || SEAT_TYPES[seatType] || seatType;
   } else {
-    // Fallback: extract type from static mappings for S1 format
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {
       seatType = typeMatch[1] || "";
@@ -250,7 +244,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const staticChest = CHESTS[parsed.chest] || { name: "?", legHeight: 0, legCount: 0 };
   let chestName = staticChest.name;
   let chestLegHeight = staticChest.legHeight;
-  const chestLegCount = staticChest.legCount || 4;
+  const chestLegCount = chestsRes.data?.leg_count || staticChest.legCount || 4;
 
   if (chestsRes.data) {
     chestName = chestsRes.data.name ?? "";
@@ -314,14 +308,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   if (automatSeatLegs && automatSeatLegHeight > 0) {
     if (legsDecoded) {
-      // Nóżki z SKU — typ nóżki z segmentu N (model S1 z AT1)
       sofaSeatLeg = {
         leg: `${legsDecoded.code}${legsDecoded.color || ""}`,
         height: automatSeatLegHeight,
         count: automatSeatLegCount,
       };
     } else {
-      // Wbudowane plastikowe — brak N w SKU (model S2)
       sofaSeatLeg = {
         leg: "N4",
         height: automatSeatLegHeight,
@@ -369,9 +361,57 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     return { code: e, name: eData.name, type: eData.type };
   });
 
+  // ---- PUFA SEAT (from DB, fallback to static) ----
+  let pufaSeatDecoded: DecodedSKU["pufaSeat"] = undefined;
+  const hasPufa = parsed.extras.some(e => e === "PF" || e === "PFO");
+  if (hasPufa) {
+    if (seatPufaRes.data) {
+      pufaSeatDecoded = {
+        frontBack: seatPufaRes.data.front_back ?? "-",
+        sides: seatPufaRes.data.sides ?? "-",
+        foam: seatPufaRes.data.base_foam ?? "-",
+        box: seatPufaRes.data.box_height ?? "-",
+      };
+    } else {
+      const staticPufa = STATIC_SEATS_PUFA[seatCode];
+      if (staticPufa) {
+        pufaSeatDecoded = {
+          frontBack: staticPufa.frontBack,
+          sides: staticPufa.sides,
+          foam: staticPufa.foam,
+          box: staticPufa.box,
+        };
+      }
+    }
+  }
+
+  // ---- PUFA/FOTEL LEGS (from series_config, fallback to hardcoded) ----
+  const scData = seriesConfigRes.data as any;
+  const pufaLegHeight = scData?.pufa_leg_height_cm ?? 16;
+  const pufaLegCount = scData?.pufa_leg_count ?? 4;
+
+  let pufaLegsDecoded: DecodedSKU["pufaLegs"] = undefined;
+  let fotelLegsDecoded: DecodedSKU["fotelLegs"] = undefined;
+
+  if (hasPufa && legsDecoded) {
+    pufaLegsDecoded = {
+      code: `${legsDecoded.code}${legsDecoded.color || ""}`,
+      height: pufaLegHeight,
+      count: pufaLegCount,
+    };
+  }
+
+  const hasFotel = parsed.extras.includes("FT");
+  if (hasFotel && legsDecoded) {
+    fotelLegsDecoded = {
+      code: `${legsDecoded.code}${legsDecoded.color || ""}`,
+      height: pufaLegHeight,
+      count: pufaLegCount,
+    };
+  }
+
   // ---- Generate pufa SKU ----
   let pufaSKU: string | undefined;
-  const hasPufa = parsed.extras.some(e => e === "PF" || e === "PFO");
   if (hasPufa && parsed.legs) {
     const pufaType = parsed.extras.find(e => e === "PF" || e === "PFO")!;
     pufaSKU = `${pufaType}-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.legs.code}${parsed.legs.color || ""}`;
@@ -379,7 +419,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   // ---- Generate fotel SKU ----
   let fotelSKU: string | undefined;
-  const hasFotel = parsed.extras.includes("FT");
   if (hasFotel && parsed.legs) {
     const jaskiPart = parsed.jaski ? `-${parsed.jaski.code}${parsed.jaski.finish || ""}` : "";
     fotelSKU = `FT-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.side.code}${parsed.side.finish}${jaskiPart}-${parsed.legs.code}${parsed.legs.color || ""}`;
@@ -409,6 +448,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     walek: walekDecoded,
     extras: extrasDecoded,
     legHeights: { sofa_chest: sofaChestLeg, sofa_seat: sofaSeatLeg },
+    pufaSeat: pufaSeatDecoded,
+    pufaLegs: pufaLegsDecoded,
+    fotelLegs: fotelLegsDecoded,
     pufaSKU,
     fotelSKU,
   };
@@ -416,7 +458,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
 /**
  * Fetch side exceptions from DB for a given series code.
- * Returns a map of original_code → mapped_code for use with parseSKU().
  */
 export async function fetchSideExceptions(seriesCode: string): Promise<Record<string, string>> {
   const seriesId = await resolveSeriesId(seriesCode);

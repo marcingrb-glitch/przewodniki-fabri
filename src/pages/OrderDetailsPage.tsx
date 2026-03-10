@@ -17,7 +17,7 @@ import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
 import { getOrderById } from "@/utils/supabaseQueries";
 import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
-import { SEATS_PUFA } from "@/data/mappings";
+
 import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateSofaGuidePDF } from "@/utils/pdfGenerators/sofaGuide";
 import { generatePufaGuidePDF } from "@/utils/pdfGenerators/pufaGuide";
@@ -104,7 +104,7 @@ const OrderDetailsPage = () => {
 
   const hasPufa = !!decoded.pufaSKU;
   const hasFotel = !!decoded.fotelSKU;
-  const pufaSeat = SEATS_PUFA[decoded.seat.code];
+  const pufaSeat = decoded.pufaSeat;
 
   const ActionBtn = ({ icon: Icon, label, loadKey, onClick }: { icon: typeof Eye; label: string; loadKey: string; onClick: () => Promise<void> | void }) => (
     <Button variant="outline" size="sm" className="gap-1.5" disabled={loading === loadKey} onClick={() => withLoading(loadKey, async () => { await onClick(); })}>
@@ -222,7 +222,7 @@ const OrderDetailsPage = () => {
                       <InfoRow label="Pianka bazowa" value={pufaSeat.foam} />
                       <InfoRow label="Skrzynka" value={pufaSeat.box} />
                     </>}
-                    {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
+                    {decoded.pufaLegs && <InfoRow label="Nóżki" value={`${decoded.pufaLegs.code} H ${decoded.pufaLegs.height}cm (${decoded.pufaLegs.count} szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -254,7 +254,7 @@ const OrderDetailsPage = () => {
                     <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.typeName}`} />
                     <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}`} />
                     {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
-                    {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`} />}
+                    {decoded.fotelLegs && <InfoRow label="Nóżki" value={`${decoded.fotelLegs.code} H ${decoded.fotelLegs.height}cm (${decoded.fotelLegs.count} szt)`} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>
