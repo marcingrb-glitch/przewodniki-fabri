@@ -174,9 +174,14 @@ export default function SeriesBackrests({ seriesId }: Props) {
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
-  // Get all sewing variants for a backrest code (no model filtering)
+  // Get sewing variants for a backrest card — filtered by model overlap
   const getMatchingVariants = (b: Backrest) => {
-    return sewingVariants.filter((v) => v.component_code === b.code);
+    const all = sewingVariants.filter((v) => v.component_code === b.code);
+    if (!b.model_name) return all;
+    const cardModels = parseModels(b.model_name);
+    return all.filter((v) =>
+      v.models.length === 0 || v.models.some((m) => cardModels.includes(m))
+    );
   };
 
   // Get foams for a specific backrest card
