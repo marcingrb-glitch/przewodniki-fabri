@@ -31,6 +31,7 @@ import ParseRules from "@/pages/AdminPanel/ParseRules";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
 import LabelTemplates from "@/pages/AdminPanel/LabelTemplates";
 import GuideTemplates from "@/pages/AdminPanel/GuideTemplates";
+import DecodingTemplates from "@/pages/AdminPanel/DecodingTemplates";
 import SeriesSpecification from "@/pages/AdminPanel/SeriesSpecification";
 import Cheatsheets from "@/pages/AdminPanel/Cheatsheets";
 import NotFound from "@/pages/NotFound";
