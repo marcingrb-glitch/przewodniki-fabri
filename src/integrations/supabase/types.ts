@@ -788,6 +788,7 @@ export type Database = {
       }
       sewing_variants: {
         Row: {
+          backrest_id: string | null
           component_code: string
           component_type: string
           created_at: string
@@ -798,6 +799,7 @@ export type Database = {
           variant_name: string
         }
         Insert: {
+          backrest_id?: string | null
           component_code: string
           component_type: string
           created_at?: string
@@ -808,6 +810,7 @@ export type Database = {
           variant_name: string
         }
         Update: {
+          backrest_id?: string | null
           component_code?: string
           component_type?: string
           created_at?: string
@@ -818,6 +821,13 @@ export type Database = {
           variant_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sewing_variants_backrest_id_fkey"
+            columns: ["backrest_id"]
+            isOneToOne: false
+            referencedRelation: "backrests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sewing_variants_series_id_fkey"
             columns: ["series_id"]
