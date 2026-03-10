@@ -92,7 +92,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
             return finishes.length > 1;
           }).map(s => (
             <p key={s.id} className="warning font-bold underline">
-              {s.code} ({s.model_name ?? s.type_name ?? "—"}) — dozwolone: {(s.allowed_finishes ?? []).join(", ")} — uwaga na różne rysunki!
+              {s.code} ({s.model_name ?? "—"}) — dozwolone: {(s.allowed_finishes ?? []).join(", ")} — uwaga na różne rysunki!
             </p>
           ))}
         </div>
