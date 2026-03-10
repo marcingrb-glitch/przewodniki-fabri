@@ -5,7 +5,8 @@ import { useAdminCrud } from "@/hooks/useAdminCrud";
 const columns = [
   { key: "code", label: "Kod" },
   { key: "name", label: "Nazwa" },
-  { key: "construction_type", label: "Typ konstrukcji" },
+  { key: "construction_type", label: "Wygląd" },
+  { key: "insert_type", label: "Wkład" },
   { key: "allowed_finishes", label: "Możliwe wykończenia", render: (v: string[]) => Array.isArray(v) ? v.join(", ") : "-" },
 ];
 
