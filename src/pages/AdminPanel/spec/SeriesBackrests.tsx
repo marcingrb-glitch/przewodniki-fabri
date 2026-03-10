@@ -153,10 +153,12 @@ export default function SeriesBackrests({ seriesId }: Props) {
   const addSewingVariant = async (backrest: Backrest) => {
     const existing = sewingVariants.filter((v) => v.backrest_id === backrest.id);
     const nextNum = existing.length + 1;
+    const defaultDescriptions: Record<number, string> = { 1: "Przewinięte", 2: "Bodno na górze" };
     const { error } = await (supabase.from("sewing_variants") as any).insert({
       series_id: seriesId, component_type: "backrest", component_code: backrest.code,
       backrest_id: backrest.id,
       variant_name: `Wariant ${nextNum}`, models: [],
+      description: defaultDescriptions[nextNum] || null,
     });
     if (error) toast.error("Błąd dodawania wariantu");
     else { toast.success("Dodano wariant"); fetchAll(); }
