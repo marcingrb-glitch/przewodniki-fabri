@@ -52,6 +52,14 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
     },
   });
 
+  const { data: fabrics = [] } = useQuery({
+    queryKey: ["cheat-fabrics"],
+    queryFn: async () => {
+      const { data } = await supabase.from("fabrics").select("*").order("code");
+      return data ?? [];
+    },
+  });
+
   const { data: sewingVariants = [] } = useQuery({
     queryKey: ["cheat-sewing-variants", seriesId],
     queryFn: async () => {
