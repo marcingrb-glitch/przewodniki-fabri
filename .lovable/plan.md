@@ -1,38 +1,60 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Wizualny konfigurator przewodnika PDF
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Cel
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+Dodanie podgladu na zywo (mockup strony A4) w panelu `/admin/guide-templates`, ktory pokazuje jak bedzie wygladal wygenerowany przewodnik PDF — analogicznie do podgladu etykiet w `LabelConfigurator`.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Jak to bedzie dzialac
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+Pod tabela sekcji (lub obok niej) pojawi sie karta "Podglad przewodnika" renderujaca miniature strony A4 z:
+- Naglowkiem (numer zamowienia, seria, data) — tak jak w prawdziwym PDF
+- Kolejnymi sekcjami jako mini-tabelkami z naglowkami kolumn i przykladowym wierszem danych
+- Sekcje warunkowe oznaczone wizualnie (np. przerywanym obramowaniem + etykieta "warunkowa")
+- Sekcje wylaczone (enabled=false) ukryte
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+Dane przykladowe beda pobierane z bazy (pierwszy rekord z kazdej tabeli komponentow) — identycznie jak w `LabelConfigurator` (`useExampleData`). Pola bedzie resolvowal uproszczony mapper z `AVAILABLE_FIELDS` + przykladowe wartosci.
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+### Szczegoly techniczne
 
-### Krok 4: App.tsx — routing
+**Nowy komponent: `src/pages/AdminPanel/GuidePreview.tsx`**
+- Props: `sections: GuideSection[]` (przefiltrowane po aktywnej zakladce)
+- Wewnatrz: `useExampleData()` (ten sam hook lub zblizony) do pobrania przykladowych wartosci
+- Mapowanie pol: `resolveExampleValue(field: string, exampleData): string` — uproszczona wersja `resolveField` z guideGenerator, ale operujaca na surowych danych z bazy zamiast DecodedSKU
+- Renderowanie: skalowana strona A4 (proporcje 210:297) w kontenerze np. 500px szerokosci
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+```text
++---------------------------------------+
+| NUMER ZAMÓWIENIA: 12345    [S1 - ...]  |
+| Data złożenia zamówienia: 2026-03-10   |
+| SKU: EXAMPLE-SKU                       |
+|                                        |
+| +-----------------------------------+ |
+| | Siedzisko | Stelaż | Pianka       | |  <-- sekcja 1
+| | S01 (A)   | drewno | T25 40x...   | |
+| +-----------------------------------+ |
+|                                        |
+| +-----------------------------------+ |
+| | Oparcie   | Stelaż | Góra         | |  <-- sekcja 2
+| | O01A (B)  | metal  | zaokr.       | |
+| +-----------------------------------+ |
+|                                        |
+| +- - - - - - - - - - - - - - - - - + |
+| | [warunkowa] Poduszka | Wyk.       | |  <-- sekcja warunkowa
+| | PD01       | A (Zwykły)           | |
+| +- - - - - - - - - - - - - - - - - + |
++---------------------------------------+
+```
 
-### Krok 5: skuDecoder.ts — uprość seat types
+### Integracja w GuideTemplates.tsx
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+- Pod `<Tabs>` dodac `<GuidePreview sections={filtered} />`
+- Podglad aktualizuje sie automatycznie przy zmianie zakladki i po zapisie sekcji
+- Mozna tez podswietlic sekcje ktora jest aktualnie edytowana
 
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+### Pliki
 
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+- **Nowy**: `src/pages/AdminPanel/GuidePreview.tsx`
+- **Edycja**: `src/pages/AdminPanel/GuideTemplates.tsx` — import + dodanie `<GuidePreview />`
 
