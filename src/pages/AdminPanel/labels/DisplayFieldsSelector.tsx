@@ -46,7 +46,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   ],
   chest: [
     { value: "chest.code", label: "Kod skrzyni", source: "chests (wspólne)" },
-    { value: "chest.name", label: "Nazwa", source: "chests (wspólne)" },
+    { value: "chest.name", label: "Skrzynia", source: "chests (wspólne)" },
     { value: "chest.legHeight", label: "Wys. nóżki", source: "chests.leg_height_cm" },
     { value: "chest.legCount", label: "Ilość nóżek", source: "chests.leg_count" },
     { value: "automat.code", label: "Kod automatu", source: "automats (wspólne)" },
