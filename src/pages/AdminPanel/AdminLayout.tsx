@@ -4,26 +4,11 @@ import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-
-const sharedLinks = [
-  { to: "/admin/users", label: "👥 Użytkownicy" },
-  { to: "/admin/fabrics", label: "Tkaniny" },
-  { to: "/admin/finishes", label: "Wykończenia" },
-  { to: "/admin/chests", label: "Skrzynie" },
-  { to: "/admin/legs", label: "Nóżki" },
-  { to: "/admin/automats", label: "Automaty" },
-  { to: "/admin/pillows", label: "Poduszki" },
-  { to: "/admin/jaskis", label: "Jaśki" },
-  { to: "/admin/waleks", label: "Wałki" },
-];
-
-const skuConfigLinks = [
-  { to: "/admin/parse-rules", label: "Reguły parsowania" },
-  { to: "/admin/side-exceptions", label: "Wyjątki boczków" },
-];
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AdminLayout() {
   const location = useLocation();
+  const { isAdmin, permissions } = useAuth();
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() => localStorage.getItem("admin_series_id") || "");
 
   const { data: seriesList = [] } = useQuery({
@@ -47,7 +32,44 @@ export default function AdminLayout() {
 
   const firstSeriesCode = seriesList.length > 0 ? seriesList[0].code : "S1";
 
-  if (location.pathname === "/admin") return <Navigate to={`/admin/spec/${firstSeriesCode}`} replace />;
+  // Redirect /admin to appropriate page based on permissions
+  if (location.pathname === "/admin") {
+    if (isAdmin) return <Navigate to={`/admin/spec/${firstSeriesCode}`} replace />;
+    if (permissions.can_view_cheatsheets) return <Navigate to="/admin/cheatsheets" replace />;
+    if (permissions.can_view_specs) return <Navigate to={`/admin/spec/${firstSeriesCode}`} replace />;
+    return <Navigate to="/" replace />;
+  }
+
+  const canViewSpecs = isAdmin || permissions.can_view_specs;
+  const canViewCheatsheets = isAdmin || permissions.can_view_cheatsheets;
+
+  const sharedLinks = isAdmin
+    ? [
+        { to: "/admin/users", label: "👥 Użytkownicy" },
+        { to: "/admin/fabrics", label: "Tkaniny" },
+        { to: "/admin/finishes", label: "Wykończenia" },
+        { to: "/admin/chests", label: "Skrzynie" },
+        { to: "/admin/legs", label: "Nóżki" },
+        { to: "/admin/automats", label: "Automaty" },
+        { to: "/admin/pillows", label: "Poduszki" },
+        { to: "/admin/jaskis", label: "Jaśki" },
+        { to: "/admin/waleks", label: "Wałki" },
+      ]
+    : [];
+
+  const skuConfigLinks = isAdmin
+    ? [
+        { to: "/admin/parse-rules", label: "Reguły parsowania" },
+        { to: "/admin/side-exceptions", label: "Wyjątki boczków" },
+      ]
+    : [];
+
+  const specLinks = canViewSpecs
+    ? seriesList.map(s => ({
+        to: `/admin/spec/${s.code}`,
+        label: `${s.code} - ${s.name}`,
+      }))
+    : [];
 
   const NavItem = ({ to, label, useStartsWith }: { to: string; label: string; useStartsWith?: boolean }) => {
     const active = useStartsWith ? location.pathname.startsWith(to) : location.pathname === to;
@@ -64,41 +86,49 @@ export default function AdminLayout() {
     );
   };
 
-  const specLinks = seriesList.map(s => ({
-    to: `/admin/spec/${s.code}`,
-    label: `${s.code} - ${s.name}`,
-  }));
-
   return (
     <div className="flex min-h-[calc(100vh-120px)]">
       <aside className="w-[280px] shrink-0 border-r bg-muted/30 p-4 space-y-4 sticky top-0 self-start">
-        <h2 className="text-lg font-bold px-3">⚙️ Panel Administracyjny</h2>
+        <h2 className="text-lg font-bold px-3">
+          {isAdmin ? "⚙️ Panel Administracyjny" : "📋 Panel"}
+        </h2>
 
-        <div className="space-y-0.5">
-          <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Wspólne</p>
-          {sharedLinks.map((l) => <NavItem key={l.to} {...l} />)}
-        </div>
+        {sharedLinks.length > 0 && (
+          <>
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Wspólne</p>
+              {sharedLinks.map((l) => <NavItem key={l.to} {...l} />)}
+            </div>
+            <Separator />
+          </>
+        )}
 
-        <Separator />
+        {specLinks.length > 0 && (
+          <>
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Specyfikacje produktów</p>
+              {specLinks.map((l) => <NavItem key={l.to} {...l} useStartsWith />)}
+            </div>
+            <Separator />
+          </>
+        )}
 
-        <div className="space-y-0.5">
-          <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Specyfikacje produktów</p>
-          {specLinks.map((l) => <NavItem key={l.to} {...l} useStartsWith />)}
-        </div>
+        {skuConfigLinks.length > 0 && (
+          <>
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Konfiguracja SKU</p>
+              {skuConfigLinks.map((l) => <NavItem key={l.to} {...l} />)}
+            </div>
+            <Separator />
+          </>
+        )}
 
-        <Separator />
-
-        <div className="space-y-0.5">
-          <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Konfiguracja SKU</p>
-          {skuConfigLinks.map((l) => <NavItem key={l.to} {...l} />)}
-        </div>
-
-        <Separator />
-
-        <div className="space-y-0.5">
-          <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Ściągawki</p>
-          <NavItem to="/admin/cheatsheets" label="Generator ściągawek" />
-        </div>
+        {canViewCheatsheets && (
+          <div className="space-y-0.5">
+            <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Ściągawki</p>
+            <NavItem to="/admin/cheatsheets" label="Generator ściągawek" />
+          </div>
+        )}
       </aside>
 
       <main className="flex-1 p-6">
