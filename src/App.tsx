@@ -49,27 +49,29 @@ const App = () => (
                 <Route path="/" element={<NewOrderPage />} />
                 <Route path="/order/:id" element={<OrderDetailsPage />} />
                 <Route path="/history" element={<OrderHistoryPage />} />
-                <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
-                  <Route index element={<Series />} />
-                  <Route path="series" element={<Series />} />
-                  <Route path="fabrics" element={<Fabrics />} />
-                  <Route path="chests" element={<Chests />} />
-                  <Route path="automats" element={<Automats />} />
-                  <Route path="pillows" element={<Pillows />} />
-                  <Route path="jaskis" element={<Jaskis />} />
-                  <Route path="waleks" element={<Waleks />} />
-                  <Route path="finishes" element={<Finishes />} />
-                  <Route path="seats-sofa" element={<SeatsSofa />} />
-                  <Route path="seats-pufa" element={<SeatsPufa />} />
-                  <Route path="backrests" element={<Backrests />} />
-                  <Route path="sides" element={<Sides />} />
-                  <Route path="legs" element={<Legs />} />
-                  <Route path="extras" element={<Extras />} />
-                  <Route path="users" element={<Users />} />
-                  <Route path="parse-rules" element={<ParseRules />} />
-                  <Route path="side-exceptions" element={<SideExceptions />} />
-                  <Route path="spec/:seriesCode" element={<SeriesSpecification />} />
-                  <Route path="cheatsheets" element={<Cheatsheets />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  {/* Admin-only routes */}
+                  <Route index element={<ProtectedRoute adminOnly><Series /></ProtectedRoute>} />
+                  <Route path="series" element={<ProtectedRoute adminOnly><Series /></ProtectedRoute>} />
+                  <Route path="fabrics" element={<ProtectedRoute adminOnly><Fabrics /></ProtectedRoute>} />
+                  <Route path="chests" element={<ProtectedRoute adminOnly><Chests /></ProtectedRoute>} />
+                  <Route path="automats" element={<ProtectedRoute adminOnly><Automats /></ProtectedRoute>} />
+                  <Route path="pillows" element={<ProtectedRoute adminOnly><Pillows /></ProtectedRoute>} />
+                  <Route path="jaskis" element={<ProtectedRoute adminOnly><Jaskis /></ProtectedRoute>} />
+                  <Route path="waleks" element={<ProtectedRoute adminOnly><Waleks /></ProtectedRoute>} />
+                  <Route path="finishes" element={<ProtectedRoute adminOnly><Finishes /></ProtectedRoute>} />
+                  <Route path="seats-sofa" element={<ProtectedRoute adminOnly><SeatsSofa /></ProtectedRoute>} />
+                  <Route path="seats-pufa" element={<ProtectedRoute adminOnly><SeatsPufa /></ProtectedRoute>} />
+                  <Route path="backrests" element={<ProtectedRoute adminOnly><Backrests /></ProtectedRoute>} />
+                  <Route path="sides" element={<ProtectedRoute adminOnly><Sides /></ProtectedRoute>} />
+                  <Route path="legs" element={<ProtectedRoute adminOnly><Legs /></ProtectedRoute>} />
+                  <Route path="extras" element={<ProtectedRoute adminOnly><Extras /></ProtectedRoute>} />
+                  <Route path="users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
+                  <Route path="parse-rules" element={<ProtectedRoute adminOnly><ParseRules /></ProtectedRoute>} />
+                  <Route path="side-exceptions" element={<ProtectedRoute adminOnly><SideExceptions /></ProtectedRoute>} />
+                  {/* Permission-based routes */}
+                  <Route path="spec/:seriesCode" element={<ProtectedRoute requiredPermission="can_view_specs"><SeriesSpecification /></ProtectedRoute>} />
+                  <Route path="cheatsheets" element={<ProtectedRoute requiredPermission="can_view_cheatsheets"><Cheatsheets /></ProtectedRoute>} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

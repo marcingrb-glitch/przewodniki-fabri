@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 const Header = () => {
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, isAdmin, permissions, signOut } = useAuth();
+  const hasAnyPermission = isAdmin || permissions.can_view_cheatsheets || permissions.can_view_specs;
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -43,14 +44,14 @@ const Header = () => {
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Historia</span>
           </NavLink>
-          {isAdmin && (
+          {hasAnyPermission && (
             <NavLink
               to="/admin"
               className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/80 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
               activeClassName="bg-primary-foreground/15 text-primary-foreground"
             >
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Panel Admin</span>
+              <span className="hidden sm:inline">{isAdmin ? "Panel Admin" : "Panel"}</span>
             </NavLink>
           )}
 

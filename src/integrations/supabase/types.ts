@@ -954,6 +954,33 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          can_view_cheatsheets: boolean
+          can_view_specs: boolean
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_view_cheatsheets?: boolean
+          can_view_specs?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_view_cheatsheets?: boolean
+          can_view_specs?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,12 @@ interface UserProfile {
   created_at: string | null;
 }
 
+interface UserPerm {
+  user_id: string;
+  can_view_cheatsheets: boolean;
+  can_view_specs: boolean;
+}
+
 export default function Users() {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
@@ -51,6 +58,19 @@ export default function Users() {
     },
   });
 
+  const { data: permissions = [] } = useQuery({
+    queryKey: ["admin-user-permissions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_permissions")
+        .select("user_id, can_view_cheatsheets, can_view_specs");
+      if (error) throw error;
+      return data as UserPerm[];
+    },
+  });
+
+  const permMap = new Map(permissions.map(p => [p.user_id, p]));
+
   const toggleApproval = useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
       const { error } = await supabase
@@ -62,6 +82,23 @@ export default function Users() {
     onSuccess: (_, { approved }) => {
       toast.success(approved ? "✅ Użytkownik zaakceptowany" : "❌ Dostęp cofnięty");
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (err) => {
+      toast.error(`❌ ${getUserFriendlyError(err)}`);
+    },
+  });
+
+  const updatePermission = useMutation({
+    mutationFn: async ({ userId, field, value }: { userId: string; field: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("user_permissions")
+        .update({ [field]: value, updated_at: new Date().toISOString() })
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-user-permissions"] });
+      toast.success("✅ Uprawnienia zaktualizowane");
     },
     onError: (err) => {
       toast.error(`❌ ${getUserFriendlyError(err)}`);
@@ -80,6 +117,7 @@ export default function Users() {
     onSuccess: () => {
       toast.success("✅ Użytkownik utworzony i zaakceptowany");
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-permissions"] });
       setAddOpen(false);
       setNewEmail("");
       setNewPassword("");
@@ -123,7 +161,9 @@ export default function Users() {
           </h2>
           <UserTable
             users={pending}
+            permMap={permMap}
             onToggle={(id, approved) => toggleApproval.mutate({ id, approved })}
+            onPermChange={(userId, field, value) => updatePermission.mutate({ userId, field, value })}
             isPending={toggleApproval.isPending}
           />
         </div>
@@ -136,7 +176,9 @@ export default function Users() {
         ) : (
           <UserTable
             users={approved}
+            permMap={permMap}
             onToggle={(id, approved) => toggleApproval.mutate({ id, approved })}
+            onPermChange={(userId, field, value) => updatePermission.mutate({ userId, field, value })}
             isPending={toggleApproval.isPending}
           />
         )}
@@ -198,11 +240,15 @@ export default function Users() {
 
 function UserTable({
   users,
+  permMap,
   onToggle,
+  onPermChange,
   isPending,
 }: {
   users: UserProfile[];
+  permMap: Map<string, UserPerm>;
   onToggle: (id: string, approved: boolean) => void;
+  onPermChange: (userId: string, field: string, value: boolean) => void;
   isPending: boolean;
 }) {
   return (
@@ -213,51 +259,72 @@ function UserTable({
             <TableHead>Email</TableHead>
             <TableHead>Imię i nazwisko</TableHead>
             <TableHead>Data rejestracji</TableHead>
+            <TableHead className="text-center">Ściągawki</TableHead>
+            <TableHead className="text-center">Specyfikacje</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Akcja</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.email}</TableCell>
-              <TableCell>{user.full_name || "—"}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">
-                {user.created_at
-                  ? new Date(user.created_at).toLocaleDateString("pl-PL")
-                  : "—"}
-              </TableCell>
-              <TableCell>
-                {user.is_approved ? (
-                  <Badge variant="default">Aktywny</Badge>
-                ) : (
-                  <Badge variant="secondary">Oczekuje</Badge>
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                {user.is_approved ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isPending}
-                    onClick={() => onToggle(user.id, false)}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Cofnij
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => onToggle(user.id, true)}
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Akceptuj
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {users.map((user) => {
+            const perm = permMap.get(user.id);
+            return (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.email}</TableCell>
+                <TableCell>{user.full_name || "—"}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {user.created_at
+                    ? new Date(user.created_at).toLocaleDateString("pl-PL")
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Checkbox
+                    checked={perm?.can_view_cheatsheets ?? false}
+                    onCheckedChange={(checked) =>
+                      onPermChange(user.id, "can_view_cheatsheets", !!checked)
+                    }
+                  />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Checkbox
+                    checked={perm?.can_view_specs ?? false}
+                    onCheckedChange={(checked) =>
+                      onPermChange(user.id, "can_view_specs", !!checked)
+                    }
+                  />
+                </TableCell>
+                <TableCell>
+                  {user.is_approved ? (
+                    <Badge variant="default">Aktywny</Badge>
+                  ) : (
+                    <Badge variant="secondary">Oczekuje</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {user.is_approved ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isPending}
+                      onClick={() => onToggle(user.id, false)}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cofnij
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => onToggle(user.id, true)}
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Akceptuj
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
