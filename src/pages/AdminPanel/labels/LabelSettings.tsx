@@ -255,6 +255,7 @@ export default function LabelSettings() {
               />
               <p className="text-[10px] text-muted-foreground">
                 Dostępne zmienne: <code className="bg-muted px-1 rounded">{"{TYPE}"}</code>{" "}
+                <code className="bg-muted px-1 rounded">{"{LABEL}"}</code>{" "}
                 <code className="bg-muted px-1 rounded">{"{ORDER}"}</code>
               </p>
             </div>
