@@ -1,22 +1,28 @@
 
 
-## Plan: Dodaj pianki do oparcia OP68 (Ravenna / Barga, sprężyna 54A) w S2
+## Problem
 
-Na podstawie screenshota — 3 rekordy pianek do dodania do backrest_id `1608086a-0b5e-4c09-a77e-1775478ce845`:
+W `MagazynSheet.tsx` są dwa błędy uniemożliwiające wyświetlanie pianek ze specyfikacji:
 
-| Poz. | Nazwa | Wys. | Szer. | Dł. | Materiał | Ilość |
-|------|-------|------|-------|-----|----------|-------|
-| 5 | OPARCIE 6x68x191 | 6 | 68 | 191 | T-35-38 | 1 |
-| 6 | OPARCIE 3x69x192 | 3 | 69 | 192 | T-35-38 | 1 |
-| 7 | OPARCIE CZAPA 3D 2x64x187 | 2 | 64 | 187 | T-35-38 | 1 |
+1. **Siedziska (linia 100)**: Filtr pianek używa `f.component === "seat"` ale dane w bazie mają `component: "siedzisko"`. Przez to tabela szczegółowych pianek nigdy się nie wyświetla — widać tylko stare pole `seat.foam` ("Pianka ogólna").
 
-### Realizacja
+2. **Oparcia (linia 160)**: Wyświetla tylko `b.foam` (stare pole tekstowe z tabeli `backrests`) — w ogóle nie pobiera danych z `product_foams` dla oparć (component = `"oparcie"`). KierownikSheet robi to poprawnie przez `formatFoamsForCode`, ale MagazynSheet nie.
 
-Jedna migracja SQL — INSERT 3 rekordów do `product_foams` z:
-- `series_id` = ID serii S2
-- `seat_code` = `'OP68'`
-- `component` = `'oparcie'`
-- `backrest_id` = `'1608086a-0b5e-4c09-a77e-1775478ce845'`
+## Rozwiązanie
 
-Bez zmian w kodzie — dane pojawią się automatycznie w karcie OP68 Ravenna/Barga.
+### `MagazynSheet.tsx`:
+
+1. **Linia 100** — zmień `"seat"` na `"siedzisko"`:
+```typescript
+const seatFoams = foams.filter(f => f.seat_code === seat.code && f.component === "siedzisko");
+```
+
+2. **Sekcja Oparcia (linie 141-168)** — dodaj pianki z `product_foams` analogicznie jak w siedziskach:
+   - Dla każdego oparcia pobierz pianki: `foams.filter(f => f.seat_code === b.code && f.component === "oparcie" && (!f.backrest_id || f.backrest_id === b.id))`
+   - Zamień tabelę na karty z widokiem szczegółowych pianek (tak jak siedziska)
+   - Dodaj fallback na `b.foam` gdy brak pianek w `product_foams`
+   - Uwzględnij model_name i spring_type oparcia w nagłówku karty
+
+### Plik do edycji:
+- `src/pages/AdminPanel/cheatsheets/MagazynSheet.tsx`
 
