@@ -1,38 +1,38 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Ogranicz wybór modeli w wariantach szycia do modeli z danych technicznych
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+`ModelMultiSelect` w sekcji wariantów szycia pokazuje **wszystkie modele z serii** (`availableModels`), zamiast tylko tych przypisanych do danego oparcia w polu `model_name`. Użytkownik może przez pomyłkę przypisać model, który nie jest powiązany z tym wariantem oparcia.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Rozwiązanie
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+W `renderSewingSection` przekazać do `ModelMultiSelect` ograniczoną listę modeli — tylko te z `parseModels(b.model_name)` zamiast globalnych `availableModels`.
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+### Zmiana w `SeriesBackrests.tsx`
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+1. **`ModelMultiSelect`** — dodać opcjonalny prop `allowedModels` który, jeśli podany, zastępuje `availableModels`:
 
-### Krok 4: App.tsx — routing
+```typescript
+const ModelMultiSelect = ({ selected, onChange, label = "Modele", allowedModels }: { 
+  selected: string[]; onChange: (models: string[]) => void; label?: string; allowedModels?: string[] 
+}) => {
+  const modelsToShow = allowedModels ?? availableModels;
+  // ... reszta bez zmian, użyć modelsToShow zamiast availableModels
+```
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+2. **W `renderSewingSection`** (linia 269) — przekazać modele karty:
 
-### Krok 5: skuDecoder.ts — uprość seat types
+```typescript
+<ModelMultiSelect
+  selected={v.models}
+  onChange={(models) => updateSewingVariant(v.id, "models", models)}
+  label="Modele"
+  allowedModels={parseModels(b.model_name)}
+/>
+```
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Plik do edycji
+- `src/pages/AdminPanel/spec/SeriesBackrests.tsx`
 
