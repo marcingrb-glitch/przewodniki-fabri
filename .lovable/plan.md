@@ -1,34 +1,38 @@
 
 
-## Plan: Domyślne sekcje dekodowania (seed defaults)
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-Dodanie przycisku "Wstaw domyślne sekcje", który automatycznie utworzy sekcje odpowiadające wcześniejszemu hardcoded'owanemu układowi dekodowania (Tkanina, Siedzisko-Stolarka, Siedzisko-Pianki, Oparcie, Boczek, Skrzynia+Automat, Nóżki, Dodatki + warunkowe: Poduszka, Jaśki, Wałek, Pufa, Fotel).
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiana w `src/pages/AdminPanel/DecodingTemplates.tsx`
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-Dodać mutację `seedDefaultsMutation` wstawiającą ~12 sekcji z poprawnymi kolumnami do `guide_sections` z `product_type = "decoding"`. Przycisk widoczny tylko gdy `filtered.length === 0` (brak sekcji). Domyślne sekcje:
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-1. **Tkanina** — `fabric.code`, `fabric.name`, `fabric.color`, `fabric.group` (wymaga dodania tych pól do fieldResolver)
-2. **Siedzisko — Stolarka** — `seat.code`, `seat.type`, `seat.frame`, `seat.frameModification`, `seat.springType`, `seat.finish_name`
-3. **Siedzisko — Pianki** — `seat.foams_summary`, `seat.front`, `seat.midStrip_yn`
-4. **Oparcie** — `backrest.code`, `backrest.frame`, `backrest.foams_summary`, `backrest.top`, `backrest.springType`, `backrest.finish_name`
-5. **Boczek** — `side.code`, `side.frame`, `side.finish_name`
-6. **Skrzynia + Automat** — `chest.name`, `automat.code_name`
-7. **Nóżki** — `legs.code_color`, `legHeights.sofa_chest_info`, `legHeights.sofa_seat_info`
-8. **Poduszka** (warunkowa: pillow) — `pillow.code`, `pillow.name`, `pillow.finish_info`
-9. **Jaśki** (warunkowa: jaski) — `jaski.code`, `jaski.name`, `jaski.finish_info`
-10. **Wałek** (warunkowa: walek) — `walek.code`, `walek.name`, `walek.finish_info`
-11. **Pufa** (warunkowa: extras_pufa_fotel) — `pufaSeat.frontBack`, `pufaSeat.sides`, `pufaSeat.foam`, `pufaSeat.box`, `pufaLegs.code`, `pufaLegs.height_info`, `pufaLegs.count_info`
-12. **Fotel** (warunkowa: fotelLegs) — `fotelLegs.code`, `fotelLegs.height_info`, `fotelLegs.count_info`
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### Zmiana w `src/pages/AdminPanel/fieldResolver.ts`
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Dodać brakujące pola tkaniny do `AVAILABLE_FIELDS`:
-- `fabric.code` (Kod), `fabric.name` (Nazwa), `fabric.color` (Kolor), `fabric.group` (Grupa) — grupa `fabric`
-- Dodać grupę `fabric` ("Tkanina") do `FIELD_GROUPS`
-- Dodać mapowanie w `resolveExampleValue`
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Pliki do edycji:
-- `src/pages/AdminPanel/DecodingTemplates.tsx` — przycisk + mutacja seed
-- `src/pages/AdminPanel/fieldResolver.ts` — pola tkaniny
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
