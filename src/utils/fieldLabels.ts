@@ -47,9 +47,6 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "legHeights.sofa_chest.leg": "Typ nogi (skrzynia)",
   "legHeights.sofa_chest.height": "Wysokość nogi (skrzynia)",
   "legHeights.sofa_chest.count": "Ilość nóg (skrzynia)",
-  "leg.code": "Noga",
-  "leg.height": "Wysokość nogi",
-  "leg.count": "Ilość nóg",
 
   // Legs (sofa seat)
   "legHeights.sofa_seat.leg": "Typ nogi (siedzisko)",
