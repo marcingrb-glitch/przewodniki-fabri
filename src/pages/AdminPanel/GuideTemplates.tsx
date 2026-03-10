@@ -127,6 +127,7 @@ const emptySection = (productType: string): Omit<GuideSection, "id"> => ({
 
 export default function GuideTemplates() {
   const [activeTab, setActiveTab] = useState("sofa");
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>("__global__");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<GuideSection | null>(null);
   const [form, setForm] = useState<Omit<GuideSection, "id">>(emptySection("sofa"));
