@@ -1,38 +1,24 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Nagłówek etykiety: `{TYPE} | {LABEL} | {ORDER}`
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Użytkownik chce, żeby nagłówek etykiety wyglądał np.: **SOFA | Siedzisko | 12345** — typ pierwszy, potem nazwa szablonu, potem sam numer zamówienia (bez "Zam:").
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Zmiany w `src/utils/pdfGenerators/labels.ts`
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+1. **`buildLabelLines`** — dodać `.replace("{LABEL}", tpl.label_name)` do linii generującej header (linia ~146-148)
+2. **Domyślny `headerTemplate`** w `fetchLabelSettings` (linia ~113) — zmienić z `"{TYPE} | Zam: {ORDER}"` na `"{TYPE} | {LABEL} | {ORDER}"`
+3. **Fallback header** (~linia 184) — analogicznie dodać `.replace("{LABEL}", ...)` z pustym stringiem
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+### Zmiany w `src/pages/AdminPanel/labels/LabelSettings.tsx`
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+4. **Opis dostępnych zmiennych** — dodać `{LABEL}` do opisu pod polem wzorca nagłówka
+5. **Preview** — dodać `.replace("{LABEL}", "Siedzisko")` do podglądu
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+### Efekt
 
-### Krok 4: App.tsx — routing
+Na etykiecie nóżek skrzyni: **SOFA | Noga skrzynia | 12345**
+Na etykiecie siedziska: **SOFA | Siedzisko | 12345**
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+2 pliki, ~6 zmian.
 
