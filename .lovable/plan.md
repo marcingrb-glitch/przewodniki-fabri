@@ -1,38 +1,23 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Zawijanie kolumn do kolejnych wierszy
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem
+Gdy sekcja ma za dużo kolumn, tabela wychodzi poza stronę A4 (widoczne na screenshocie — kolumna "Front" ucięta).
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Rozwiązanie
+Obliczać maksymalną liczbę kolumn na wiersz na podstawie dostępnej szerokości (A4 = 180mm użyteczne). Przy czcionce 10pt minimalna czytelna kolumna to ~30mm, więc max ~6 kolumn. Jeśli sekcja ma więcej — dzielimy na chunki i renderujemy jako kolejne tabele (bez powtarzania nazwy sekcji).
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Zmiany
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+**1. `src/utils/pdfGenerators/guideGenerator.ts`**
+- W pętli po sekcjach: jeśli `cols.length > MAX_COLS` (np. 5), podzielić na chunki po MAX_COLS
+- Każdy chunk = osobne wywołanie `addTable` z odpowiednimi nagłówkami i wartościami
+- Między chunkami mniejszy odstęp (np. 2mm zamiast 8mm)
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**2. `src/utils/pdfHelpers.ts`**
+- Dodać opcjonalny parametr `spacing` do `addTable` żeby kontrolować odstęp po tabeli (domyślnie 8, ale dla kontynuacji chunka 2mm)
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+**3. `src/pages/AdminPanel/GuidePreview.tsx`**
+- Analogiczna logika chunkowania w podglądzie — jeśli kolumn > MAX_COLS, renderować wiele mini-tabel pod sobą
 
