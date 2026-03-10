@@ -6,10 +6,10 @@
 export const SHORT_FIELD_LABELS: Record<string, string> = {
   // Seat
   "seat.code": "Siedzisko",
-  "seat.type": "Typ siedziska",
-  "seat.frame": "Rama siedziska",
-  "seat.foamsList": "Pianki siedziska",
-  "seat.front": "Front siedziska",
+  "seat.type": "Typ",
+  "seat.frame": "Stelaż",
+  "seat.foamsList": "Pianki",
+  "seat.front": "Front",
   "seat.finish": "Wykończenie (kod)",
   "seat.finishName": "Wykończenie (nazwa)",
   "seat.midStrip": "Środkowy pasek",
@@ -17,31 +17,31 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Automat
   "automat.code": "Automat",
-  "automat.name": "Nazwa automatu",
-  "automat.type": "Typ automatu",
+  "automat.name": "Nazwa",
+  "automat.type": "Typ",
 
   // Side
   "side.code": "Boczek",
-  "side.name": "Nazwa boczka",
-  "side.frame": "Rama boczka",
+  "side.name": "Nazwa",
+  "side.frame": "Stelaż",
   "side.finish": "Wykończenie (kod)",
   "side.finishName": "Wykończenie (nazwa)",
 
   // Backrest
   "backrest.code": "Oparcie",
-  "backrest.height": "Wysokość oparcia",
-  "backrest.frame": "Rama oparcia",
-  "backrest.foamsList": "Pianki oparcia",
-  "backrest.top": "Góra oparcia",
+  "backrest.height": "Wysokość",
+  "backrest.frame": "Stelaż",
+  "backrest.foamsList": "Pianki",
+  "backrest.top": "Góra",
   "backrest.finish": "Wykończenie (kod)",
   "backrest.finishName": "Wykończenie (nazwa)",
   "backrest.springType": "Sprężyna",
 
   // Chest
   "chest.code": "Skrzynia",
-  "chest.name": "Nazwa skrzyni",
-  "chest.legHeight": "Wys. nóżki skrzyni",
-  "chest.legCount": "Ilość nóżek skrzyni",
+  "chest.name": "Nazwa",
+  "chest.legHeight": "Wys. nóżki",
+  "chest.legCount": "Ilość nóżek",
 
   // Legs (sofa chest)
   "legHeights.sofa_chest.leg": "Typ nogi (skrzynia)",
@@ -67,23 +67,23 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "fotelLegs.count": "Ilość nóg (fotel)",
 
   // Pufa seat
-  "pufaSeat.frontBack": "Przód/Tył pufy",
-  "pufaSeat.sides": "Boki pufy",
-  "pufaSeat.foam": "Pianka pufy",
-  "pufaSeat.box": "Skrzynka pufy",
+  "pufaSeat.frontBack": "Przód/Tył",
+  "pufaSeat.sides": "Boki",
+  "pufaSeat.foam": "Pianka",
+  "pufaSeat.box": "Skrzynka",
 
   // Pillow
   "pillow.code": "Poduszka",
-  "pillow.name": "Nazwa poduszki",
-  "pillow.finish": "Wykończenie poduszki (kod)",
-  "pillow.finishName": "Wykończenie poduszki (nazwa)",
+  "pillow.name": "Nazwa",
+  "pillow.finish": "Wykończenie (kod)",
+  "pillow.finishName": "Wykończenie (nazwa)",
 
   // Legs (common)
   "legs.code": "Noga",
-  "legs.name": "Nazwa nogi",
-  "legs.material": "Materiał nogi",
-  "legs.color": "Kolor nogi (kod)",
-  "legs.colorName": "Kolor nogi (nazwa)",
+  "legs.name": "Nazwa",
+  "legs.material": "Materiał",
+  "legs.color": "Kolor (kod)",
+  "legs.colorName": "Kolor (nazwa)",
 };
 
 /** Format a field value with its label prefix */
