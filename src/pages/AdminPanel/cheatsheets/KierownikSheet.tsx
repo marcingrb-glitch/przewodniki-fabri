@@ -212,6 +212,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
                 <th className="border border-border px-1 py-1 text-left">Mod.</th>
                 <th className="border border-border px-1 py-1 text-left">Sprężyna</th>
                 <th className="border border-border px-1 py-1 text-left">Pianka</th>
+                <th className="border border-border px-1 py-1 text-left">Pasek</th>
                 <th className="border border-border px-1 py-1 text-left">Wykoń.</th>
               </tr>
             </thead>

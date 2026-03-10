@@ -106,6 +106,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
                     <div><span className="text-muted-foreground">Modyfikacja:</span> {seat.frame_modification ?? "brak"}</div>
                     <div><span className="text-muted-foreground">Pianka (ogólna):</span> {seat.foam ?? "—"}</div>
                     <div><span className="text-muted-foreground">Front:</span> {seat.front ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Pasek środkowy:</span> <strong>{seat.center_strip ? "TAK ✅" : "NIE"}</strong></div>
                   </div>
                   {seatFoams.length > 0 && (
                     <table className="w-full text-xs mt-2 border-collapse">
