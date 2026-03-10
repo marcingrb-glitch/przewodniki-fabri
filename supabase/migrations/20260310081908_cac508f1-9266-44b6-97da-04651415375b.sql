@@ -1,0 +1,1 @@
+ALTER TABLE public.backrests DROP CONSTRAINT IF EXISTS backrests_series_id_code_key;

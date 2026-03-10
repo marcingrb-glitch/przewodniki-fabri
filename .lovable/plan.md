@@ -1,42 +1,38 @@
 
 
-## Plan: Rozdzielenie oparcia OP68 na warianty + powiązanie pianek z backrest_id
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Zmiany
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-**1. Migracja SQL**
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-```sql
--- Dodaj model_name do backrests
-ALTER TABLE public.backrests ADD COLUMN IF NOT EXISTS model_name TEXT;
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
--- Dodaj backrest_id do product_foams (referencja do konkretnego rekordu oparcia)
-ALTER TABLE public.product_foams ADD COLUMN IF NOT EXISTS backrest_id UUID REFERENCES public.backrests(id) ON DELETE SET NULL;
-```
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-**2. Aktualizacja danych (INSERT tool)**
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-- UPDATE istniejącego OP68 w S2: ustaw `model_name = 'Modena / Sienna / Porto'`, `spring_type = 'B'`
-- INSERT drugiego OP68 w S2: `model_name = 'Ravenna / Barga'`, `spring_type = '54A'`, te same `height_cm`, `frame`, `allowed_finishes`, `default_finish`
-- UPDATE istniejących pianek OP68 S2: ustaw `backrest_id` na ID pierwszego wariantu (Modena/Sienna/Porto)
-- UPDATE sewing_variants: przypisz modele do odpowiednich wariantów
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-**3. SeriesBackrests.tsx — zmiany w widoku**
+### Krok 4: App.tsx — routing
 
-- Dodaj `model_name` do `backrestFields` w formularzu
-- W `renderBackrestCard`: wyświetlaj `model_name` w tytule karty obok kodu (np. "OP68 — Modena / Sienna / Porto")
-- Warianty szycia wyświetlaj WEWNĄTRZ karty oparcia — powiązanie przez `models` pokrywające się z `model_name` karty. Wyświetlaj jako badge: "Szycie: Przewinięte"
-- Pianki filtruj po `backrest_id` zamiast `seat_code` — każda karta widzi tylko swoje pianki
-- Przy dodawaniu pianki: ustaw `backrest_id` na ID bieżącej karty (oprócz `seat_code` i `series_id`)
-- Grupuj karty po kodzie, potem po `model_name` — karty z tym samym kodem ale różnym `model_name` wyświetlają się jako osobne karty
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-### Pliki do edycji
-- **Migracja SQL**: `ALTER TABLE` — 2 kolumny
-- **Dane** (insert tool): UPDATE + INSERT rekordów
-- **`SeriesBackrests.tsx`**: model_name w tytule, pianki filtrowane po backrest_id, warianty szycia jako badge wewnątrz karty
+### Krok 5: skuDecoder.ts — uprość seat types
 
-### Co się NIE zmienia
-- `skuParser.ts`, `skuDecoder.ts`, `pdfGenerators/*` — bez zmian (zgodnie z instrukcją)
-- `Backrests.tsx` (stary komponent) — nie używany w specyfikacji serii
-- Struktura `sewing_variants` — bez zmian, tylko dane
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
