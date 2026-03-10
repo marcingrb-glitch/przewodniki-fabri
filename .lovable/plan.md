@@ -1,27 +1,38 @@
 
 
-## Skrócenie labelek nóg
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-Usunąć kontekst w nawiasach — szablony etykiet i tak są osobne per komponent.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiany w `fieldLabels.ts` i `DisplayFieldsSelector.tsx`
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-| Klucz | Obecna | Nowa |
-|---|---|---|
-| `legHeights.sofa_chest.leg` | Typ nogi (skrzynia) | Noga |
-| `legHeights.sofa_chest.height` | Wysokość nogi (skrzynia) | H |
-| `legHeights.sofa_chest.count` | Ilość nóg (skrzynia) | Ilość |
-| `legHeights.sofa_seat.leg` | Typ nogi (siedzisko) | Noga |
-| `legHeights.sofa_seat.height` | Wysokość nogi (siedzisko) | H |
-| `legHeights.sofa_seat.count` | Ilość nóg (siedzisko) | Ilość |
-| `pufaLegs.height` | Wysokość nogi (pufa) | H |
-| `pufaLegs.count` | Ilość nóg (pufa) | Ilość |
-| `fotelLegs.height` | Wysokość nogi (fotel) | H |
-| `fotelLegs.count` | Ilość nóg (fotel) | Ilość |
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-### Formatowanie wysokości w `labels.ts` → `resolveField`
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-Gdy ścieżka kończy się na `.height` i wartość jest liczbą → zwracać `{value} cm`. Efekt na etykiecie: `H: 12 cm`.
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-3 pliki, ~15 zmian stringów + 3 linie logiki.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
