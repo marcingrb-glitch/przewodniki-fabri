@@ -1,48 +1,38 @@
 
 
-## Ujednolicenie nazewnictwa: Rama → Stelaż + skrócenie nazw kontekstowych
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Zasada
-Skoro pole jest przypisane do komponentu (siedzisko/boczek/oparcie), na etykiecie wystarczy sama nazwa cechy bez powtarzania komponentu. Nazewnictwo musi być spójne ze specyfikacją.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiany w `src/utils/fieldLabels.ts`
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-| Klucz | Obecna wartość | Nowa wartość |
-|---|---|---|
-| `seat.frame` | Rama siedziska | Stelaż |
-| `side.frame` | Rama boczka | Stelaż |
-| `backrest.frame` | Rama oparcia | Stelaż |
-| `seat.type` | Typ siedziska | Typ |
-| `seat.foamsList` | Pianki siedziska | Pianki |
-| `seat.front` | Front siedziska | Front |
-| `seat.midStrip` | Środkowy pasek | Środkowy pasek |
-| `side.name` | Nazwa boczka | Nazwa |
-| `backrest.height` | Wysokość oparcia | Wysokość |
-| `backrest.foamsList` | Pianki oparcia | Pianki |
-| `backrest.top` | Góra oparcia | Góra |
-| `automat.name` | Nazwa automatu | Nazwa |
-| `automat.type` | Typ automatu | Typ |
-| `chest.name` | Nazwa skrzyni | Nazwa |
-| `chest.legHeight` | Wys. nóżki skrzyni | Wys. nóżki |
-| `chest.legCount` | Ilość nóżek skrzyni | Ilość nóżek |
-| `pillow.name` | Nazwa poduszki | Nazwa |
-| `pillow.finish` | Wykończenie poduszki (kod) | Wykończenie (kod) |
-| `pillow.finishName` | Wykończenie poduszki (nazwa) | Wykończenie (nazwa) |
-| `pufaSeat.frontBack` | Przód/Tył pufy | Przód/Tył |
-| `pufaSeat.sides` | Boki pufy | Boki |
-| `pufaSeat.foam` | Pianka pufy | Pianka |
-| `pufaSeat.box` | Skrzynka pufy | Skrzynka |
-| `legs.name` | Nazwa nogi | Nazwa |
-| `legs.material` | Materiał nogi | Materiał |
-| `legs.color` | Kolor nogi (kod) | Kolor (kod) |
-| `legs.colorName` | Kolor nogi (nazwa) | Kolor (nazwa) |
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Pola z kontekstem w nawiasie (np. "Noga (pufa)", "Typ nogi (skrzynia)") — **zostawiamy** bo te rozróżnienia są potrzebne gdy nogi różnych typów mogą pojawić się na tej samej etykiecie.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### Zmiany w `src/pages/AdminPanel/labels/DisplayFieldsSelector.tsx`
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Analogiczne skrócenie labelek w `COMPONENT_FIELDS` — te same nazwy co wyżej, żeby selektor pól w panelu admina był spójny.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Zakres
-~27 zmian stringów w fieldLabels.ts + ~27 w DisplayFieldsSelector.tsx, 2 pliki.
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
