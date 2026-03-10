@@ -1,5 +1,6 @@
 import { ParsedSKU, DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { formatFoamsSummary } from "@/utils/foamHelpers";
 import { resolveSeriesId } from "@/utils/supabaseQueries";
 import {
   SERIES, FABRICS, SEAT_TYPES as STATIC_SEAT_TYPES, SEATS_SOFA_S1, BACKRESTS, SIDES,
