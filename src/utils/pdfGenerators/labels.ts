@@ -145,6 +145,7 @@ function buildLabelLines(
   const s = seriesLine(decoded, settings.leftZoneFields, productType);
   const header = settings.headerTemplate
     .replace("{TYPE}", productType.toUpperCase())
+    .replace("{LABEL}", tpl.label_name)
     .replace("{ORDER}", decoded.orderNumber || "");
 
   const lineGroups = normalizeDisplayFields(tpl.display_fields);
