@@ -198,6 +198,53 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_sections: {
+        Row: {
+          columns: Json
+          condition_field: string | null
+          created_at: string
+          enabled: boolean
+          id: string
+          is_conditional: boolean
+          product_type: string
+          section_name: string
+          series_id: string | null
+          sort_order: number
+        }
+        Insert: {
+          columns?: Json
+          condition_field?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          is_conditional?: boolean
+          product_type: string
+          section_name: string
+          series_id?: string | null
+          sort_order?: number
+        }
+        Update: {
+          columns?: Json
+          condition_field?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          is_conditional?: boolean
+          product_type?: string
+          section_name?: string
+          series_id?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_sections_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jaskis: {
         Row: {
           code: string
