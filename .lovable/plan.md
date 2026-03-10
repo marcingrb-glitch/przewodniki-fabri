@@ -1,38 +1,30 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Uzupełnienie brakujących `default_finish`
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Potwierdzone braki w bazie (zweryfikowane zapytaniem):
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+| Tabela | Kod | Seria | allowed_finishes | Brak default_finish |
+|--------|-----|-------|-----------------|-------------------|
+| seats_sofa | SD02N | S1 | [A, B] | tak |
+| seats_sofa | SD03 | S1 | [A, B] | tak |
+| sides | B1-B6, B9 | S1 | [A, B] | tak |
+| sides | B1-B8 | S2 | [B, C] lub [A, B, C] | tak |
+| backrests | OP62 | S1 | [A, B] | tak |
+| backrests | OP68 | S2 | [A, B] | tak |
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Operacje (dane, nie schemat)
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+Wykonam 6 UPDATE-ów przez narzędzie do manipulacji danymi:
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+1. **S1 seats_sofa**: `SD02N` i `SD03` → `default_finish = 'A'`
+2. **S1 sides**: wszystkie bez default → `default_finish = 'A'`
+3. **S2 sides B3**: → `default_finish = 'A'`
+4. **S2 sides pozostałe**: → `default_finish = allowed_finishes[1]`
+5. **S1 backrests**: → `default_finish = 'A'`
+6. **S2 backrests**: → `default_finish = 'A'`
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+### Brak zmian w kodzie
 
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+Nie modyfikuję żadnych plików TypeScript. Nie modyfikuję `skuParser.ts`, `skuDecoder.ts`, ani `pdfGenerators/`.
 
