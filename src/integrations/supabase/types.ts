@@ -18,45 +18,25 @@ export type Database = {
         Row: {
           code: string
           created_at: string
-          has_seat_legs: boolean
           id: string
           name: string
-          seat_leg_count: number | null
-          seat_leg_height_cm: number | null
-          series_id: string
           type: string | null
         }
         Insert: {
           code: string
           created_at?: string
-          has_seat_legs?: boolean
           id?: string
           name: string
-          seat_leg_count?: number | null
-          seat_leg_height_cm?: number | null
-          series_id: string
           type?: string | null
         }
         Update: {
           code?: string
           created_at?: string
-          has_seat_legs?: boolean
           id?: string
           name?: string
-          seat_leg_count?: number | null
-          seat_leg_height_cm?: number | null
-          series_id?: string
           type?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "automats_series_id_fkey"
-            columns: ["series_id"]
-            isOneToOne: false
-            referencedRelation: "series"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       backrests: {
         Row: {
@@ -685,6 +665,51 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      series_automats: {
+        Row: {
+          automat_code: string
+          created_at: string | null
+          has_seat_legs: boolean
+          id: string
+          seat_leg_count: number | null
+          seat_leg_height_cm: number | null
+          series_id: string
+        }
+        Insert: {
+          automat_code: string
+          created_at?: string | null
+          has_seat_legs?: boolean
+          id?: string
+          seat_leg_count?: number | null
+          seat_leg_height_cm?: number | null
+          series_id: string
+        }
+        Update: {
+          automat_code?: string
+          created_at?: string | null
+          has_seat_legs?: boolean
+          id?: string
+          seat_leg_count?: number | null
+          seat_leg_height_cm?: number | null
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_automats_automat_code_fkey"
+            columns: ["automat_code"]
+            isOneToOne: false
+            referencedRelation: "automats"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "series_automats_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       series_config: {
         Row: {
