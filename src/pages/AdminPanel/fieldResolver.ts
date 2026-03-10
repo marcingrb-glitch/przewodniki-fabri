@@ -44,6 +44,10 @@ export const FIELD_GROUPS: { key: string; label: string }[] = [
 ];
 
 export const AVAILABLE_FIELDS: FieldDef[] = [
+  { value: "fabric.code", label: "Kod", group: "fabric" },
+  { value: "fabric.name", label: "Nazwa", group: "fabric" },
+  { value: "fabric.color", label: "Kolor", group: "fabric" },
+  { value: "fabric.group", label: "Grupa cenowa", group: "fabric" },
   { value: "seat.code", label: "Kod", group: "seat_frame" },
   { value: "seat.finish_name", label: "Wykończenie", group: "seat_frame" },
   { value: "seat.code_finish", label: "Kod + wykończenie (razem)", group: "seat_frame" },
