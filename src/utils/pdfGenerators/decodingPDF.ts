@@ -1,6 +1,6 @@
 import { DecodedSKU } from "@/types";
-import { createDoc, addHeader, toBlob } from "@/utils/pdfHelpers";
-import autoTable from "jspdf-autotable";
+import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
+import { formatFoamsDetailed } from "@/utils/foamHelpers";
 
 export async function generateDecodingPDF(
   decoded: DecodedSKU,
@@ -17,18 +17,18 @@ export async function generateDecodingPDF(
   doc.setFontSize(13);
   doc.setFont("Roboto", "bold");
   doc.text(`SKU: ${decoded.rawSKU || ""}`, 105, y, { align: "center" });
-  y += 10;
+  y += 8;
 
   // Separator line
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(15, y, 195, y);
-  y += 5;
+  y += 3;
 
-  // Full-width image
+  // Variant image (reduced to 60mm)
   const imageX = 15;
-  const imageW = 180; // full page width minus margins
-  const imageH = 90;
+  const imageW = 180;
+  const imageH = 60;
 
   if (variantImageUrl) {
     try {
@@ -40,18 +40,15 @@ export async function generateDecodingPDF(
         reader.readAsDataURL(blob);
       });
 
-      // Get natural dimensions
       const dims = await new Promise<{ w: number; h: number }>((resolve) => {
         const img = new Image();
         img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
         img.src = base64;
       });
 
-      // Draw grey background
       doc.setFillColor(245, 245, 245);
       doc.rect(imageX, y, imageW, imageH, "F");
 
-      // Calculate proportional fit
       const imgRatio = dims.w / dims.h;
       const areaRatio = imageW / imageH;
       let drawW: number, drawH: number, drawX: number, drawY: number;
@@ -80,119 +77,174 @@ export async function generateDecodingPDF(
     drawPlaceholder(doc, imageX, y, imageW, imageH);
   }
 
-  y += imageH + 5;
+  y += imageH + 4;
 
-  // Two-column layout below image
-  const colGap = 4;
-  const leftColX = 15;
-  const colW = (180 - colGap) / 2;
-  const rightColX = leftColX + colW + colGap;
+  const fs = 8;
+  const rh = 6;
+  const sp = 4;
 
-  const tableStyles = {
-    font: "Roboto" as const,
-    fontSize: 8,
-    cellPadding: 1.5,
-    overflow: "linebreak" as const,
-    textColor: [0, 0, 0] as [number, number, number],
-    lineWidth: 0.3,
-    lineColor: [0, 0, 0] as [number, number, number],
-  };
-  const headStyle = { fillColor: [255, 255, 255] as [number, number, number], textColor: [0, 0, 0] as [number, number, number], fontStyle: "bold" as const };
-  const bodyStyle = { fillColor: [255, 255, 255] as [number, number, number] };
+  // 1. TKANINA
+  y = addTable(doc, y,
+    ["TKANINA", "Kod", "Nazwa", "Kolor", "Grupa"],
+    [[
+      "",
+      `${decoded.fabric.code}${decoded.fabric.color}`,
+      decoded.fabric.name,
+      `${decoded.fabric.color} - ${decoded.fabric.colorName}`,
+      `${decoded.fabric.group}`,
+    ]],
+    { 0: { cellWidth: 0 } }, sp, fs, rh
+  );
 
-  // LEFT COLUMN: Main components
-  const mainRows: string[][] = [
-    ["Seria", `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`],
-    ["Tkanina", `${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`],
-    ["Siedzisko", `${decoded.seat.code} - ${decoded.seat.type || '?'}`],
-    ["  Wykończenie", `${decoded.seat.finish} (${decoded.seat.finishName})`],
-    ["Boczek", `${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}`],
-    ["  Wykończenie", `${decoded.side.finish} (${decoded.side.finishName})`],
-    ["Oparcie", `${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm`],
-    ["  Wykończenie", `${decoded.backrest.finish} (${decoded.backrest.finishName})`],
-    ["Skrzynia", decoded.chest.code],
-    ["Automat", `${decoded.automat.code} - ${decoded.automat.name}`],
-  ];
+  // 2. SIEDZISKO — STOLARKA
+  const seatFrameRows: string[][] = [[
+    decoded.seat.code,
+    decoded.seat.type || "-",
+    decoded.seat.frame || "-",
+    decoded.seat.frameModification || "-",
+    decoded.seat.springType || "-",
+    `${decoded.seat.finish} (${decoded.seat.finishName})`,
+  ]];
+  y = addTable(doc, y,
+    ["SIEDZISKO — STOLARKA", "Typ", "Stelaż", "Modyfikacja", "Sprężyna", "Wykończenie"],
+    seatFrameRows,
+    undefined, sp, fs, rh
+  );
 
-  if (decoded.legs) {
-    mainRows.push(["Nóżki", `${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`]);
-  }
+  // 3. SIEDZISKO — PIANKI
+  const seatFoamLines = formatFoamsDetailed(decoded.seat.foams);
+  const seatFoamText = seatFoamLines.length > 0 ? seatFoamLines.join("\n") : decoded.seat.foam || "-";
+  const midStripText = decoded.seat.midStrip ? "TAK" : "NIE";
+  y = addTable(doc, y,
+    ["SIEDZISKO — PIANKI", "Front", "Pasek środkowy"],
+    [[seatFoamText, decoded.seat.front || "-", midStripText]],
+    { 0: { cellWidth: 100 } }, sp, fs, rh
+  );
 
-  autoTable(doc, {
-    startY: y,
-    margin: { left: leftColX, right: 195 - leftColX - colW },
-    tableWidth: colW,
-    head: [["GŁÓWNE KOMPONENTY", ""]],
-    body: mainRows,
-    theme: "grid",
-    styles: tableStyles,
-    headStyles: headStyle,
-    bodyStyles: bodyStyle,
-    alternateRowStyles: bodyStyle,
-    columnStyles: { 0: { cellWidth: 25, fontStyle: "bold" } },
-  });
+  // 4. OPARCIE
+  const backFoamLines = formatFoamsDetailed(decoded.backrest.foams);
+  const backFoamText = backFoamLines.length > 0 ? backFoamLines.join("\n") : decoded.backrest.foam || "-";
+  y = addTable(doc, y,
+    ["OPARCIE", "Wys.", "Stelaż", "Góra", "Sprężyna", "Wykończenie", "Pianki"],
+    [[
+      `${decoded.backrest.code}`,
+      `${decoded.backrest.height}cm`,
+      decoded.backrest.frame || "-",
+      decoded.backrest.top || "-",
+      decoded.backrest.springType || "-",
+      `${decoded.backrest.finish} (${decoded.backrest.finishName})`,
+      backFoamText,
+    ]],
+    undefined, sp, fs, rh
+  );
 
-  const leftEndY = (doc as any).lastAutoTable.finalY;
+  // 5. BOCZEK
+  y = addTable(doc, y,
+    ["BOCZEK", "Nazwa", "Stelaż", "Wykończenie"],
+    [[
+      `${decoded.side.code}`,
+      decoded.side.name,
+      decoded.side.frame || "-",
+      `${decoded.side.finish} (${decoded.side.finishName})`,
+    ]],
+    undefined, sp, fs, rh
+  );
 
-  // RIGHT COLUMN: Extras + Legs + Pufa/Fotel
-  const rightRows: string[][] = [];
+  // 6. SKRZYNIA + AUTOMAT
+  y = addTable(doc, y,
+    ["SKRZYNIA", "Nazwa", "AUTOMAT", "Nazwa", "Typ"],
+    [[
+      decoded.chest.code,
+      decoded.chest.name || "-",
+      decoded.automat.code,
+      decoded.automat.name,
+      decoded.automat.type || "-",
+    ]],
+    undefined, sp, fs, rh
+  );
 
-  // Extras
-  if (decoded.pillow) {
-    rightRows.push(["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name}`]);
-    rightRows.push(["  Wykończenie", `${decoded.pillow.finish} (${decoded.pillow.finishName})`]);
-  }
-  if (decoded.jaski) {
-    rightRows.push(["Jaśki", `${decoded.jaski.code} - ${decoded.jaski.name}`]);
-    rightRows.push(["  Wykończenie", `${decoded.jaski.finish} (${decoded.jaski.finishName})`]);
-  }
-  if (decoded.walek) {
-    rightRows.push(["Wałek", decoded.walek.code]);
-    rightRows.push(["  Wykończenie", `${decoded.walek.finish} (${decoded.walek.finishName})`]);
-  }
-  decoded.extras.forEach(e => {
-    rightRows.push([e.name, e.code]);
-  });
-
-  // Leg heights
+  // 7. NÓŻKI
   const chestLeg = decoded.legHeights.sofa_chest;
   const seatLeg = decoded.legHeights.sofa_seat;
-  rightRows.push(["NÓŻKI SOFA", ""]);
-  rightRows.push(["Pod skrzynią", chestLeg ? `${chestLeg.leg} H ${chestLeg.height}cm (${chestLeg.count} szt)` : "-"]);
-  rightRows.push(["Pod siedziskiem", seatLeg ? `${seatLeg.leg} H ${seatLeg.height}cm (${seatLeg.count} szt)` : "BRAK"]);
+  const legsRows: string[][] = [];
+  if (decoded.legs) {
+    legsRows.push([
+      "Typ nóżki",
+      `${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name}`,
+      decoded.legs.material || "-",
+      decoded.legs.colorName || "-",
+    ]);
+  }
+  legsRows.push([
+    "Pod skrzynią",
+    chestLeg ? `${chestLeg.leg} H ${chestLeg.height}cm` : "-",
+    chestLeg ? `${chestLeg.count} szt` : "-",
+    "",
+  ]);
+  legsRows.push([
+    "Pod siedziskiem",
+    seatLeg ? `${seatLeg.leg} H ${seatLeg.height}cm` : "BRAK",
+    seatLeg ? `${seatLeg.count} szt` : "-",
+    "",
+  ]);
+  y = addTable(doc, y,
+    ["NÓŻKI", "Wartość", "Ilość/Materiał", "Kolor"],
+    legsRows,
+    { 0: { cellWidth: 30 } }, sp, fs, rh
+  );
 
-  // Pufa
+  // 8. DODATKI
+  const extraRows: string[][] = [];
+  if (decoded.pillow) {
+    extraRows.push(["Poduszka", `${decoded.pillow.code} - ${decoded.pillow.name}`, `${decoded.pillow.finish} (${decoded.pillow.finishName})`]);
+  }
+  if (decoded.jaski) {
+    extraRows.push(["Jaśki", `${decoded.jaski.code} - ${decoded.jaski.name}`, `${decoded.jaski.finish} (${decoded.jaski.finishName})`]);
+  }
+  if (decoded.walek) {
+    extraRows.push(["Wałek", decoded.walek.code, `${decoded.walek.finish} (${decoded.walek.finishName})`]);
+  }
+  decoded.extras.forEach(e => {
+    extraRows.push([e.name, e.code, e.type || "-"]);
+  });
+  if (extraRows.length > 0) {
+    y = addTable(doc, y,
+      ["DODATKI", "Kod / Nazwa", "Wykończenie / Typ"],
+      extraRows,
+      { 0: { cellWidth: 25 } }, sp, fs, rh
+    );
+  }
+
+  // 9. PUFA (conditional)
   if (decoded.pufaSKU) {
-    rightRows.push(["PUFA", ""]);
-    rightRows.push(["SKU pufy", decoded.pufaSKU]);
-    if (decoded.legs) {
-      rightRows.push(["Nóżki pufy", `${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`]);
+    const pufaRows: string[][] = [["SKU pufy", decoded.pufaSKU]];
+    if (decoded.pufaSeat) {
+      pufaRows.push(["Przód/Tył", decoded.pufaSeat.frontBack || "-"]);
+      pufaRows.push(["Boki", decoded.pufaSeat.sides || "-"]);
+      pufaRows.push(["Pianka", decoded.pufaSeat.foam || "-"]);
+      pufaRows.push(["Skrzynka", decoded.pufaSeat.box || "-"]);
     }
+    if (decoded.pufaLegs) {
+      pufaRows.push(["Nóżki pufy", `${decoded.pufaLegs.code} H ${decoded.pufaLegs.height}cm (${decoded.pufaLegs.count} szt)`]);
+    }
+    y = addTable(doc, y,
+      ["PUFA", "Wartość"],
+      pufaRows,
+      { 0: { cellWidth: 30 } }, sp, fs, rh
+    );
   }
 
-  // Fotel
+  // 10. FOTEL (conditional)
   if (decoded.fotelSKU) {
-    rightRows.push(["FOTEL", ""]);
-    rightRows.push(["SKU fotela", decoded.fotelSKU]);
-    if (decoded.legs) {
-      rightRows.push(["Nóżki fotela", `${decoded.legs.code}${decoded.legs.color || ""} H 16cm (4 szt)`]);
+    const fotelRows: string[][] = [["SKU fotela", decoded.fotelSKU]];
+    if (decoded.fotelLegs) {
+      fotelRows.push(["Nóżki fotela", `${decoded.fotelLegs.code} H ${decoded.fotelLegs.height}cm (${decoded.fotelLegs.count} szt)`]);
     }
-  }
-
-  if (rightRows.length > 0) {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: rightColX, right: 15 },
-      tableWidth: colW,
-      head: [["DODATKI / NÓŻKI", ""]],
-      body: rightRows,
-      theme: "grid",
-      styles: tableStyles,
-      headStyles: headStyle,
-      bodyStyles: bodyStyle,
-      alternateRowStyles: bodyStyle,
-      columnStyles: { 0: { cellWidth: 25, fontStyle: "bold" } },
-    });
+    y = addTable(doc, y,
+      ["FOTEL", "Wartość"],
+      fotelRows,
+      { 0: { cellWidth: 30 } }, sp, fs, rh
+    );
   }
 
   return toBlob(doc);
