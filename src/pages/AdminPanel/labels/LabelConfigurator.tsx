@@ -152,6 +152,22 @@ export default function LabelConfigurator({
     return result;
   }, [lines, template.label_name]);
 
+  // Left zone fields from settings
+  const LEFT_FIELD_EXAMPLES: Record<string, string> = {
+    "series.code": "S1",
+    "series.name": "Sofa Mar",
+    "series.collection": "Vienne",
+    "product_type": productLabel,
+    "order_number": "12345",
+  };
+
+  const leftFields = labelSettings?.left_zone_fields || ["series.code", "series.name", "series.collection"];
+  const leftZoneWidthPx = ((labelSettings?.left_zone_width || 16) / 100) * 400;
+
+  const headerText = (labelSettings?.header_template || "{TYPE} | Zam: {ORDER}")
+    .replace("{TYPE}", productLabel)
+    .replace("{ORDER}", "12345");
+
   return (
     <Card className="mt-4 border-primary/20">
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
