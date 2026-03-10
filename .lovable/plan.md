@@ -1,25 +1,38 @@
 
 
-## Plan: Dodanie pola `spring_type` (sprężyna) do etykiet siedziska i oparcia
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Co trzeba zrobić
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-Pole `spring_type` istnieje w tabelach `seats_sofa` i `backrests`, ale nie jest pobierane w dekoderze SKU ani uwzględnione w typie `DecodedSKU`. Trzeba je przepuścić przez cały łańcuch: DB query → dekoder → typ → selektor pól etykiet.
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-### Zmiany w plikach
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-1. **`src/types/index.ts`** — dodać `springType` do interfejsów `seat` i `backrest` w `DecodedSKU`
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-2. **`src/utils/skuDecoder.ts`**:
-   - Linia 130: dodać `spring_type` do SELECT z `seats_sofa`
-   - Linia 136: dodać `spring_type` do SELECT z `backrests`
-   - W sekcji mapowania seat (~l.190+): wyciągnąć `spring_type` z DB response
-   - W obiekcie return seat (~l.430): dodać `springType`
-   - W obiekcie return backrest (~l.442): dodać `springType`
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-3. **`src/pages/AdminPanel/labels/DisplayFieldsSelector.tsx`**:
-   - Dodać pole `seat.springType` ("Sprężyna siedziska", source: `seats_sofa.spring_type`) do sekcji `seat`
-   - Dodać pole `backrest.springType` ("Sprężyna oparcia", source: `backrests.spring_type`) do sekcji `backrest`
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-4. **Usunąć `typeName` z typu** — w poprzednim kroku usunęliśmy `type_name` z DB, ale `typeName` wciąż jest w `DecodedSKU.seat` — wyczyścić przy okazji.
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

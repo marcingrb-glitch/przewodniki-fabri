@@ -104,7 +104,7 @@ export async function generateDecodingPDF(
   const mainRows: string[][] = [
     ["Seria", `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`],
     ["Tkanina", `${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, ${decoded.fabric.colorName}`],
-    ["Siedzisko", `${decoded.seat.code} - ${decoded.seat.typeName}`],
+    ["Siedzisko", `${decoded.seat.code} - ${decoded.seat.type || '?'}`],
     ["  Wykończenie", `${decoded.seat.finish} (${decoded.seat.finishName})`],
     ["Boczek", `${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}`],
     ["  Wykończenie", `${decoded.side.finish} (${decoded.side.finishName})`],

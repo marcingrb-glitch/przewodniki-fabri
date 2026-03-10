@@ -127,13 +127,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     supabase.from("series").select("code, name, collection").eq("code", parsed.series).maybeSingle(),
     supabase.from("fabrics").select("code, name, price_group, colors").eq("code", parsed.fabric.code).maybeSingle(),
     seriesId
-      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("seats_sofa").select("code, frame, foam, front, center_strip, default_finish, allowed_finishes, type, spring_type").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     seriesId && parsed.side.code
       ? supabase.from("sides").select("code, name, frame, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     seriesId && parsed.backrest.code
-      ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("backrests").select("code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.chest
       ? supabase.from("chests").select("code, name, leg_height_cm, leg_count").eq("code", parsed.chest).maybeSingle()
@@ -195,7 +195,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   let seatMidStrip = staticSeat.midStrip;
   let seatDefaultFinish = DEFAULT_FINISHES[seatCode] || "A";
   let seatType = "";
-  let seatTypeName = "";
+  let seatSpringType = "";
 
   if (seatSofaRes.data) {
     seatFrame = seatSofaRes.data.frame ?? "";
@@ -204,12 +204,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seatMidStrip = seatSofaRes.data.center_strip ?? false;
     seatDefaultFinish = seatSofaRes.data.default_finish ?? "A";
     seatType = seatSofaRes.data.type ?? "";
-    seatTypeName = SEAT_TYPES[seatType] || seatType;
+    seatSpringType = seatSofaRes.data.spring_type ?? "";
   } else {
     const typeMatch = seatCode.match(/^SD\d{2}(N[DB]?|W)?$/);
     if (typeMatch) {
       seatType = typeMatch[1] || "";
-      seatTypeName = SEAT_TYPES[seatType] || seatType;
     }
   }
 
@@ -430,16 +429,16 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seat: {
       code: seatCode,
       type: seatType,
-      typeName: seatTypeName,
       finish: seatFinish,
       finishName: seatFinishName,
       frame: seatFrame,
       foam: seatFoam,
       front: seatFront,
       midStrip: seatMidStrip,
+      springType: seatSpringType || undefined,
     },
     side: { code: parsed.side.code, name: sideName, frame: sideFrame, finish: parsed.side.finish || (sidesRes.data?.default_finish ?? ""), finishName: FINISHES[parsed.side.finish || (sidesRes.data?.default_finish ?? "")] || parsed.side.finish },
-    backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: backrestFoam, top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish },
+    backrest: { code: parsed.backrest.code, height: backrestHeight, frame: backrestFrame, foam: backrestFoam, top: backrestTop, finish: parsed.backrest.finish, finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish, springType: backrestsRes.data?.spring_type || undefined },
     chest: { code: parsed.chest, name: chestName, legHeight: chestLegHeight, legCount: chestLegCount },
     automat: { code: parsed.automat, name: automatName, type: automatType, seatLegs: automatSeatLegs, seatLegHeight: automatSeatLegHeight, seatLegCount: automatSeatLegCount },
     legs: legsDecoded,
