@@ -284,6 +284,7 @@ function UserTable({
         <TableBody>
           {users.map((user) => {
             const perm = permMap.get(user.id);
+            const isUserAdmin = adminIds.has(user.id);
             return (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.email}</TableCell>
@@ -294,20 +295,28 @@ function UserTable({
                     : "—"}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Checkbox
-                    checked={perm?.can_view_cheatsheets ?? false}
-                    onCheckedChange={(checked) =>
-                      onPermChange(user.id, "can_view_cheatsheets", !!checked)
-                    }
-                  />
+                  {isUserAdmin ? (
+                    <Badge variant="outline" className="text-xs">Admin</Badge>
+                  ) : (
+                    <Checkbox
+                      checked={perm?.can_view_cheatsheets ?? false}
+                      onCheckedChange={(checked) =>
+                        onPermChange(user.id, "can_view_cheatsheets", !!checked)
+                      }
+                    />
+                  )}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Checkbox
-                    checked={perm?.can_view_specs ?? false}
-                    onCheckedChange={(checked) =>
-                      onPermChange(user.id, "can_view_specs", !!checked)
-                    }
-                  />
+                  {isUserAdmin ? (
+                    <Badge variant="outline" className="text-xs">Admin</Badge>
+                  ) : (
+                    <Checkbox
+                      checked={perm?.can_view_specs ?? false}
+                      onCheckedChange={(checked) =>
+                        onPermChange(user.id, "can_view_specs", !!checked)
+                      }
+                    />
+                  )}
                 </TableCell>
                 <TableCell>
                   {user.is_approved ? (
