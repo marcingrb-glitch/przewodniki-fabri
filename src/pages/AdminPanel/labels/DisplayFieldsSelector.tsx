@@ -93,7 +93,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   ],
   legs: [
     { value: "legs.code", label: "Kod nogi", source: "legs (wspólne)" },
-    { value: "legs.name", label: "Nazwa", source: "legs (wspólne)" },
+    { value: "legs.name", label: "Noga", source: "legs (wspólne)" },
     { value: "legs.material", label: "Materiał", source: "legs.material (wspólne)" },
     { value: "legs.color", label: "Kolor (kod)", source: "legs.colors (wspólne)" },
     { value: "legs.colorName", label: "Kolor (nazwa)", source: "legs.colors (wspólne)" },

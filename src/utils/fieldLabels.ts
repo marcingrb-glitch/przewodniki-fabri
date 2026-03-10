@@ -77,7 +77,7 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
 
   // Legs (common)
   "legs.code": "Noga",
-  "legs.name": "Nazwa",
+  "legs.name": "Noga",
   "legs.material": "Materiał",
   "legs.color": "Kolor (kod)",
   "legs.colorName": "Kolor (nazwa)",
