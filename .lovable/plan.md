@@ -1,38 +1,28 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Filtr serii w szablonach przewodników
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Stan obecny
+- Tabela `guide_sections` już ma kolumnę `series_id` (null = globalny)
+- Logika override w generatorze PDF już działa (per `section_name` — seria nadpisuje global)
+- UI pokazuje wszystkie sekcje flat z kolumną "Seria", ale brak filtra — ciężko zarządzać gdy jest dużo serii
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Zmiany
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+**`src/pages/AdminPanel/GuideTemplates.tsx`**
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+1. Dodać state `selectedSeriesId` (domyślnie `"__global__"` = sekcje globalne)
+2. Dodać dropdown filtra serii obok przycisku "Dodaj sekcję" — opcje: "Globalny (wszystkie serie)" + lista serii z DB
+3. Zmienić `filtered` żeby oprócz `product_type` filtrował też po `series_id`:
+   - `"__global__"` → `series_id === null`
+   - konkretna seria → `series_id === selectedSeriesId`
+4. Przy dodawaniu nowej sekcji (`openAdd`) — ustawiać `series_id` z aktualnego filtra (jeśli wybrana konkretna seria)
+5. Podgląd (`GuidePreview`) — przekazać `selectedSeriesId` żeby pokazywał sekcje w kontekście wybranej serii (globalne + nadpisania)
+6. Usunąć kolumnę "Seria" z tabeli (bo teraz filtrujemy po niej)
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+**`src/pages/AdminPanel/GuidePreview.tsx`**
+- Przyjąć opcjonalny prop `seriesId` i wyświetlać w podglądzie info o serii
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Efekt
+Użytkownik wybiera serię z dropdowna → widzi tylko sekcje tej serii (lub globalne). Dodając sekcję, automatycznie przypisuje ją do wybranej serii. Tak jak w etykietach.
 
