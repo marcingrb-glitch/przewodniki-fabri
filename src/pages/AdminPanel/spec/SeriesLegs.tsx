@@ -154,7 +154,7 @@ export default function SeriesLegs({ seriesId, config, seriesCode }: Props) {
       type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—",
       height: config.pufa_leg_height_cm != null ? `${config.pufa_leg_height_cm} cm` : "—",
       count: "4 szt",
-      who: isPlastic ? "Tapicer (na stanowisku)" : pufaType === "built_in_plastic" ? "Tapicer (wbudowane)" : "Dziewczyny od nóżek (kompletacja do worka)",
+      who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)",
     });
   }
 

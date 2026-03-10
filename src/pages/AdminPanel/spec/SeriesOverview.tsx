@@ -16,7 +16,6 @@ interface Props {
 const formatLegType = (type: string | null, height: number | null): string => {
   if (!type) return '—';
   switch (type) {
-    case 'built_in_plastic': return `N4 plastikowe wbudowane, H${height}cm`;
     case 'plastic_2_5': return `N4 plastikowe, H${height}cm`;
     case 'from_sku': return `Z segmentu N (z SKU), H${height}cm`;
     default: return `${type}, H${height}cm`;
@@ -25,7 +24,6 @@ const formatLegType = (type: string | null, height: number | null): string => {
 
 const LEG_COMPLETION_LABELS: Record<string, string> = {
   from_sku: "Dziewczyny od nóżek (kompletacja do worka)",
-  built_in_plastic: "Tapicer (wbudowane)",
   plastic_2_5: "Tapicer (na stanowisku)",
 };
 
