@@ -197,7 +197,9 @@ export async function generateLabelsPDF(
     const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType);
     const fallbackHeader = settings.headerTemplate
       .replace("{TYPE}", productType.toUpperCase())
-      .replace("{ORDER}", decoded.orderNumber || "");
+      .replace("{LABEL}", "")
+      .replace("{ORDER}", decoded.orderNumber || "")
+      .replace("| |", "|");
     addLabel(doc, [fallbackSeries, fallbackHeader, "Brak szablonów etykiet"], true, settings);
   }
 

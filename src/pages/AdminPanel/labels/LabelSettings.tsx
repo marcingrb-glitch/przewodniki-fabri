@@ -153,6 +153,7 @@ export default function LabelSettings() {
   // Preview
   const previewHeader = localHeader
     .replace("{TYPE}", "SOFA")
+    .replace("{LABEL}", "Siedzisko")
     .replace("{ORDER}", "12345");
 
   const previewLeftItems = localFields.map((f) => {
