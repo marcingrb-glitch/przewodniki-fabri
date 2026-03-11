@@ -65,6 +65,19 @@ interface RenderItem {
   columnStyles?: { [key: string]: { cellWidth: number } };
 }
 
+/** Estimate the height of a column of render items in mm */
+function estimateColumnHeight(items: RenderItem[], fs: number, rh: number, sp: number): number {
+  let h = 0;
+  for (const item of items) {
+    if (item.title) h += 3; // title text
+    // header row + body rows
+    const rowCount = 1 + item.rows.length; // 1 for header
+    h += rowCount * (rh + fs * 0.15) + 2 * 2.5; // cellPadding approximation
+    h += sp; // spacing after table
+  }
+  return h;
+}
+
 export async function generateDecodingPDF(
   decoded: DecodedSKU,
   variantImageUrl?: string
@@ -91,65 +104,14 @@ export async function generateDecodingPDF(
   doc.line(15, y, 195, y);
   y += 3;
 
-  // Variant image (50mm)
-  const imageX = 15;
-  const imageW = 180;
-  const imageH = 50;
-
-  if (variantImageUrl) {
-    try {
-      const response = await fetch(variantImageUrl);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-
-      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-        img.src = base64;
-      });
-
-      doc.setFillColor(245, 245, 245);
-      doc.rect(imageX, y, imageW, imageH, "F");
-
-      const imgRatio = dims.w / dims.h;
-      const areaRatio = imageW / imageH;
-      let drawW: number, drawH: number, drawX: number, drawY: number;
-
-      if (imgRatio > areaRatio) {
-        drawW = imageW;
-        drawH = imageW / imgRatio;
-        drawX = imageX;
-        drawY = y + (imageH - drawH) / 2;
-      } else {
-        drawH = imageH;
-        drawW = imageH * imgRatio;
-        drawX = imageX + (imageW - drawW) / 2;
-        drawY = y;
-      }
-
-      doc.addImage(base64, "JPEG", drawX, drawY, drawW, drawH);
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(imageX, y, imageW, imageH);
-    } catch (error) {
-      console.error("Error adding image to PDF:", error);
-      drawPlaceholder(doc, imageX, y, imageW, imageH);
-    }
-  } else {
-    drawPlaceholder(doc, imageX, y, imageW, imageH);
-  }
-
-  y += imageH + 4;
-
-  // --- Build render items from sections ---
+  // --- Table parameters ---
+  const fs = 10;
+  const rh = 8;
+  const sp = 3;
   const MAX_COLS = 6;
   const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
 
-  // Group consecutive conditional sections with identical headers
+  // --- Build render items from sections BEFORE drawing image ---
   const groups: { sections: GuideSection[] }[] = [];
   for (const section of sections) {
     if (section.is_conditional && section.condition_field) {
@@ -167,7 +129,6 @@ export async function generateDecodingPDF(
     groups.push({ sections: [section] });
   }
 
-  // Convert groups into RenderItems
   const renderItems: RenderItem[] = [];
 
   const buildChunkedItems = (title: string, cols: GuideColumn[]): RenderItem[] => {
@@ -217,18 +178,79 @@ export async function generateDecodingPDF(
     }
   }
 
+  // --- Calculate dynamic image height ---
+  const midPoint = Math.ceil(renderItems.length / 2);
+  const leftItems = renderItems.slice(0, midPoint);
+  const rightItems = renderItems.slice(midPoint);
+
+  const leftH = estimateColumnHeight(leftItems, fs, rh, sp);
+  const rightH = estimateColumnHeight(rightItems, fs, rh, sp);
+  const maxColH = Math.max(leftH, rightH);
+
+  const pageH = 297;
+  const bottomMargin = 10;
+  const imageGap = 4;
+  const availableForImage = pageH - bottomMargin - y - imageGap - maxColH;
+  const imageH = Math.max(20, Math.min(80, availableForImage));
+
+  // --- Draw variant image ---
+  const imageX = 15;
+  const imageW = 180;
+
+  if (variantImageUrl) {
+    try {
+      const response = await fetch(variantImageUrl);
+      const blob = await response.blob();
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.src = base64;
+      });
+
+      doc.setFillColor(245, 245, 245);
+      doc.rect(imageX, y, imageW, imageH, "F");
+
+      const imgRatio = dims.w / dims.h;
+      const areaRatio = imageW / imageH;
+      let drawW: number, drawH: number, drawX: number, drawY: number;
+
+      if (imgRatio > areaRatio) {
+        drawW = imageW;
+        drawH = imageW / imgRatio;
+        drawX = imageX;
+        drawY = y + (imageH - drawH) / 2;
+      } else {
+        drawH = imageH;
+        drawW = imageH * imgRatio;
+        drawX = imageX + (imageW - drawW) / 2;
+        drawY = y;
+      }
+
+      doc.addImage(base64, "JPEG", drawX, drawY, drawW, drawH);
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(imageX, y, imageW, imageH);
+    } catch (error) {
+      console.error("Error adding image to PDF:", error);
+      drawPlaceholder(doc, imageX, y, imageW, imageH);
+    }
+  } else {
+    drawPlaceholder(doc, imageX, y, imageW, imageH);
+  }
+
+  y += imageH + imageGap;
+
   // --- Two-column rendering ---
-  const fs = 7;
-  const rh = 5;
-  const sp = 3;
   const colLeftX = 15;
   const colRightX = 105;
   const colW = 85;
   const startY = y;
-
-  const midPoint = Math.ceil(renderItems.length / 2);
-  const leftItems = renderItems.slice(0, midPoint);
-  const rightItems = renderItems.slice(midPoint);
 
   const renderColumn = (items: RenderItem[], xStart: number, yStart: number): number => {
     let cy = yStart;
