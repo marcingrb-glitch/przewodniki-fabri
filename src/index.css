@@ -137,7 +137,7 @@
 }
 
 @media print {
-  header, aside, .no-print, .toaster, [data-sonner-toaster] {
+  header, aside, nav, .no-print, .toaster, [data-sonner-toaster] {
     display: none !important;
   }
   body {
