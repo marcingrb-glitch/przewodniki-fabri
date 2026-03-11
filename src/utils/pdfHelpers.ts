@@ -253,10 +253,10 @@ export function addLabel(
       doc.setFontSize(fontSize);
     }
 
-    const x = nextX + fontSize * 0.3;
+    const x = nextX + 1.5;
     const y = pageH / 2 + doc.getTextWidth(fieldValue) / 2;
     doc.text(fieldValue, x, y, { angle: 90 });
-    nextX = x + fontSize * 0.3 + (fi === 0 ? 0.5 : 0.5);
+    nextX = x + 1.5;
   }
 
   // --- Main content (shifted right) ---
