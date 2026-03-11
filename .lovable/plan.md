@@ -1,40 +1,38 @@
 
 
-## Problem
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-SKU `S2-T2D-SD1-B1B-OP68A-SK23-AT1-P2C` — pianki oparcia są źle dekodowane. Wyświetlają się pianki z **obu** wariantów oparcia OP68 (Modena + Barga) zamiast tylko z właściwego.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Przyczyna źródłowa
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-Dane w bazie:
-- **Siedzisko SD1** (S2) ma `model_name = "Modena"`
-- **Oparcie OP68** (S2) ma dwa warianty:
-  - `model_name = "Modena / Sienna / Porto / Ravenna"` (id: 3e8537fe) — **poprawny**
-  - `model_name = "Barga"` (id: 1608086a) — **niepoprawny dla tego SKU**
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-Linia 176 w `skuDecoder.ts` robi **exact match**: `.eq("model_name", "Modena")`, ale w bazie wartość to `"Modena / Sienna / Porto / Ravenna"` — nie pasuje.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-Fallback szuka `model_name IS NULL` — też nie istnieje. Więc `backrestsRes.data = null`, `backrestId = null`.
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Gdy `backrestId = null`, logika filtrowania pianek (linia 243) przepuszcza **wszystkie** pianki oparcia niezależnie od `backrest_id` — stąd pianki z wariantu Barga mieszają się z Modena.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-## Rozwiązanie
+### Krok 4: App.tsx — routing
 
-### Zmiana w `skuDecoder.ts` — dopasowanie oparcia po częściowym `model_name`
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-Zamiast `.eq("model_name", seatModelName)`, użyj `.ilike("model_name", "%Modena%")` — sprawdza czy model_name **zawiera** nazwę modelu siedziska.
+### Krok 5: skuDecoder.ts — uprość seat types
 
-**Konkretnie (linia 170-189)**:
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
 
-1. Zamień `.eq("model_name", seatModelName)` na `.ilike("model_name", `%${seatModelName}%`)`
-2. Reszta logiki (fallback na `model_name IS NULL`, potem `anyBackrest`) — bez zmian
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
 
-To wystarczy, bo:
-- `"Modena"` pasuje do `"Modena / Sienna / Porto / Ravenna"` ✓
-- `"Barga"` nie pasuje do `"Modena / Sienna / Porto / Ravenna"` ✓
-- Gdy backrest zostanie znaleziony poprawnie, `backrestId` będzie ustawiony → filtrowanie pianek będzie działać prawidłowo
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
 
-### Wpływ
+### Krok 7: Usuń SKUConfig.tsx
 
-Jedna zmiana w jednej linii — naprawia zarówno dopasowanie oparcia (stelaż, sprężyny), jak i pianek oparcia dla wszystkich serii z wielomodelowymi nazwami oparć.
+Plik nie jest już potrzebny.
 
