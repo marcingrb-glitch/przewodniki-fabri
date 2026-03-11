@@ -188,8 +188,8 @@ export async function generateDecodingPDF(
   const leftItems = renderItems.slice(0, midPoint);
   const rightItems = renderItems.slice(midPoint);
 
-  const leftH = estimateColumnHeight(leftItems, fs, rh, sp);
-  const rightH = estimateColumnHeight(rightItems, fs, rh, sp);
+  const leftH = estimateColumnHeight(leftItems, rh, sp);
+  const rightH = estimateColumnHeight(rightItems, rh, sp);
   const maxColH = Math.max(leftH, rightH);
 
   const pageH = 297;
