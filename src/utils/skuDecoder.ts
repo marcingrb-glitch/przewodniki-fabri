@@ -221,7 +221,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       .from("product_foams")
       .select("component, position_number, name, height, width, length, material, quantity, notes, backrest_id")
       .eq("series_id", seriesId)
-      .eq("seat_code", seatCode)
+      .in("seat_code", [seatCode, parsed.backrest.code])
       .order("position_number");
 
     if (foamsData) {
