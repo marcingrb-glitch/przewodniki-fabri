@@ -1,27 +1,38 @@
 
 
-## Problem
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-Comparing the HTML preview (screenshot 1) with the PDF output (screenshot 2), the PDF is missing **section name headers** (SIEDZISKO, OPARCIE, BOCZEK, SKRZYNIA + AUTOMAT). The preview renders them as bold uppercase labels above each table, but the PDF generator (`guideGenerator.ts`) never prints `section.section_name`.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-Specifically in `guideGenerator.ts` lines 140-168:
-- For **split sections** (Stolarka/Pianki): It prints the sub-labels but skips the parent header ("SIEDZISKO")
-- For **non-split sections**: It jumps straight to `renderColumns()` without any section name
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-## Fix
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-**File**: `src/utils/pdfGenerators/guideGenerator.ts`
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-Add a bold section name header before each section's content, inside the `for (const section of sections)` loop (before the `hasSplit` check). This means adding ~5 lines:
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-```typescript
-// Before the hasSplit check, render section name as bold header
-doc.setFontSize(guideSettings.font_size_header);
-doc.setFont("Roboto", "bold");
-doc.setTextColor(0, 0, 0);
-doc.text(section.section_name.toUpperCase(), 15, y);
-y += 5;
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-This will match the preview's behavior where each section has a bold uppercase name displayed above its table(s).
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
