@@ -334,7 +334,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
 
       {/* Automaty */}
       {seriesAutomats.length > 0 &&
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
           <h2 className="text-lg font-bold mb-2">🔧 Automaty ({seriesAutomats.length})</h2>
           <table className="w-full text-xs border-collapse">
             <thead>
