@@ -279,7 +279,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Boczki */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">📐 Boczki ({sides.length})</h2>
         {sides.length === 0 ? <NoData label="boczki" /> :
         <table className="w-full text-xs border-collapse">
