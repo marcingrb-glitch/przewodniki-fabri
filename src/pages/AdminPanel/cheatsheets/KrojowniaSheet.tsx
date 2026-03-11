@@ -207,7 +207,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
 
       {/* Mapowanie poduszek */}
       {pillowMappings.length > 0 && (
-        <section className="page-break">
+        <section className="mb-6 avoid-break">
           <h2 className="text-lg font-bold mb-2">🛏️ Poduszki per siedzisko</h2>
           <table className="w-full text-sm border-collapse">
             <thead>
