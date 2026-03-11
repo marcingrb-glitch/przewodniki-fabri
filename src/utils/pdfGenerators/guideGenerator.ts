@@ -138,6 +138,12 @@ export async function generateGuidePDF(
   };
 
   for (const section of sections) {
+    // Section name header
+    doc.setFontSize(guideSettings.font_size_header);
+    doc.setFont("Roboto", "bold");
+    doc.setTextColor(0, 0, 0);
+    doc.text(section.section_name.toUpperCase(), 15, y);
+    y += 5;
     if (section.is_conditional && section.condition_field) {
       if (!checkDecodedCondition(decoded, section.condition_field)) continue;
     }
