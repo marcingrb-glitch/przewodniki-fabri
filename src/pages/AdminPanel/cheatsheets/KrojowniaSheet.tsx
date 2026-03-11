@@ -99,7 +99,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Dozwolone wykończenia - siedziska */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">✂️ Wykończenia siedzisk</h2>
         {seats.length === 0 ? <NoData label="siedziska" /> : (
           <table className="w-full text-sm border-collapse">
