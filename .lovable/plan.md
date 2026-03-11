@@ -1,48 +1,38 @@
-## Problem
 
-Dekodowanie SKU nie mieści się na 1 stronie A4 — sekcje są ułożone pionowo jedna pod drugą, co zajmuje za dużo miejsca.
 
-## Rozwiązanie — układ dwukolumnowy pod zdjęciem
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-Przebudowa `decodingPDF.ts` aby sekcje tabel renderowały się w **dwóch kolumnach** obok siebie (lewa i prawa), podobnie jak było wcześniej z "Główne komponenty" i "Dodatki/Nóżki".
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Struktura strony:
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-```text
-┌──────────────────────────────────────┐
-│  Nagłówek (nr zamówienia, seria)     │
-│  SKU: S1-XXXXX                       │
-│  ─────────────────────────────────── │
-│  ┌──────────── ZDJĘCIE ───────────┐  │
-│  │         (180 x 50mm)           │  │
-│  └────────────────────────────────┘  │
-│                                      │
-│  ┌─── KOLUMNA L ──┐┌─── KOLUMNA P ──┐│
-│  │ Seria           ││ Poduszka       ││
-│  │ Tkanina         ││ Jaśki/Wałki    ││
-│  │ Siedzisko-Stol. ││ Nóżki          ││
-│  │ Siedzisko-Pianki││ Automat         ││
-│  │ Oparcie         ││                ││
-│  │ Bok             ││                ││
-│  └─────────────────┘└────────────────┘│
-└──────────────────────────────────────┘
-```
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-### Zmiany w `decodingPDF.ts`:
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-1. **Zmniejsz spacing/font** — `fs=7`, `rh=5`, `sp=3` — bardziej kompaktowe tabele.
-2. **Dwukolumnowy rendering**: Po zebraniu wszystkich grup sekcji, podziel je na lewą i prawą kolumnę (np. pół na pół albo balansując wysokość). Renderuj tabele z `margin.left=15` i `tableWidth=85` dla lewej kolumny, `margin.left=105` i `tableWidth=85` dla prawej.
-3. **Nowa funkcja `addTableAt**` w `pdfHelpers.ts` — wariant `addTable` przyjmujący parametry `xStart` i `tableWidth`, żeby renderować tabelę w dowolnym miejscu na stronie.
-4. **Tekst się zawija** — `overflow: "linebreak"` już jest ustawione, więc długi tekst automatycznie zwiększy wysokość komórki. Bez zmian tu potrzebnych.
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-### Zmiany w `pdfHelpers.ts`:
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-Dodanie eksportowanej funkcji `addTableAt(doc, y, headers, rows, xStart, tableWidth, columnStyles?, spacing?, fontSize?, minCellHeight?)` — identyczna logika jak `addTable`, ale z konfigurowalnym `margin.left` i `tableWidth`.
+### Krok 4: App.tsx — routing
 
-### Algorytm podziału na kolumny:
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-1. Zbierz wszystkie gotowe grupy (po filtracji warunkowej) w tablicę `renderItems[]` — każdy item to: nagłówek + kolumny.
-2. Podziel na pół (np. pierwsze N/2 → lewa, reszta → prawa).
-3. Renderuj lewą kolumnę od `y` w dół, zapamiętaj `yLeft`.
-4. Renderuj prawą kolumnę od tego samego `y`, zapamiętaj `yRight`.
-5. Kontynuuj od `max(yLeft, yRight)`.
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
+

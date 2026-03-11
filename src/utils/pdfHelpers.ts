@@ -101,14 +101,28 @@ export function addTable(
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const tableWidth = pageWidth - 2 * margin;
+  return addTableAt(doc, y, headers, rows, margin, tableWidth, columnStyles, spacing, fontSize, minCellHeight);
+}
 
+export function addTableAt(
+  doc: jsPDF,
+  y: number,
+  headers: string[],
+  rows: string[][],
+  xStart: number,
+  tableWidth: number,
+  columnStyles?: ColumnStyles,
+  spacing: number = 8,
+  fontSize: number = 10,
+  minCellHeight: number = 8,
+): number {
   autoTable(doc, {
     startY: y,
     head: [headers],
     body: rows,
     theme: "grid",
     tableWidth: tableWidth,
-    margin: { left: margin, right: margin },
+    margin: { left: xStart, right: doc.internal.pageSize.getWidth() - xStart - tableWidth },
     columnStyles: columnStyles || {},
     styles: {
       font: "Roboto",
