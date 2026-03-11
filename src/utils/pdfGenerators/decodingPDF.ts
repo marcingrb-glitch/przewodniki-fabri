@@ -166,7 +166,7 @@ export async function generateDecodingPDF(
         section.section_name,
         ...cols.map(c => resolveDecodedField(c.field, decoded)),
       ]);
-      renderItems.push({ title: groupName, headers, rows, columnStyles: { 0: { cellWidth: 20 } } });
+      renderItems.push({ title: groupName, headers, rows, fontSize: adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } } });
     } else {
       const section = group.sections[0];
       const cols = section.columns;
