@@ -207,7 +207,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       }
 
       {/* Siedziska sofa */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🪑 Siedziska sofa ({seats.length})</h2>
         {seats.length === 0 ? <NoData label="siedziska" /> :
         <table className="w-full text-xs border-collapse">
