@@ -62,18 +62,18 @@ interface RenderItem {
   title: string;
   headers: string[];
   rows: string[][];
+  fontSize: number;
   columnStyles?: { [key: string]: { cellWidth: number } };
 }
 
 /** Estimate the height of a column of render items in mm */
-function estimateColumnHeight(items: RenderItem[], fs: number, rh: number, sp: number): number {
+function estimateColumnHeight(items: RenderItem[], rh: number, sp: number): number {
   let h = 0;
   for (const item of items) {
-    if (item.title) h += 3; // title text
-    // header row + body rows
-    const rowCount = 1 + item.rows.length; // 1 for header
-    h += rowCount * (rh + fs * 0.15) + 2 * 2.5; // cellPadding approximation
-    h += sp; // spacing after table
+    if (item.title) h += 3;
+    const rowCount = 1 + item.rows.length;
+    h += rowCount * (rh + item.fontSize * 0.15) + 2 * 2.5;
+    h += sp;
   }
   return h;
 }
@@ -131,6 +131,9 @@ export async function generateDecodingPDF(
 
   const renderItems: RenderItem[] = [];
 
+  const adaptiveFontSize = (colCount: number): number =>
+    colCount <= 3 ? 10 : colCount === 4 ? 9 : 8;
+
   const buildChunkedItems = (title: string, cols: GuideColumn[]): RenderItem[] => {
     const items: RenderItem[] = [];
     if (cols.length <= MAX_COLS) {
@@ -138,6 +141,7 @@ export async function generateDecodingPDF(
         title,
         headers: cols.map(c => c.header),
         rows: [cols.map(c => resolveDecodedField(c.field, decoded))],
+        fontSize: adaptiveFontSize(cols.length),
       });
     } else {
       for (let i = 0; i < cols.length; i += MAX_COLS) {
@@ -146,6 +150,7 @@ export async function generateDecodingPDF(
           title: i === 0 ? title : "",
           headers: chunk.map(c => c.header),
           rows: [chunk.map(c => resolveDecodedField(c.field, decoded))],
+          fontSize: adaptiveFontSize(chunk.length),
         });
       }
     }
@@ -161,7 +166,7 @@ export async function generateDecodingPDF(
         section.section_name,
         ...cols.map(c => resolveDecodedField(c.field, decoded)),
       ]);
-      renderItems.push({ title: groupName, headers, rows, columnStyles: { 0: { cellWidth: 20 } } });
+      renderItems.push({ title: groupName, headers, rows, fontSize: adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } } });
     } else {
       const section = group.sections[0];
       const cols = section.columns;
@@ -183,8 +188,8 @@ export async function generateDecodingPDF(
   const leftItems = renderItems.slice(0, midPoint);
   const rightItems = renderItems.slice(midPoint);
 
-  const leftH = estimateColumnHeight(leftItems, fs, rh, sp);
-  const rightH = estimateColumnHeight(rightItems, fs, rh, sp);
+  const leftH = estimateColumnHeight(leftItems, rh, sp);
+  const rightH = estimateColumnHeight(rightItems, rh, sp);
   const maxColH = Math.max(leftH, rightH);
 
   const pageH = 297;
@@ -256,13 +261,13 @@ export async function generateDecodingPDF(
     let cy = yStart;
     for (const item of items) {
       if (item.title) {
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         doc.setFont("Roboto", "bold");
         doc.setTextColor(0, 0, 0);
         doc.text(item.title.toUpperCase(), xStart, cy);
         cy += 3;
       }
-      cy = addTableAt(doc, cy, item.headers, item.rows, xStart, colW, item.columnStyles, sp, fs, rh);
+      cy = addTableAt(doc, cy, item.headers, item.rows, xStart, colW, item.columnStyles, sp, item.fontSize, rh);
     }
     return cy;
   };
