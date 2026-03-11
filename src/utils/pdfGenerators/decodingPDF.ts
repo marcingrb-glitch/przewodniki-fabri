@@ -267,7 +267,7 @@ export async function generateDecodingPDF(
         doc.text(item.title.toUpperCase(), xStart, cy);
         cy += 3;
       }
-      cy = addTableAt(doc, cy, item.headers, item.rows, xStart, colW, item.columnStyles, sp, fs, rh);
+      cy = addTableAt(doc, cy, item.headers, item.rows, xStart, colW, item.columnStyles, sp, item.fontSize, rh);
     }
     return cy;
   };
