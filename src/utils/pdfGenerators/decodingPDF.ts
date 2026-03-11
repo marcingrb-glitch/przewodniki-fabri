@@ -67,14 +67,13 @@ interface RenderItem {
 }
 
 /** Estimate the height of a column of render items in mm */
-function estimateColumnHeight(items: RenderItem[], fs: number, rh: number, sp: number): number {
+function estimateColumnHeight(items: RenderItem[], rh: number, sp: number): number {
   let h = 0;
   for (const item of items) {
-    if (item.title) h += 3; // title text
-    // header row + body rows
-    const rowCount = 1 + item.rows.length; // 1 for header
-    h += rowCount * (rh + fs * 0.15) + 2 * 2.5; // cellPadding approximation
-    h += sp; // spacing after table
+    if (item.title) h += 3;
+    const rowCount = 1 + item.rows.length;
+    h += rowCount * (rh + item.fontSize * 0.15) + 2 * 2.5;
+    h += sp;
   }
   return h;
 }
