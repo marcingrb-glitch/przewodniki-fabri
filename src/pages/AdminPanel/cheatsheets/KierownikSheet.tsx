@@ -306,7 +306,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Nóżki */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">👟 Nóżki ({legs.length})</h2>
         {legs.length === 0 ? <NoData label="nóżki" /> :
         <table className="w-full text-xs border-collapse">
