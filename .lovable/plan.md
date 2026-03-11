@@ -1,51 +1,38 @@
 
 
-## Plan: Dynamiczna wysokość zdjęcia + większa czcionka tabel
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Problem
-Zdjęcie ma stałą wysokość 50mm niezależnie od ilości tabel. Czcionka w tabelkach to 7pt — za mała.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Rozwiązanie
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-#### 1. Czcionka tabel → 10pt
-Zmiana `fs = 7` na `fs = 10` oraz `rh = 5` na `rh = 8` (linia 221-222).
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-#### 2. Dynamiczna wysokość zdjęcia
-Zamiast stałego `imageH = 50`, oblicz ile miejsca zajmą tabele, a resztę przeznacz na zdjęcie:
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-```text
-pageHeight = 297mm (A4)
-headerEnd ≈ 39mm (nagłówek + SKU + linia)
-tablesStart = headerEnd + imageH + 4
-bottomMargin = 10mm
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-Dostępna przestrzeń na tabele = 297 - tablesStart - bottomMargin
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-**Podejście**: Najpierw wyrenderuj tabele "na sucho" (na tymczasowym dokumencie lub oblicz szacunkową wysokość), potem dopasuj zdjęcie.
+### Krok 4: App.tsx — routing
 
-Prostsze podejście — **szacowanie wysokości tabel**:
-- Każdy renderItem z tytułem: ~3mm (tytuł) + nagłówek tabeli (~rh) + wiersze * rh + spacing
-- Wysokość kolumny ≈ suma itemów w dłuższej kolumnie
-- `imageH = pageH - bottomMargin - headerEnd - 4 - tablesColumnHeight`
-- Minimum imageH = 20mm, maksimum = 80mm
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
-#### Zmiany w `decodingPDF.ts`:
+### Krok 5: skuDecoder.ts — uprość seat types
 
-1. **Linia 221-222**: `fs = 10`, `rh = 8`
-2. **Przed renderowaniem zdjęcia** (linia ~94-146): Przenieś budowanie `renderItems` i obliczenie wysokości kolumn PRZED rysowaniem zdjęcia
-3. **Nowa funkcja** `estimateColumnHeight(items, fs, rh, sp)` — szacuje wysokość kolumny na podstawie liczby wierszy, nagłówków i spacing
-4. **Oblicz `imageH`**: `Math.max(20, Math.min(80, 297 - 10 - y - 4 - maxColumnHeight))`
-5. Reszta logiki (rysowanie zdjęcia, renderowanie kolumn) bez zmian
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
 
-#### Kolejność w kodzie:
-```
-1. Header + SKU → y ≈ 39
-2. Buduj renderItems z sekcji
-3. Podziel na left/right kolumny
-4. Szacuj wysokość dłuższej kolumny
-5. imageH = dostępne miejsce - wysokość tabel
-6. Rysuj zdjęcie (imageH)
-7. Renderuj tabele dwukolumnowo
-```
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 
