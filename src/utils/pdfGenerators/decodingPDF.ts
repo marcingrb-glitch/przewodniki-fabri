@@ -1,6 +1,6 @@
 import { DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
+import { createDoc, addHeader, addTableAt, toBlob } from "@/utils/pdfHelpers";
 import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 
 interface GuideColumn {
@@ -20,9 +20,6 @@ interface GuideSection {
   enabled: boolean;
 }
 
-/**
- * Fetch decoding sections with series override logic.
- */
 async function fetchDecodingSections(seriesCode: string): Promise<GuideSection[]> {
   const { data: seriesData } = await supabase
     .from("series")
@@ -43,7 +40,6 @@ async function fetchDecodingSections(seriesCode: string): Promise<GuideSection[]
 
   const sections = data as unknown as GuideSection[];
 
-  // Override logic: series-specific > global
   const byName = new Map<string, GuideSection[]>();
   for (const s of sections) {
     if (!byName.has(s.section_name)) byName.set(s.section_name, []);
@@ -61,6 +57,14 @@ async function fetchDecodingSections(seriesCode: string): Promise<GuideSection[]
   return result;
 }
 
+/** A render item ready for column placement */
+interface RenderItem {
+  title: string;
+  headers: string[];
+  rows: string[][];
+  columnStyles?: { [key: string]: { cellWidth: number } };
+}
+
 export async function generateDecodingPDF(
   decoded: DecodedSKU,
   variantImageUrl?: string
@@ -76,22 +80,21 @@ export async function generateDecodingPDF(
 
   let y = addHeader(doc, orderNumber, seriesInfo, date);
 
-  // SKU - large font
+  // SKU
   doc.setFontSize(13);
   doc.setFont("Roboto", "bold");
   doc.text(`SKU: ${decoded.rawSKU || ""}`, 105, y, { align: "center" });
   y += 8;
 
-  // Separator line
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(15, y, 195, y);
   y += 3;
 
-  // Variant image (60mm)
+  // Variant image (50mm)
   const imageX = 15;
   const imageW = 180;
-  const imageH = 60;
+  const imageH = 50;
 
   if (variantImageUrl) {
     try {
@@ -142,37 +145,11 @@ export async function generateDecodingPDF(
 
   y += imageH + 4;
 
-  const fs = 8;
-  const rh = 6;
-  const sp = 4;
+  // --- Build render items from sections ---
   const MAX_COLS = 6;
   const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
 
-  const renderColumns = (colsToRender: GuideColumn[], spacing: number) => {
-    if (colsToRender.length <= MAX_COLS) {
-      const headers = colsToRender.map(c => c.header);
-      const row = colsToRender.map(c => resolveDecodedField(c.field, decoded));
-      y = addTable(doc, y, headers, [row], undefined, spacing, fs, rh);
-    } else {
-      for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
-        const chunk = colsToRender.slice(i, i + MAX_COLS);
-        const headers = chunk.map(c => c.header);
-        const row = chunk.map(c => resolveDecodedField(c.field, decoded));
-        const isLast = i + MAX_COLS >= colsToRender.length;
-        y = addTable(doc, y, headers, [row], undefined, isLast ? spacing : 2, fs, rh);
-      }
-    }
-  };
-
-  const renderSectionHeader = (text: string) => {
-    doc.setFontSize(9);
-    doc.setFont("Roboto", "bold");
-    doc.setTextColor(0, 0, 0);
-    doc.text(text.toUpperCase(), 15, y);
-    y += 4;
-  };
-
-  // Group consecutive conditional sections with identical headers for merging
+  // Group consecutive conditional sections with identical headers
   const groups: { sections: GuideSection[] }[] = [];
   for (const section of sections) {
     if (section.is_conditional && section.condition_field) {
@@ -190,18 +167,40 @@ export async function generateDecodingPDF(
     groups.push({ sections: [section] });
   }
 
+  // Convert groups into RenderItems
+  const renderItems: RenderItem[] = [];
+
+  const buildChunkedItems = (title: string, cols: GuideColumn[]): RenderItem[] => {
+    const items: RenderItem[] = [];
+    if (cols.length <= MAX_COLS) {
+      items.push({
+        title,
+        headers: cols.map(c => c.header),
+        rows: [cols.map(c => resolveDecodedField(c.field, decoded))],
+      });
+    } else {
+      for (let i = 0; i < cols.length; i += MAX_COLS) {
+        const chunk = cols.slice(i, i + MAX_COLS);
+        items.push({
+          title: i === 0 ? title : "",
+          headers: chunk.map(c => c.header),
+          rows: [chunk.map(c => resolveDecodedField(c.field, decoded))],
+        });
+      }
+    }
+    return items;
+  };
+
   for (const group of groups) {
     if (group.sections.length > 1) {
-      // Merged conditional group — bold header + table with "Typ" column
       const groupName = group.sections.map(s => s.section_name).join(" / ");
-      renderSectionHeader(groupName);
       const cols = group.sections[0].columns;
       const headers = ["Typ", ...cols.map(c => c.header)];
       const rows = group.sections.map(section => [
         section.section_name,
         ...cols.map(c => resolveDecodedField(c.field, decoded)),
       ]);
-      y = addTable(doc, y, headers, rows, { 0: { cellWidth: 25 } }, sp, fs, rh);
+      renderItems.push({ title: groupName, headers, rows, columnStyles: { 0: { cellWidth: 20 } } });
     } else {
       const section = group.sections[0];
       const cols = section.columns;
@@ -210,16 +209,45 @@ export async function generateDecodingPDF(
       const hasSplit = frameCols.length > 0 && foamCols.length > 0;
 
       if (hasSplit) {
-        renderSectionHeader(`${section.section_name} — STOLARKA`);
-        renderColumns(frameCols, sp);
-        renderSectionHeader(`${section.section_name} — PIANKI`);
-        renderColumns(foamCols, sp);
+        renderItems.push(...buildChunkedItems(`${section.section_name} — STOLARKA`, frameCols));
+        renderItems.push(...buildChunkedItems(`${section.section_name} — PIANKI`, foamCols));
       } else {
-        renderSectionHeader(section.section_name);
-        renderColumns(cols, sp);
+        renderItems.push(...buildChunkedItems(section.section_name, cols));
       }
     }
   }
+
+  // --- Two-column rendering ---
+  const fs = 7;
+  const rh = 5;
+  const sp = 3;
+  const colLeftX = 15;
+  const colRightX = 105;
+  const colW = 85;
+  const startY = y;
+
+  const midPoint = Math.ceil(renderItems.length / 2);
+  const leftItems = renderItems.slice(0, midPoint);
+  const rightItems = renderItems.slice(midPoint);
+
+  const renderColumn = (items: RenderItem[], xStart: number, yStart: number): number => {
+    let cy = yStart;
+    for (const item of items) {
+      if (item.title) {
+        doc.setFontSize(8);
+        doc.setFont("Roboto", "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(item.title.toUpperCase(), xStart, cy);
+        cy += 3;
+      }
+      cy = addTableAt(doc, cy, item.headers, item.rows, xStart, colW, item.columnStyles, sp, fs, rh);
+    }
+    return cy;
+  };
+
+  const yLeft = renderColumn(leftItems, colLeftX, startY);
+  const yRight = renderColumn(rightItems, colRightX, startY);
+  y = Math.max(yLeft, yRight);
 
   return toBlob(doc);
 }
