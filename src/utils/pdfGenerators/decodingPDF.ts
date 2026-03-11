@@ -168,36 +168,43 @@ export async function generateDecodingPDF(
     if (group.sections.length > 1) {
       const groupName = group.sections.map(s => s.section_name).join(" / ");
       const cols = group.sections[0].columns;
+      const fw = isFullWidthSection(cols);
       const headers = ["Typ", ...cols.map(c => c.header)];
       const rows = group.sections.map(section => [
         section.section_name,
         ...cols.map(c => resolveDecodedField(c.field, decoded)),
       ]);
-      renderItems.push({ title: groupName, headers, rows, fontSize: adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } } });
+      renderItems.push({ title: groupName, headers, rows, fontSize: fw ? 10 : adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } }, fullWidth: fw });
     } else {
       const section = group.sections[0];
       const cols = section.columns;
+      const fw = isFullWidthSection(cols);
       const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
       const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
-      const hasSplit = frameCols.length > 0 && foamCols.length > 0;
+      const hasSplit = !fw && frameCols.length > 0 && foamCols.length > 0;
 
       if (hasSplit) {
-        renderItems.push(...buildChunkedItems(`${section.section_name} — STOLARKA`, frameCols));
-        renderItems.push(...buildChunkedItems(`${section.section_name} — PIANKI`, foamCols));
+        renderItems.push(...buildChunkedItems(`${section.section_name} — STOLARKA`, frameCols, false));
+        renderItems.push(...buildChunkedItems(`${section.section_name} — PIANKI`, foamCols, false));
       } else {
-        renderItems.push(...buildChunkedItems(section.section_name, cols));
+        renderItems.push(...buildChunkedItems(section.section_name, cols, fw));
       }
     }
   }
 
+  // --- Split into column items and full-width items ---
+  const columnItems = renderItems.filter(item => !item.fullWidth);
+  const fullWidthItems = renderItems.filter(item => item.fullWidth);
+
   // --- Calculate dynamic image height ---
-  const midPoint = Math.ceil(renderItems.length / 2);
-  const leftItems = renderItems.slice(0, midPoint);
-  const rightItems = renderItems.slice(midPoint);
+  const midPoint = Math.ceil(columnItems.length / 2);
+  const leftItems = columnItems.slice(0, midPoint);
+  const rightItems = columnItems.slice(midPoint);
 
   const leftH = estimateColumnHeight(leftItems, rh, sp);
   const rightH = estimateColumnHeight(rightItems, rh, sp);
-  const maxColH = Math.max(leftH, rightH);
+  const fullWidthH = estimateColumnHeight(fullWidthItems, rh, sp);
+  const maxColH = Math.max(leftH, rightH) + fullWidthH;
 
   const pageH = 297;
   const bottomMargin = 10;
