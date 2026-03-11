@@ -173,7 +173,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
         .select(backrestSelect)
         .eq("code", parsed.backrest.code)
         .eq("series_id", seriesId)
-        .eq("model_name", seatModelName)
+        .ilike("model_name", `%${seatModelName}%`)
         .maybeSingle();
       if (byModel) {
         backrestsRes = { data: byModel };
