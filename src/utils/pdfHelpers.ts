@@ -278,7 +278,7 @@ export function addLabel(
   }
 
   doc.setFontSize(mainFontSize);
-  const lineHeight = mainFontSize * 0.45;
+  const lineHeight = mainFontSize * 0.55;
   const totalTextHeight = mainLines.length * lineHeight;
   const startY = marginY + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
 
