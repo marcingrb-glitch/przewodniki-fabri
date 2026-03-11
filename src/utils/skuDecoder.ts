@@ -443,7 +443,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     const walekName = waleksRes.data?.name || staticWalek.name;
     const walekFinish = parsed.walek.finish || seatFinish;
     const walekFinishName = FINISHES[walekFinish] || walekFinish;
-    walekDecoded = { code: walekCode, name: walekName, finish: walekFinish, finishName: walekFinishName };
+    walekDecoded = {
+      code: walekCode, name: walekName, finish: walekFinish, finishName: walekFinishName,
+      constructionType: waleksRes.data?.construction_type ?? undefined,
+      insertType: waleksRes.data?.insert_type ?? undefined,
+    };
   }
 
   // ---- EXTRAS (static only — no series_id needed) ----

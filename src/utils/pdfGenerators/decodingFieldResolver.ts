@@ -74,8 +74,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "walek.code": return decoded.walek?.code || "-";
     case "walek.name": return decoded.walek?.name || "-";
     case "walek.finish_info": return decoded.walek ? `${decoded.walek.finish} (${decoded.walek.finishName})` : "-";
-    case "walek.construction_type": return (decoded.walek as any)?.constructionType || "-";
-    case "walek.insert_type": return (decoded.walek as any)?.insertType || "-";
+    case "walek.construction_type": return decoded.walek?.constructionType || "-";
+    case "walek.insert_type": return decoded.walek?.insertType || "-";
 
     case "pufaSeat.frontBack": return decoded.pufaSeat?.frontBack || "-";
     case "pufaSeat.sides": return decoded.pufaSeat?.sides || "-";
