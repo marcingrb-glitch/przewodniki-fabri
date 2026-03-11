@@ -153,7 +153,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Wykończenia oparć */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Wykończenia oparć</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> : (
           <table className="w-full text-sm border-collapse">
