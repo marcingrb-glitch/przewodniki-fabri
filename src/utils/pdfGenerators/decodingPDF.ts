@@ -290,6 +290,18 @@ export async function generateDecodingPDF(
   const yRight = renderColumn(rightItems, colRightX, startY);
   y = Math.max(yLeft, yRight);
 
+  // --- Full-width items (pillows etc.) ---
+  for (const item of fullWidthItems) {
+    if (item.title) {
+      doc.setFontSize(7);
+      doc.setFont("Roboto", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(item.title.toUpperCase(), 15, y);
+      y += 3;
+    }
+    y = addTableAt(doc, y, item.headers, item.rows, 15, 180, item.columnStyles, sp, item.fontSize, rh);
+  }
+
   return toBlob(doc);
 }
 
