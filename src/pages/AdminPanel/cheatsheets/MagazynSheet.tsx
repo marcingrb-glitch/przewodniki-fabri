@@ -92,7 +92,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       </section>
 
       {/* Siedziska */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🪑 Siedziska</h2>
         {seats.length === 0 ? <NoData label="siedziska" /> : (
           <div className="space-y-4">
