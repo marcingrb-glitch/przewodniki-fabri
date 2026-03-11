@@ -64,6 +64,7 @@ interface RenderItem {
   rows: string[][];
   fontSize: number;
   columnStyles?: { [key: string]: { cellWidth: number } };
+  fullWidth?: boolean;
 }
 
 /** Estimate the height of a column of render items in mm */
