@@ -237,7 +237,7 @@ export function addLabel(
   const parts = seriesText.split("|");
 
   // Render each field in left zone
-  let nextX = 2;
+  let nextX = 1;
   for (let fi = 0; fi < s.leftZoneFields.length; fi++) {
     const fieldValue = parts[fi] || "";
     if (!fieldValue) continue;
@@ -253,10 +253,12 @@ export function addLabel(
       doc.setFontSize(fontSize);
     }
 
-    const x = nextX + 1.5;
+    // Rotated 90° text extends LEFT from anchor — offset by font height
+    const fontHeightMm = fontSize * 0.35;
+    const x = nextX + fontHeightMm;
     const y = pageH / 2 + doc.getTextWidth(fieldValue) / 2;
     doc.text(fieldValue, x, y, { angle: 90 });
-    nextX = x + 1.5;
+    nextX = x + 1;
   }
 
   // --- Main content (shifted right) ---

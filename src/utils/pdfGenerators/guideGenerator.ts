@@ -138,12 +138,7 @@ export async function generateGuidePDF(
   };
 
   for (const section of sections) {
-    // Section name header
-    doc.setFontSize(guideSettings.font_size_header);
-    doc.setFont("Roboto", "bold");
-    doc.setTextColor(0, 0, 0);
-    doc.text(section.section_name.toUpperCase(), 15, y);
-    y += 5;
+    // Check condition BEFORE rendering anything
     if (section.is_conditional && section.condition_field) {
       if (!checkDecodedCondition(decoded, section.condition_field)) continue;
     }
@@ -154,21 +149,27 @@ export async function generateGuidePDF(
     const hasSplit = frameCols.length > 0 && foamCols.length > 0;
 
     if (hasSplit) {
-      // Subgroup label: Stolarka
-      doc.setFontSize(guideSettings.font_size_table);
-      doc.setFont("Roboto", "italic");
-      doc.setTextColor(100, 100, 100);
-      doc.text("Stolarka", 15, y);
-      y += 3;
+      // Subgroup headers with section name
+      doc.setFontSize(guideSettings.font_size_header);
+      doc.setFont("Roboto", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${section.section_name.toUpperCase()} — STOLARKA`, 15, y);
+      y += 5;
       renderColumns(frameCols, 4);
 
-      // Subgroup label: Pianki
-      doc.setFont("Roboto", "italic");
-      doc.setTextColor(100, 100, 100);
-      doc.text("Pianki", 15, y);
-      y += 3;
+      doc.setFontSize(guideSettings.font_size_header);
+      doc.setFont("Roboto", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${section.section_name.toUpperCase()} — PIANKI`, 15, y);
+      y += 5;
       renderColumns(foamCols, 8);
     } else {
+      // Section name header
+      doc.setFontSize(guideSettings.font_size_header);
+      doc.setFont("Roboto", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(section.section_name.toUpperCase(), 15, y);
+      y += 5;
       renderColumns(cols, 8);
     }
   }
