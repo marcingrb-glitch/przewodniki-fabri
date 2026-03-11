@@ -1,38 +1,30 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Fix SKU decoder missing fields + cheatsheet print layout
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem 1: Missing `frame_modification` in seats_sofa SELECT
+Line 131 in `skuDecoder.ts` — the select string doesn't include `frame_modification`, so it's always `undefined` even though the DB column exists and line 293 tries to read it.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+**Fix:** Add `frame_modification` to the select string on line 131.
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Problem 2: Backrest foams never fetched
+Line 224 filters `product_foams` by `.eq("seat_code", seatCode)`. Backrest foams are stored with `seat_code` equal to the backrest code (e.g. "OP62"), not the seat code. So they never match.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+**Fix:** Change `.eq("seat_code", seatCode)` to `.in("seat_code", [seatCode, parsed.backrest.code])` to fetch both seat and backrest foams in one query.
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+### Problem 3: Cheatsheet print — forced page breaks
+Every `<section>` in all 4 cheatsheet components uses `className="page-break"`, and the CSS rule `.page-break { page-break-before: always; }` forces each section onto a new page. This creates excessive whitespace.
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+**Fix:**
+- Remove `page-break` class from all cheatsheet sections
+- Add a new CSS class `avoid-break` with `page-break-inside: avoid` so sections try to stay together but don't force new pages
+- Add reasonable margin between sections (e.g. `mb-6`)
 
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Files to edit:
+1. **`src/utils/skuDecoder.ts`** — add `frame_modification` to select (line 131), change foam query to `.in()` (line 224)
+2. **`src/index.css`** — add `avoid-break` print class
+3. **`src/pages/AdminPanel/cheatsheets/KierownikSheet.tsx`** — replace `page-break` with `mb-6 avoid-break`
+4. **`src/pages/AdminPanel/cheatsheets/MagazynSheet.tsx`** — same
+5. **`src/pages/AdminPanel/cheatsheets/KrojowniaSheet.tsx`** — same
+6. **`src/pages/AdminPanel/cheatsheets/NozkiSheet.tsx`** — same
 
