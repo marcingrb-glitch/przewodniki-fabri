@@ -124,7 +124,7 @@ export async function generateGuidePDF(
     const MAX_COLS = 4;
     if (colsToRender.length <= MAX_COLS) {
       const headers = colsToRender.map(c => c.header);
-      const row = colsToRender.map(c => resolveField(decoded, c.field));
+      const row = colsToRender.map(c => resolveDecodedField(c.field, decoded));
       y = addTable(doc, y, headers, [row], undefined, spacing, guideSettings.font_size_table, guideSettings.table_row_height);
     } else {
       for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
