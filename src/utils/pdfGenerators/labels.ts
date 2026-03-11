@@ -97,8 +97,7 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
 
 function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
   if (!tpl.is_conditional || !tpl.condition_field) return true;
-  const val = resolveField(decoded, tpl.condition_field);
-  return val !== "-" && val !== "" && val !== "null" && val !== "undefined";
+  return checkDecodedCondition(decoded, tpl.condition_field);
 }
 
 /** Normalize display_fields: flat string[] → string[][], nested stays as-is */
