@@ -526,6 +526,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     seat: {
       code: seatCode,
       type: seatType,
+      modelName: seatSofaRes.data?.model_name || undefined,
       finish: seatFinish,
       finishName: seatFinishName,
       frame: seatFrame,
