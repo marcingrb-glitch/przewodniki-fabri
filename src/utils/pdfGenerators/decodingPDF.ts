@@ -131,6 +131,9 @@ export async function generateDecodingPDF(
 
   const renderItems: RenderItem[] = [];
 
+  const adaptiveFontSize = (colCount: number): number =>
+    colCount <= 3 ? 10 : colCount === 4 ? 9 : 8;
+
   const buildChunkedItems = (title: string, cols: GuideColumn[]): RenderItem[] => {
     const items: RenderItem[] = [];
     if (cols.length <= MAX_COLS) {
@@ -138,6 +141,7 @@ export async function generateDecodingPDF(
         title,
         headers: cols.map(c => c.header),
         rows: [cols.map(c => resolveDecodedField(c.field, decoded))],
+        fontSize: adaptiveFontSize(cols.length),
       });
     } else {
       for (let i = 0; i < cols.length; i += MAX_COLS) {
@@ -146,6 +150,7 @@ export async function generateDecodingPDF(
           title: i === 0 ? title : "",
           headers: chunk.map(c => c.header),
           rows: [chunk.map(c => resolveDecodedField(c.field, decoded))],
+          fontSize: adaptiveFontSize(chunk.length),
         });
       }
     }
