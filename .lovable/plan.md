@@ -1,38 +1,17 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Plan: Fix label PDF — text overlap and left zone spacing
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+### Problem 1: Text overlap in main content
+The `lineHeight` multiplier (`mainFontSize * 0.45`) is too small, causing lines to overlap when font size is large. For a 14pt font, lineHeight = 6.3mm which is not enough for bold Roboto.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+**Fix:** Change line height multiplier from `0.45` to `0.55` in `addLabel` (line 281).
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+### Problem 2: Too much gap between S1 and Viena in left zone
+The `nextX` calculation uses `fontSize * 0.35` on both sides of the text plus extra spacing. For S1 at 18pt, this creates ~7.6mm per field when the text itself is only ~6mm wide. The gap after the first field (`fi === 0 ? 1 : 0.8`) adds more space.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+**Fix:** Reduce the spacing multiplier from `0.35` to `0.3` and reduce inter-field gap from `1` to `0.5` (lines 256-259).
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
-
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+### Files to edit
+- **`src/utils/pdfHelpers.ts`** — lines 256-259 (left zone spacing) and line 281 (line height)
 
