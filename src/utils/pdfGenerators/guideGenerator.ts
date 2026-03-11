@@ -130,7 +130,7 @@ export async function generateGuidePDF(
       for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
         const chunk = colsToRender.slice(i, i + MAX_COLS);
         const headers = chunk.map(c => c.header);
-        const row = chunk.map(c => resolveField(decoded, c.field));
+        const row = chunk.map(c => resolveDecodedField(c.field, decoded));
         const isLastChunk = i + MAX_COLS >= colsToRender.length;
         y = addTable(doc, y, headers, [row], undefined, isLastChunk ? spacing : 2, guideSettings.font_size_table, guideSettings.table_row_height);
       }
