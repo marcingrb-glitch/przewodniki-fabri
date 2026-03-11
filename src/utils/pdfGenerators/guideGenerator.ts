@@ -139,7 +139,7 @@ export async function generateGuidePDF(
 
   for (const section of sections) {
     if (section.is_conditional && section.condition_field) {
-      if (!checkCondition(decoded, section.condition_field)) continue;
+      if (!checkDecodedCondition(decoded, section.condition_field)) continue;
     }
 
     const cols = section.columns as GuideColumn[];

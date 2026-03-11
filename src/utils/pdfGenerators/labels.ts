@@ -125,7 +125,7 @@ function buildLabelLines(
   for (let i = 0; i < lineGroups.length; i++) {
     const parts = lineGroups[i]
       .map((f) => {
-        const val = resolveField(decoded, f);
+        const val = resolveDecodedField(f, decoded);
         if (val === "-") return null;
         return formatFieldWithLabel(f, val);
       })
