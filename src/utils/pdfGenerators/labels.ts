@@ -1,11 +1,10 @@
 import { DecodedSKU } from "@/types";
 import { createDoc, addLabel, toBlob, LabelSettings } from "@/utils/pdfHelpers";
 import { supabase } from "@/integrations/supabase/client";
-import { formatFoamsDetailed } from "@/utils/foamHelpers";
 import { formatFieldWithLabel } from "@/utils/fieldLabels";
+import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 
 function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string): string {
-  // Build pipe-separated values matching leftZoneFields order
   return leftZoneFields.map((field) => {
     switch (field) {
       case "series.code": return decoded.series.code || "";
@@ -16,33 +15,6 @@ function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: 
       default: return "";
     }
   }).join("|");
-}
-
-/** Resolve a dotted path like "seat.code" from DecodedSKU */
-function resolveField(decoded: DecodedSKU, path: string): string {
-  // Special handling for foams lists
-  if (path === "seat.foamsList") {
-    const lines = formatFoamsDetailed(decoded.seat.foams);
-    return lines.length > 0 ? lines.join("\n") : "-";
-  }
-  if (path === "backrest.foamsList") {
-    const lines = formatFoamsDetailed(decoded.backrest.foams);
-    return lines.length > 0 ? lines.join("\n") : "-";
-  }
-
-  const parts = path.split(".");
-  let current: unknown = decoded;
-  for (const part of parts) {
-    if (current == null || typeof current !== "object") return "-";
-    current = (current as Record<string, unknown>)[part];
-  }
-  if (current == null) return "-";
-  if (typeof current === "boolean") return current ? "Tak" : "Nie";
-  // Auto-format height fields with "cm" unit
-  if (path.endsWith(".height") && typeof current === "number") {
-    return `${current} cm`;
-  }
-  return String(current);
 }
 
 interface LabelTemplate {
@@ -125,8 +97,7 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
 
 function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
   if (!tpl.is_conditional || !tpl.condition_field) return true;
-  const val = resolveField(decoded, tpl.condition_field);
-  return val !== "-" && val !== "" && val !== "null" && val !== "undefined";
+  return checkDecodedCondition(decoded, tpl.condition_field);
 }
 
 /** Normalize display_fields: flat string[] → string[][], nested stays as-is */
@@ -154,7 +125,7 @@ function buildLabelLines(
   for (let i = 0; i < lineGroups.length; i++) {
     const parts = lineGroups[i]
       .map((f) => {
-        const val = resolveField(decoded, f);
+        const val = resolveDecodedField(f, decoded);
         if (val === "-") return null;
         return formatFieldWithLabel(f, val);
       })

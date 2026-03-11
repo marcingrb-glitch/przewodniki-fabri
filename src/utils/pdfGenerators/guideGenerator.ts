@@ -1,7 +1,7 @@
 import { DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
-import { formatFoamsSummary } from "@/utils/foamHelpers";
+import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 
 interface GuideColumn {
   header: string;
@@ -18,113 +18,6 @@ interface GuideSection {
   condition_field: string | null;
   columns: GuideColumn[];
   enabled: boolean;
-}
-
-/**
- * Resolve a field path to a value from DecodedSKU.
- * Supports special computed fields like "seat.code_finish", "seat.foams_summary", etc.
- */
-function resolveField(decoded: DecodedSKU, field: string): string {
-  // Special computed fields
-  switch (field) {
-    case "seat.code":
-      return decoded.seat.code;
-    case "seat.finish_name":
-      return decoded.seat.finishName;
-    case "seat.code_finish":
-      return `${decoded.seat.code} (${decoded.seat.finishName})`;
-    case "seat.type":
-      return decoded.seat.type || "-";
-    case "seat.foams_summary":
-      return formatFoamsSummary(decoded.seat.foams);
-    case "seat.midStrip_yn":
-      return decoded.seat.midStrip ? "TAK" : "NIE";
-    case "seat.frameModification":
-      return decoded.seat.frameModification || "-";
-    case "backrest.code":
-      return decoded.backrest.code;
-    case "backrest.finish_name":
-      return decoded.backrest.finishName;
-    case "backrest.code_finish":
-      return `${decoded.backrest.code}${decoded.backrest.finish} (${decoded.backrest.finishName})`;
-    case "backrest.foams_summary":
-      return formatFoamsSummary(decoded.backrest.foams);
-    case "side.code":
-      return decoded.side.code;
-    case "side.finish_name":
-      return decoded.side.finishName;
-    case "side.code_finish":
-      return `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`;
-    case "side.foam":
-      return "-";
-    case "chest_automat.label":
-      return `${decoded.chest.code} + ${decoded.automat.code}`;
-    case "automat.code_name":
-      return `${decoded.automat.code} - ${decoded.automat.name}`;
-    case "legs.code_color":
-      return decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : "-";
-    case "legHeights.sofa_chest_info": {
-      const cl = decoded.legHeights.sofa_chest;
-      return cl ? `${cl.leg} H ${cl.height}cm (${cl.count} szt)` : "-";
-    }
-    case "legHeights.sofa_seat_info": {
-      const sl = decoded.legHeights.sofa_seat;
-      return sl ? `${sl.leg} H ${sl.height}cm (${sl.count} szt)` : "BRAK";
-    }
-    case "pillow.name":
-      return decoded.pillow ? decoded.pillow.name.replace(/^Poduszka\s+/i, "") : "-";
-    case "pillow.finish_info":
-      return decoded.pillow ? `${decoded.pillow.finish} (${decoded.pillow.finishName})` : "-";
-    case "jaski.finish_info":
-      return decoded.jaski ? `${decoded.jaski.finish} (${decoded.jaski.finishName})` : "-";
-    case "walek.finish_info":
-      return decoded.walek ? `${decoded.walek.finish} (${decoded.walek.finishName})` : "-";
-    case "pufaLegs.count_info":
-      return decoded.pufaLegs ? `${decoded.pufaLegs.count} szt` : "-";
-    case "pufaLegs.height_info":
-      return decoded.pufaLegs ? `H ${decoded.pufaLegs.height}cm` : "-";
-    case "fotelLegs.count_info":
-      return decoded.fotelLegs ? `${decoded.fotelLegs.count} szt` : "-";
-    case "fotelLegs.height_info":
-      return decoded.fotelLegs ? `H ${decoded.fotelLegs.height}cm` : "-";
-    case "extras.label":
-      return "";
-    case "extras.pufa_sku":
-      return decoded.pufaSKU || "-";
-    case "extras.fotel_sku":
-      return decoded.fotelSKU || "-";
-    default:
-      break;
-  }
-
-  // Generic dot-path resolution: "object.property"
-  const parts = field.split(".");
-  let val: any = decoded;
-  for (const p of parts) {
-    if (val == null) return "-";
-    val = val[p];
-  }
-  if (val == null || val === "") return "-";
-  if (typeof val === "boolean") return val ? "TAK" : "NIE";
-  return String(val);
-}
-
-/**
- * Check if the condition field is truthy in decoded data.
- */
-function checkCondition(decoded: DecodedSKU, conditionField: string): boolean {
-  if (conditionField === "extras_pufa_fotel") {
-    const hasPufa = decoded.extras.some(e => e.type === "pufa");
-    const hasFotel = decoded.extras.some(e => e.type === "fotel");
-    return hasPufa || hasFotel;
-  }
-  const parts = conditionField.split(".");
-  let val: any = decoded;
-  for (const p of parts) {
-    if (val == null) return false;
-    val = val[p];
-  }
-  return val != null && val !== false && val !== "";
 }
 
 /**
@@ -231,13 +124,13 @@ export async function generateGuidePDF(
     const MAX_COLS = 4;
     if (colsToRender.length <= MAX_COLS) {
       const headers = colsToRender.map(c => c.header);
-      const row = colsToRender.map(c => resolveField(decoded, c.field));
+      const row = colsToRender.map(c => resolveDecodedField(c.field, decoded));
       y = addTable(doc, y, headers, [row], undefined, spacing, guideSettings.font_size_table, guideSettings.table_row_height);
     } else {
       for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
         const chunk = colsToRender.slice(i, i + MAX_COLS);
         const headers = chunk.map(c => c.header);
-        const row = chunk.map(c => resolveField(decoded, c.field));
+        const row = chunk.map(c => resolveDecodedField(c.field, decoded));
         const isLastChunk = i + MAX_COLS >= colsToRender.length;
         y = addTable(doc, y, headers, [row], undefined, isLastChunk ? spacing : 2, guideSettings.font_size_table, guideSettings.table_row_height);
       }
@@ -246,7 +139,7 @@ export async function generateGuidePDF(
 
   for (const section of sections) {
     if (section.is_conditional && section.condition_field) {
-      if (!checkCondition(decoded, section.condition_field)) continue;
+      if (!checkDecodedCondition(decoded, section.condition_field)) continue;
     }
 
     const cols = section.columns as GuideColumn[];

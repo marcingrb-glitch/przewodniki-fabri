@@ -21,7 +21,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "seat.springType": return decoded.seat.springType || "-";
     case "seat.front": return decoded.seat.front || "-";
     case "seat.midStrip_yn": return decoded.seat.midStrip ? "TAK" : "NIE";
-    case "seat.foams_summary": {
+    case "seat.foams_summary":
+    case "seat.foamsList": {
       const lines = formatFoamsDetailed(decoded.seat.foams);
       return lines.length > 0 ? lines.join("\n") : decoded.seat.foam || "-";
     }
@@ -32,7 +33,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "backrest.frame": return decoded.backrest.frame || "-";
     case "backrest.top": return decoded.backrest.top || "-";
     case "backrest.springType": return decoded.backrest.springType || "-";
-    case "backrest.foams_summary": {
+    case "backrest.foams_summary":
+    case "backrest.foamsList": {
       const lines = formatFoamsDetailed(decoded.backrest.foams);
       return lines.length > 0 ? lines.join("\n") : decoded.backrest.foam || "-";
     }
