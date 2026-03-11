@@ -187,7 +187,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       </section>
 
       {/* Boczki */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">📐 Boczki</h2>
         {sides.length === 0 ? <NoData label="boczki" /> : (
           <table className="w-full text-sm border-collapse">

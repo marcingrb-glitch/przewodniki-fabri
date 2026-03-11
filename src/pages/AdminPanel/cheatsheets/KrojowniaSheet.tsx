@@ -231,7 +231,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       )}
 
       {/* Tkaniny */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🧵 Tkaniny ({fabrics.length})</h2>
         {fabrics.length === 0 ? <NoData label="tkaniny" /> : (
           <table className="w-full text-sm border-collapse">
