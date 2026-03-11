@@ -261,7 +261,7 @@ export async function generateDecodingPDF(
     let cy = yStart;
     for (const item of items) {
       if (item.title) {
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         doc.setFont("Roboto", "bold");
         doc.setTextColor(0, 0, 0);
         doc.text(item.title.toUpperCase(), xStart, cy);
