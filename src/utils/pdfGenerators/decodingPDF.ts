@@ -62,6 +62,7 @@ interface RenderItem {
   title: string;
   headers: string[];
   rows: string[][];
+  fontSize: number;
   columnStyles?: { [key: string]: { cellWidth: number } };
 }
 
