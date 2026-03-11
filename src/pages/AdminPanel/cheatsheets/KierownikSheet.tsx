@@ -248,7 +248,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Oparcia */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Oparcia ({backrests.length})</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> :
         <table className="w-full text-xs border-collapse">
