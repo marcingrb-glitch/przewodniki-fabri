@@ -413,7 +413,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     const pillowName = pillowsRes.data?.name || staticPillow.name;
     const pillowFinish = parsed.pillow.finish || pillowsRes.data?.default_finish || seatFinish;
     const pillowFinishName = FINISHES[pillowFinish] || pillowFinish;
-    pillowDecoded = { code: pillowCode, name: pillowName, finish: pillowFinish, finishName: pillowFinishName };
+    pillowDecoded = {
+      code: pillowCode, name: pillowName, finish: pillowFinish, finishName: pillowFinishName,
+      constructionType: pillowsRes.data?.construction_type ?? undefined,
+      insertType: pillowsRes.data?.insert_type ?? undefined,
+    };
   }
 
   // ---- JASKI (fallback to static) ----
