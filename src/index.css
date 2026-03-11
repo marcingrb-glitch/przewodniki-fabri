@@ -178,6 +178,9 @@
   .page-break {
     page-break-before: always;
   }
+  .avoid-break {
+    page-break-inside: avoid;
+  }
   .border-4 {
     border-width: 3px !important;
     border-color: black !important;

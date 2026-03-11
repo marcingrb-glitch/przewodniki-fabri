@@ -207,7 +207,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       }
 
       {/* Siedziska sofa */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🪑 Siedziska sofa ({seats.length})</h2>
         {seats.length === 0 ? <NoData label="siedziska" /> :
         <table className="w-full text-xs border-collapse">
@@ -248,7 +248,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Oparcia */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Oparcia ({backrests.length})</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> :
         <table className="w-full text-xs border-collapse">
@@ -279,7 +279,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Boczki */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">📐 Boczki ({sides.length})</h2>
         {sides.length === 0 ? <NoData label="boczki" /> :
         <table className="w-full text-xs border-collapse">
@@ -306,7 +306,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Nóżki */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">👟 Nóżki ({legs.length})</h2>
         {legs.length === 0 ? <NoData label="nóżki" /> :
         <table className="w-full text-xs border-collapse">
@@ -334,7 +334,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
 
       {/* Automaty */}
       {seriesAutomats.length > 0 &&
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
           <h2 className="text-lg font-bold mb-2">🔧 Automaty ({seriesAutomats.length})</h2>
           <table className="w-full text-xs border-collapse">
             <thead>
@@ -365,7 +365,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
 
       {/* Pufa */}
       {seatsPufa.length > 0 &&
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
           <h2 className="text-lg font-bold mb-2">🟫 Pufa ({seatsPufa.length})</h2>
           <table className="w-full text-xs border-collapse">
             <thead>
@@ -393,7 +393,7 @@ export default function KierownikSheet({ seriesId, seriesCode, seriesName }: Pro
       }
 
       {/* Tkaniny */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🧵 Tkaniny ({fabrics.length})</h2>
         {fabrics.length === 0 ? <NoData label="tkaniny" /> :
         <table className="w-full text-xs border-collapse">

@@ -99,7 +99,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Dozwolone wykończenia - siedziska */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">✂️ Wykończenia siedzisk</h2>
         {seats.length === 0 ? <NoData label="siedziska" /> : (
           <table className="w-full text-sm border-collapse">
@@ -126,7 +126,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Wykończenia boczków */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">📐 Wykończenia boczków</h2>
         {sides.length === 0 ? <NoData label="boczki" /> : (
           <table className="w-full text-sm border-collapse">
@@ -153,7 +153,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       </section>
 
       {/* Wykończenia oparć */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Wykończenia oparć</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> : (
           <table className="w-full text-sm border-collapse">
@@ -179,7 +179,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
 
       {/* Warianty szycia oparcia */}
       {sewingVariants.length > 0 && (
-        <section className="page-break">
+        <section className="mb-6 avoid-break">
           <div className="border-4 border-orange-500 rounded-lg p-4 bg-orange-50 dark:bg-orange-950/30">
             <h2 className="text-lg font-bold mb-2 text-orange-700 dark:text-orange-400">⚠️ Warianty szycia oparcia — WAŻNE!</h2>
             <p className="text-sm mb-3 font-medium">Różne modele mają różne rysunki oparcia. Sprawdź model przed krojem!</p>
@@ -207,7 +207,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
 
       {/* Mapowanie poduszek */}
       {pillowMappings.length > 0 && (
-        <section className="page-break">
+        <section className="mb-6 avoid-break">
           <h2 className="text-lg font-bold mb-2">🛏️ Poduszki per siedzisko</h2>
           <table className="w-full text-sm border-collapse">
             <thead>
@@ -231,7 +231,7 @@ export default function KrojowniaSheet({ seriesId, seriesCode, seriesName }: Pro
       )}
 
       {/* Tkaniny */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🧵 Tkaniny ({fabrics.length})</h2>
         {fabrics.length === 0 ? <NoData label="tkaniny" /> : (
           <table className="w-full text-sm border-collapse">

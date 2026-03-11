@@ -225,7 +225,7 @@ export default function NozkiSheet({ seriesId, seriesCode, seriesName }: Props) 
       </section>
 
       {/* Tabela typów nóżek */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">👟 Typy nóżek w serii {seriesCode}</h2>
         {legs.length === 0 ? <NoData label="nóżki" /> : (
           <table className="w-full text-sm border-collapse">

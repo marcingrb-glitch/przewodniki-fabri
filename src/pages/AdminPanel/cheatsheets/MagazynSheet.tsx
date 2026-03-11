@@ -92,7 +92,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       </section>
 
       {/* Siedziska */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🪑 Siedziska</h2>
         {seats.length === 0 ? <NoData label="siedziska" /> : (
           <div className="space-y-4">
@@ -140,7 +140,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       </section>
 
       {/* Oparcia */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Oparcia</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> : (
           <div className="space-y-4">
@@ -187,7 +187,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       </section>
 
       {/* Boczki */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">📐 Boczki</h2>
         {sides.length === 0 ? <NoData label="boczki" /> : (
           <table className="w-full text-sm border-collapse">
