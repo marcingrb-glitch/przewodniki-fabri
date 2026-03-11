@@ -28,6 +28,7 @@ export interface FieldDef {
 
 export const FIELD_GROUPS: { key: string; label: string }[] = [
   { key: "fabric", label: "Tkanina" },
+  { key: "seat", label: "Siedzisko" },
   { key: "seat_frame", label: "Siedzisko — Stolarka" },
   { key: "seat_foam", label: "Siedzisko — Pianki" },
   { key: "backrest", label: "Oparcie" },
@@ -44,6 +45,7 @@ export const FIELD_GROUPS: { key: string; label: string }[] = [
 ];
 
 export const AVAILABLE_FIELDS: FieldDef[] = [
+  { value: "seat.summary", label: "Kod + model + typ", group: "seat" },
   { value: "fabric.code", label: "Kod", group: "fabric" },
   { value: "fabric.name", label: "Nazwa", group: "fabric" },
   { value: "fabric.color", label: "Kolor", group: "fabric" },
@@ -153,6 +155,7 @@ export function resolveExampleValue(field: string, data: any): string {
     "seat.code": v(data.seat?.code),
     "seat.finish_name": finishName,
     "seat.code_finish": `${v(data.seat?.code)} (${finishName})`,
+    "seat.summary": `${v(data.seat?.code)} - ${v(data.seat?.model_name)} - Wciąg`,
     "seat.type": "Wciąg",
     "seat.frame": v(data.seat?.frame),
     "seat.foams_summary": "T25 40×50×10 (1 szt)",

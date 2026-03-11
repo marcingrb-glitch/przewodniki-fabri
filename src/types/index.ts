@@ -46,7 +46,7 @@ export interface ProductFoamItem {
 export interface DecodedSKU {
   series: { code: string; name: string; collection: string };
   fabric: { code: string; name: string; color: string; colorName: string; group: number };
-  seat: { code: string; type: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean; springType?: string; frameModification?: string; foams?: ProductFoamItem[] };
+  seat: { code: string; type: string; modelName?: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean; springType?: string; frameModification?: string; foams?: ProductFoamItem[] };
   side: { code: string; name: string; frame: string; finish: string; finishName: string };
   backrest: { code: string; height: string; frame: string; foam: string; top: string; finish: string; finishName: string; springType?: string; foams?: ProductFoamItem[] };
   chest: { code: string; name: string; legHeight: number; legCount: number };

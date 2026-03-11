@@ -1,30 +1,38 @@
 
 
-## Plan: Dodanie pola "Siedzisko" jako grupy głównej
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Co robimy
-Dodajemy nowe pole `seat.summary` w selektorze pól (grupa "Siedzisko") wyświetlające: **"SD1 - Modena - Gładkie"** (kod + model + typ).
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiany
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-#### 1. Typ `DecodedSKU` — `src/types/index.ts`
-Dodanie `modelName?: string` do obiektu `seat` w interfejsie `DecodedSKU`.
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-#### 2. Dekoder SKU — `src/utils/skuDecoder.ts`
-Przekazanie `seatSofaRes.data?.model_name` do wyniku `seat.modelName`.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-#### 3. Grupy pól — `src/pages/AdminPanel/fieldResolver.ts`
-- Dodanie nowej grupy `{ key: "seat", label: "Siedzisko" }` **przed** grupami "Stolarka" i "Pianki"
-- Dodanie pola `{ value: "seat.summary", label: "Kod + model + typ", group: "seat" }`
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-#### 4. Resolver — `src/utils/pdfGenerators/decodingFieldResolver.ts`
-Dodanie case:
-```typescript
-case "seat.summary":
-  return [decoded.seat.code, decoded.seat.modelName, decoded.seat.type]
-    .filter(Boolean).join(" - ") || "-";
-```
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-#### 5. Podgląd (fieldResolver.ts)
-Dodanie przykładowej wartości dla `seat.summary` w `resolveField`.
+### Krok 4: App.tsx — routing
+
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

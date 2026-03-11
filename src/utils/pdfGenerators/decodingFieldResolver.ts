@@ -12,6 +12,9 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "fabric.color": return `${decoded.fabric.color} - ${decoded.fabric.colorName}`;
     case "fabric.group": return `${decoded.fabric.group}`;
 
+    case "seat.summary":
+      return [decoded.seat.code, decoded.seat.modelName, decoded.seat.type]
+        .filter(Boolean).join(" - ") || "-";
     case "seat.code": return decoded.seat.code;
     case "seat.finish_name": return decoded.seat.finishName;
     case "seat.code_finish": return `${decoded.seat.code} (${decoded.seat.finishName})`;
