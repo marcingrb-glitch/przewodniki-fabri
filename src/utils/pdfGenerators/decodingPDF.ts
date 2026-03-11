@@ -145,6 +145,32 @@ export async function generateDecodingPDF(
   const fs = 8;
   const rh = 6;
   const sp = 4;
+  const MAX_COLS = 4;
+  const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
+
+  const renderColumns = (colsToRender: GuideColumn[], spacing: number) => {
+    if (colsToRender.length <= MAX_COLS) {
+      const headers = colsToRender.map(c => c.header);
+      const row = colsToRender.map(c => resolveDecodedField(c.field, decoded));
+      y = addTable(doc, y, headers, [row], undefined, spacing, fs, rh);
+    } else {
+      for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
+        const chunk = colsToRender.slice(i, i + MAX_COLS);
+        const headers = chunk.map(c => c.header);
+        const row = chunk.map(c => resolveDecodedField(c.field, decoded));
+        const isLast = i + MAX_COLS >= colsToRender.length;
+        y = addTable(doc, y, headers, [row], undefined, isLast ? spacing : 2, fs, rh);
+      }
+    }
+  };
+
+  const renderSectionHeader = (text: string) => {
+    doc.setFontSize(9);
+    doc.setFont("Roboto", "bold");
+    doc.setTextColor(0, 0, 0);
+    doc.text(text.toUpperCase(), 15, y);
+    y += 4;
+  };
 
   // Group consecutive conditional sections with identical headers for merging
   const groups: { sections: GuideSection[] }[] = [];
@@ -166,7 +192,9 @@ export async function generateDecodingPDF(
 
   for (const group of groups) {
     if (group.sections.length > 1) {
-      // Merged table with "Typ" column
+      // Merged conditional group — bold header + table with "Typ" column
+      const groupName = group.sections.map(s => s.section_name).join(" / ");
+      renderSectionHeader(groupName);
       const cols = group.sections[0].columns;
       const headers = ["Typ", ...cols.map(c => c.header)];
       const rows = group.sections.map(section => [
@@ -177,9 +205,19 @@ export async function generateDecodingPDF(
     } else {
       const section = group.sections[0];
       const cols = section.columns;
-      const headers = [section.section_name, ...cols.map(c => c.header)];
-      const row = ["", ...cols.map(c => resolveDecodedField(c.field, decoded))];
-      y = addTable(doc, y, headers, [row], { 0: { cellWidth: 0 } }, sp, fs, rh);
+      const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
+      const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
+      const hasSplit = frameCols.length > 0 && foamCols.length > 0;
+
+      if (hasSplit) {
+        renderSectionHeader(`${section.section_name} — STOLARKA`);
+        renderColumns(frameCols, sp);
+        renderSectionHeader(`${section.section_name} — PIANKI`);
+        renderColumns(foamCols, sp);
+      } else {
+        renderSectionHeader(section.section_name);
+        renderColumns(cols, sp);
+      }
     }
   }
 
