@@ -428,7 +428,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     const jaskiName = jaskisRes.data?.name || staticJaski.name;
     const jaskiFinish = parsed.jaski.finish || seatFinish;
     const jaskiFinishName = FINISHES[jaskiFinish] || jaskiFinish;
-    jaskiDecoded = { code: jaskiCode, name: jaskiName, finish: jaskiFinish, finishName: jaskiFinishName };
+    jaskiDecoded = {
+      code: jaskiCode, name: jaskiName, finish: jaskiFinish, finishName: jaskiFinishName,
+      constructionType: jaskisRes.data?.construction_type ?? undefined,
+      insertType: jaskisRes.data?.insert_type ?? undefined,
+    };
   }
 
   // ---- WALEK (fallback to static) ----
