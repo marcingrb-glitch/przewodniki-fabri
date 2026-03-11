@@ -111,6 +111,7 @@ export async function generateDecodingPDF(
   const sp = 3;
   const MAX_COLS = 6;
   const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
+  const FULL_WIDTH_PREFIXES = ["pillow.", "jaski.", "walek."];
 
   // --- Build render items from sections BEFORE drawing image ---
   const groups: { sections: GuideSection[] }[] = [];
