@@ -145,7 +145,7 @@ export async function generateDecodingPDF(
   const fs = 8;
   const rh = 6;
   const sp = 4;
-  const MAX_COLS = 4;
+  const MAX_COLS = 6;
   const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
 
   const renderColumns = (colsToRender: GuideColumn[], spacing: number) => {
