@@ -140,7 +140,7 @@ export default function MagazynSheet({ seriesId, seriesCode, seriesName }: Props
       </section>
 
       {/* Oparcia */}
-      <section className="page-break">
+      <section className="mb-6 avoid-break">
         <h2 className="text-lg font-bold mb-2">🛋️ Oparcia</h2>
         {backrests.length === 0 ? <NoData label="oparcia" /> : (
           <div className="space-y-4">
