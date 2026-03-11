@@ -165,7 +165,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // ---- BACKREST query (depends on seat's model_name) ----
   const seatModelName = seatSofaRes.data?.model_name ?? null;
   let backrestsRes: { data: any } = { data: null };
-  const backrestSelect = "id, code, frame, foam, top, height_cm, allowed_finishes, default_finish, spring_type";
+  const backrestSelect = "id, code, frame, top, height_cm, allowed_finishes, default_finish, spring_type";
   if (seriesId && parsed.backrest.code) {
     if (seatModelName) {
       const { data: byModel } = await supabase
