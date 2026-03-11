@@ -136,14 +136,18 @@ export async function generateDecodingPDF(
   const adaptiveFontSize = (colCount: number): number =>
     colCount <= 3 ? 10 : colCount === 4 ? 9 : 8;
 
-  const buildChunkedItems = (title: string, cols: GuideColumn[]): RenderItem[] => {
+  const isFullWidthSection = (cols: GuideColumn[]): boolean =>
+    cols.some(c => FULL_WIDTH_PREFIXES.some(p => c.field.startsWith(p)));
+
+  const buildChunkedItems = (title: string, cols: GuideColumn[], fullWidth: boolean): RenderItem[] => {
     const items: RenderItem[] = [];
     if (cols.length <= MAX_COLS) {
       items.push({
         title,
         headers: cols.map(c => c.header),
         rows: [cols.map(c => resolveDecodedField(c.field, decoded))],
-        fontSize: adaptiveFontSize(cols.length),
+        fontSize: fullWidth ? 10 : adaptiveFontSize(cols.length),
+        fullWidth,
       });
     } else {
       for (let i = 0; i < cols.length; i += MAX_COLS) {
@@ -152,7 +156,8 @@ export async function generateDecodingPDF(
           title: i === 0 ? title : "",
           headers: chunk.map(c => c.header),
           rows: [chunk.map(c => resolveDecodedField(c.field, decoded))],
-          fontSize: adaptiveFontSize(chunk.length),
+          fontSize: fullWidth ? 10 : adaptiveFontSize(chunk.length),
+          fullWidth,
         });
       }
     }
