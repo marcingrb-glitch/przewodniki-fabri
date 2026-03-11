@@ -237,7 +237,7 @@ export function addLabel(
   const parts = seriesText.split("|");
 
   // Render each field in left zone
-  let nextX = 1;
+  let nextX = 2;
   for (let fi = 0; fi < s.leftZoneFields.length; fi++) {
     const fieldValue = parts[fi] || "";
     if (!fieldValue) continue;
