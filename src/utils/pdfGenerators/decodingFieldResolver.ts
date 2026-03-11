@@ -68,8 +68,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "jaski.code": return decoded.jaski?.code || "-";
     case "jaski.name": return decoded.jaski?.name || "-";
     case "jaski.finish_info": return decoded.jaski ? `${decoded.jaski.finish} (${decoded.jaski.finishName})` : "-";
-    case "jaski.construction_type": return (decoded.jaski as any)?.constructionType || "-";
-    case "jaski.insert_type": return (decoded.jaski as any)?.insertType || "-";
+    case "jaski.construction_type": return decoded.jaski?.constructionType || "-";
+    case "jaski.insert_type": return decoded.jaski?.insertType || "-";
 
     case "walek.code": return decoded.walek?.code || "-";
     case "walek.name": return decoded.walek?.name || "-";
