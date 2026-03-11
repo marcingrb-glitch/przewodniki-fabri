@@ -21,7 +21,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "seat.springType": return decoded.seat.springType || "-";
     case "seat.front": return decoded.seat.front || "-";
     case "seat.midStrip_yn": return decoded.seat.midStrip ? "TAK" : "NIE";
-    case "seat.foams_summary": {
+    case "seat.foams_summary":
+    case "seat.foamsList": {
       const lines = formatFoamsDetailed(decoded.seat.foams);
       return lines.length > 0 ? lines.join("\n") : decoded.seat.foam || "-";
     }
