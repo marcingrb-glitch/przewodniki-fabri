@@ -3,6 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
 import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 
+interface GuideColumn {
+  header: string;
+  field: string;
+}
+
+interface GuideSection {
+  id: string;
+  product_type: string;
+  series_id: string | null;
+  section_name: string;
+  sort_order: number;
+  is_conditional: boolean;
+  condition_field: string | null;
+  columns: GuideColumn[];
+  enabled: boolean;
+}
+
 /**
  * Fetch guide sections with series override logic.
  */
