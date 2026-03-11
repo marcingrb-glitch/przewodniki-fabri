@@ -146,13 +146,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? supabase.from("legs").select("code, name, material, colors").eq("code", parsed.legs.code).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.pillow
-      ? supabase.from("pillows").select("code, name, default_finish, allowed_finishes").eq("code", parsed.pillow.code).maybeSingle()
+      ? supabase.from("pillows").select("code, name, default_finish, allowed_finishes, construction_type, insert_type").eq("code", parsed.pillow.code).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.jaski
-      ? supabase.from("jaskis").select("code, name").eq("code", parsed.jaski.code).maybeSingle()
+      ? supabase.from("jaskis").select("code, name, construction_type, insert_type").eq("code", parsed.jaski.code).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.walek
-      ? supabase.from("waleks").select("code, name").eq("code", parsed.walek.code).maybeSingle()
+      ? supabase.from("waleks").select("code, name, construction_type, insert_type").eq("code", parsed.walek.code).maybeSingle()
       : Promise.resolve({ data: null }),
     seriesId
       ? supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
