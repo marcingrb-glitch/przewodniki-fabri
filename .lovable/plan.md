@@ -1,38 +1,36 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Problem
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+PDF dekodowania nie wyświetla poprawnych wartości dla kilku pól, ponieważ `skuDecoder.ts` **nie pobiera wszystkich kolumn z bazy**, a typ `DecodedSKU` **nie ma pól** `constructionType` / `insertType` dla poduszek, jaśków i wałków.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Konkretne luki:
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+1. **Poduszki** — tabela `pillows` ma kolumny `construction_type` i `insert_type`, ale decoder pobiera tylko `code, name, default_finish, allowed_finishes`. Te pola nigdy nie trafiają do `DecodedSKU`, więc `resolveDecodedField` zwraca `"-"` dla `pillow.construction_type` i `pillow.insert_type`.
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+2. **Jaśki / Wałki** — tabele `jaskis` i `waleks` **nie mają** kolumn `construction_type` / `insert_type` w bazie. Pola te są zdefiniowane w `AVAILABLE_FIELDS` i wyświetlane w podglądzie, ale dane nie istnieją. Trzeba dodać te kolumny do tabel DB.
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+3. **Typ `DecodedSKU`** — interfejsy `pillow`, `jaski`, `walek` nie mają `constructionType` / `insertType`, dlatego resolver używa `as any` — zawsze `undefined`.
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
+### Naprawa
 
-### Krok 4: App.tsx — routing
+#### 1. Migracja DB — dodaj brakujące kolumny do `jaskis` i `waleks`
+```sql
+ALTER TABLE public.jaskis ADD COLUMN construction_type text;
+ALTER TABLE public.jaskis ADD COLUMN insert_type text;
+ALTER TABLE public.waleks ADD COLUMN construction_type text;
+ALTER TABLE public.waleks ADD COLUMN insert_type text;
+```
 
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+#### 2. `src/types/index.ts` — rozszerz typy pillow/jaski/walek
+Dodaj `constructionType?: string` i `insertType?: string` do interfejsów `pillow`, `jaski`, `walek` w `DecodedSKU`.
 
-### Krok 5: skuDecoder.ts — uprość seat types
+#### 3. `src/utils/skuDecoder.ts` — pobierz brakujące pola
+- Poduszki: zmień select na `code, name, default_finish, allowed_finishes, construction_type, insert_type`
+- Jaśki: zmień select na `code, name, construction_type, insert_type`
+- Wałki: zmień select na `code, name, construction_type, insert_type`
+- Przypisz `constructionType` i `insertType` do decoded obiektów
 
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+#### 4. `src/utils/pdfGenerators/decodingFieldResolver.ts` — usuń `as any` casty
+Zamień `(decoded.pillow as any)?.constructionType` na `decoded.pillow?.constructionType` (analogicznie dla jaski/walek).
 
