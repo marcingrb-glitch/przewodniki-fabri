@@ -62,8 +62,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "pillow.code": return decoded.pillow?.code || "-";
     case "pillow.name": return decoded.pillow ? decoded.pillow.name.replace(/^Poduszka\s+/i, "") : "-";
     case "pillow.finish_info": return decoded.pillow ? `${decoded.pillow.finish} (${decoded.pillow.finishName})` : "-";
-    case "pillow.construction_type": return (decoded.pillow as any)?.constructionType || "-";
-    case "pillow.insert_type": return (decoded.pillow as any)?.insertType || "-";
+    case "pillow.construction_type": return decoded.pillow?.constructionType || "-";
+    case "pillow.insert_type": return decoded.pillow?.insertType || "-";
 
     case "jaski.code": return decoded.jaski?.code || "-";
     case "jaski.name": return decoded.jaski?.name || "-";
