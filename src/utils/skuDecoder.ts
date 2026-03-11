@@ -146,13 +146,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? supabase.from("legs").select("code, name, material, colors").eq("code", parsed.legs.code).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.pillow
-      ? supabase.from("pillows").select("code, name, default_finish, allowed_finishes").eq("code", parsed.pillow.code).maybeSingle()
+      ? supabase.from("pillows").select("code, name, default_finish, allowed_finishes, construction_type, insert_type").eq("code", parsed.pillow.code).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.jaski
-      ? supabase.from("jaskis").select("code, name").eq("code", parsed.jaski.code).maybeSingle()
+      ? supabase.from("jaskis").select("code, name, construction_type, insert_type").eq("code", parsed.jaski.code).maybeSingle()
       : Promise.resolve({ data: null }),
     parsed.walek
-      ? supabase.from("waleks").select("code, name").eq("code", parsed.walek.code).maybeSingle()
+      ? supabase.from("waleks").select("code, name, construction_type, insert_type").eq("code", parsed.walek.code).maybeSingle()
       : Promise.resolve({ data: null }),
     seriesId
       ? supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
@@ -413,7 +413,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     const pillowName = pillowsRes.data?.name || staticPillow.name;
     const pillowFinish = parsed.pillow.finish || pillowsRes.data?.default_finish || seatFinish;
     const pillowFinishName = FINISHES[pillowFinish] || pillowFinish;
-    pillowDecoded = { code: pillowCode, name: pillowName, finish: pillowFinish, finishName: pillowFinishName };
+    pillowDecoded = {
+      code: pillowCode, name: pillowName, finish: pillowFinish, finishName: pillowFinishName,
+      constructionType: pillowsRes.data?.construction_type ?? undefined,
+      insertType: pillowsRes.data?.insert_type ?? undefined,
+    };
   }
 
   // ---- JASKI (fallback to static) ----
@@ -424,7 +428,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     const jaskiName = jaskisRes.data?.name || staticJaski.name;
     const jaskiFinish = parsed.jaski.finish || seatFinish;
     const jaskiFinishName = FINISHES[jaskiFinish] || jaskiFinish;
-    jaskiDecoded = { code: jaskiCode, name: jaskiName, finish: jaskiFinish, finishName: jaskiFinishName };
+    jaskiDecoded = {
+      code: jaskiCode, name: jaskiName, finish: jaskiFinish, finishName: jaskiFinishName,
+      constructionType: jaskisRes.data?.construction_type ?? undefined,
+      insertType: jaskisRes.data?.insert_type ?? undefined,
+    };
   }
 
   // ---- WALEK (fallback to static) ----
@@ -435,7 +443,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     const walekName = waleksRes.data?.name || staticWalek.name;
     const walekFinish = parsed.walek.finish || seatFinish;
     const walekFinishName = FINISHES[walekFinish] || walekFinish;
-    walekDecoded = { code: walekCode, name: walekName, finish: walekFinish, finishName: walekFinishName };
+    walekDecoded = {
+      code: walekCode, name: walekName, finish: walekFinish, finishName: walekFinishName,
+      constructionType: waleksRes.data?.construction_type ?? undefined,
+      insertType: waleksRes.data?.insert_type ?? undefined,
+    };
   }
 
   // ---- EXTRAS (static only — no series_id needed) ----

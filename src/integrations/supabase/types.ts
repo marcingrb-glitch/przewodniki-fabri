@@ -272,20 +272,26 @@ export type Database = {
       jaskis: {
         Row: {
           code: string
+          construction_type: string | null
           created_at: string
           id: string
+          insert_type: string | null
           name: string
         }
         Insert: {
           code: string
+          construction_type?: string | null
           created_at?: string
           id?: string
+          insert_type?: string | null
           name: string
         }
         Update: {
           code?: string
+          construction_type?: string | null
           created_at?: string
           id?: string
+          insert_type?: string | null
           name?: string
         }
         Relationships: []
@@ -1177,20 +1183,26 @@ export type Database = {
       waleks: {
         Row: {
           code: string
+          construction_type: string | null
           created_at: string
           id: string
+          insert_type: string | null
           name: string
         }
         Insert: {
           code: string
+          construction_type?: string | null
           created_at?: string
           id?: string
+          insert_type?: string | null
           name: string
         }
         Update: {
           code?: string
+          construction_type?: string | null
           created_at?: string
           id?: string
+          insert_type?: string | null
           name?: string
         }
         Relationships: []

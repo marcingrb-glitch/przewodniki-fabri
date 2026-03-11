@@ -62,20 +62,20 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "pillow.code": return decoded.pillow?.code || "-";
     case "pillow.name": return decoded.pillow ? decoded.pillow.name.replace(/^Poduszka\s+/i, "") : "-";
     case "pillow.finish_info": return decoded.pillow ? `${decoded.pillow.finish} (${decoded.pillow.finishName})` : "-";
-    case "pillow.construction_type": return (decoded.pillow as any)?.constructionType || "-";
-    case "pillow.insert_type": return (decoded.pillow as any)?.insertType || "-";
+    case "pillow.construction_type": return decoded.pillow?.constructionType || "-";
+    case "pillow.insert_type": return decoded.pillow?.insertType || "-";
 
     case "jaski.code": return decoded.jaski?.code || "-";
     case "jaski.name": return decoded.jaski?.name || "-";
     case "jaski.finish_info": return decoded.jaski ? `${decoded.jaski.finish} (${decoded.jaski.finishName})` : "-";
-    case "jaski.construction_type": return (decoded.jaski as any)?.constructionType || "-";
-    case "jaski.insert_type": return (decoded.jaski as any)?.insertType || "-";
+    case "jaski.construction_type": return decoded.jaski?.constructionType || "-";
+    case "jaski.insert_type": return decoded.jaski?.insertType || "-";
 
     case "walek.code": return decoded.walek?.code || "-";
     case "walek.name": return decoded.walek?.name || "-";
     case "walek.finish_info": return decoded.walek ? `${decoded.walek.finish} (${decoded.walek.finishName})` : "-";
-    case "walek.construction_type": return (decoded.walek as any)?.constructionType || "-";
-    case "walek.insert_type": return (decoded.walek as any)?.insertType || "-";
+    case "walek.construction_type": return decoded.walek?.constructionType || "-";
+    case "walek.insert_type": return decoded.walek?.insertType || "-";
 
     case "pufaSeat.frontBack": return decoded.pufaSeat?.frontBack || "-";
     case "pufaSeat.sides": return decoded.pufaSeat?.sides || "-";

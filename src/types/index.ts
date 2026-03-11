@@ -52,9 +52,9 @@ export interface DecodedSKU {
   chest: { code: string; name: string; legHeight: number; legCount: number };
   automat: { code: string; name: string; type: string; seatLegs: boolean; seatLegHeight: number; seatLegCount: number };
   legs?: { code: string; name: string; material: string; color?: string; colorName?: string };
-  pillow?: { code: string; name: string; finish: string; finishName: string };
-  jaski?: { code: string; name: string; finish: string; finishName: string };
-  walek?: { code: string; name: string; finish: string; finishName: string };
+  pillow?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
+  jaski?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
+  walek?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
   extras: { code: string; name: string; type: string }[];
   legHeights: {
     sofa_chest: { leg: string; height: number; count: number } | null;
