@@ -33,7 +33,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "backrest.frame": return decoded.backrest.frame || "-";
     case "backrest.top": return decoded.backrest.top || "-";
     case "backrest.springType": return decoded.backrest.springType || "-";
-    case "backrest.foams_summary": {
+    case "backrest.foams_summary":
+    case "backrest.foamsList": {
       const lines = formatFoamsDetailed(decoded.backrest.foams);
       return lines.length > 0 ? lines.join("\n") : decoded.backrest.foam || "-";
     }
