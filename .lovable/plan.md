@@ -1,28 +1,38 @@
 
 
-## Plan: Tabelka poduszek na pełną szerokość pod dwiema kolumnami
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-### Co robimy
-Sekcje zawierające pola `pillow.*`, `jaski.*`, `walek.*` (grupa "Poduszka/Jaśki/Wałek") wyciągamy z dwukolumnowego layoutu i renderujemy na pełną szerokość (180mm) pod obiema kolumnami.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-### Zmiany w `src/utils/pdfGenerators/decodingPDF.ts`
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-1. **Rozdzielenie renderItems na dwie grupy** — po zbudowaniu `renderItems`, podziel je na:
-   - `columnItems` — wszystko co **nie** zawiera pól `pillow.*`, `jaski.*`, `walek.*`
-   - `fullWidthItems` — sekcje z polami `pillow.*`, `jaski.*`, `walek.*`
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-   Identyfikacja: sprawdź czy w `item.headers` lub oryginalnych kolumnach sekcji są pola z tych grup. Najprościej: dodaj flagę `fullWidth: boolean` do `RenderItem` i oznacz ją podczas budowania.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-2. **Podział na kolumny tylko z `columnItems`** — `midPoint`, `leftItems`, `rightItems` liczone z `columnItems`.
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-3. **Estymacja wysokości** — `estimateColumnHeight` liczy tylko `columnItems` + dodaj osobną estymację `fullWidthItems` do kalkulacji `availableForImage`.
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-4. **Rendering** — po wyrenderowaniu dwóch kolumn (`y = Math.max(yLeft, yRight)`), renderuj `fullWidthItems` na pełną szerokość:
-   ```
-   xStart = 15, colW = 180 (cała szerokość)
-   ```
-   Czcionka adaptacyjna liczy się normalnie od liczby kolumn — ale przy 180mm nawet 5 kolumn wygląda dobrze w fs=10.
+### Krok 4: App.tsx — routing
 
-### Identyfikacja sekcji poduszek
-Sekcja jest "full-width" jeśli którykolwiek z jej pól zaczyna się od `pillow.`, `jaski.` lub `walek.`. Sprawdzane na etapie budowania `renderItems` z oryginalnych `cols[].field`.
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
+
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
 

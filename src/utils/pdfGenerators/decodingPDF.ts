@@ -64,6 +64,7 @@ interface RenderItem {
   rows: string[][];
   fontSize: number;
   columnStyles?: { [key: string]: { cellWidth: number } };
+  fullWidth?: boolean;
 }
 
 /** Estimate the height of a column of render items in mm */
@@ -110,6 +111,7 @@ export async function generateDecodingPDF(
   const sp = 3;
   const MAX_COLS = 6;
   const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
+  const FULL_WIDTH_PREFIXES = ["pillow.", "jaski.", "walek."];
 
   // --- Build render items from sections BEFORE drawing image ---
   const groups: { sections: GuideSection[] }[] = [];
@@ -134,14 +136,18 @@ export async function generateDecodingPDF(
   const adaptiveFontSize = (colCount: number): number =>
     colCount <= 3 ? 10 : colCount === 4 ? 9 : 8;
 
-  const buildChunkedItems = (title: string, cols: GuideColumn[]): RenderItem[] => {
+  const isFullWidthSection = (cols: GuideColumn[]): boolean =>
+    cols.some(c => FULL_WIDTH_PREFIXES.some(p => c.field.startsWith(p)));
+
+  const buildChunkedItems = (title: string, cols: GuideColumn[], fullWidth: boolean): RenderItem[] => {
     const items: RenderItem[] = [];
     if (cols.length <= MAX_COLS) {
       items.push({
         title,
         headers: cols.map(c => c.header),
         rows: [cols.map(c => resolveDecodedField(c.field, decoded))],
-        fontSize: adaptiveFontSize(cols.length),
+        fontSize: fullWidth ? 10 : adaptiveFontSize(cols.length),
+        fullWidth,
       });
     } else {
       for (let i = 0; i < cols.length; i += MAX_COLS) {
@@ -150,7 +156,8 @@ export async function generateDecodingPDF(
           title: i === 0 ? title : "",
           headers: chunk.map(c => c.header),
           rows: [chunk.map(c => resolveDecodedField(c.field, decoded))],
-          fontSize: adaptiveFontSize(chunk.length),
+          fontSize: fullWidth ? 10 : adaptiveFontSize(chunk.length),
+          fullWidth,
         });
       }
     }
@@ -161,36 +168,43 @@ export async function generateDecodingPDF(
     if (group.sections.length > 1) {
       const groupName = group.sections.map(s => s.section_name).join(" / ");
       const cols = group.sections[0].columns;
+      const fw = isFullWidthSection(cols);
       const headers = ["Typ", ...cols.map(c => c.header)];
       const rows = group.sections.map(section => [
         section.section_name,
         ...cols.map(c => resolveDecodedField(c.field, decoded)),
       ]);
-      renderItems.push({ title: groupName, headers, rows, fontSize: adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } } });
+      renderItems.push({ title: groupName, headers, rows, fontSize: fw ? 10 : adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } }, fullWidth: fw });
     } else {
       const section = group.sections[0];
       const cols = section.columns;
+      const fw = isFullWidthSection(cols);
       const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
       const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
-      const hasSplit = frameCols.length > 0 && foamCols.length > 0;
+      const hasSplit = !fw && frameCols.length > 0 && foamCols.length > 0;
 
       if (hasSplit) {
-        renderItems.push(...buildChunkedItems(`${section.section_name} — STOLARKA`, frameCols));
-        renderItems.push(...buildChunkedItems(`${section.section_name} — PIANKI`, foamCols));
+        renderItems.push(...buildChunkedItems(`${section.section_name} — STOLARKA`, frameCols, false));
+        renderItems.push(...buildChunkedItems(`${section.section_name} — PIANKI`, foamCols, false));
       } else {
-        renderItems.push(...buildChunkedItems(section.section_name, cols));
+        renderItems.push(...buildChunkedItems(section.section_name, cols, fw));
       }
     }
   }
 
+  // --- Split into column items and full-width items ---
+  const columnItems = renderItems.filter(item => !item.fullWidth);
+  const fullWidthItems = renderItems.filter(item => item.fullWidth);
+
   // --- Calculate dynamic image height ---
-  const midPoint = Math.ceil(renderItems.length / 2);
-  const leftItems = renderItems.slice(0, midPoint);
-  const rightItems = renderItems.slice(midPoint);
+  const midPoint = Math.ceil(columnItems.length / 2);
+  const leftItems = columnItems.slice(0, midPoint);
+  const rightItems = columnItems.slice(midPoint);
 
   const leftH = estimateColumnHeight(leftItems, rh, sp);
   const rightH = estimateColumnHeight(rightItems, rh, sp);
-  const maxColH = Math.max(leftH, rightH);
+  const fullWidthH = estimateColumnHeight(fullWidthItems, rh, sp);
+  const maxColH = Math.max(leftH, rightH) + fullWidthH;
 
   const pageH = 297;
   const bottomMargin = 10;
@@ -275,6 +289,18 @@ export async function generateDecodingPDF(
   const yLeft = renderColumn(leftItems, colLeftX, startY);
   const yRight = renderColumn(rightItems, colRightX, startY);
   y = Math.max(yLeft, yRight);
+
+  // --- Full-width items (pillows etc.) ---
+  for (const item of fullWidthItems) {
+    if (item.title) {
+      doc.setFontSize(7);
+      doc.setFont("Roboto", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(item.title.toUpperCase(), 15, y);
+      y += 3;
+    }
+    y = addTableAt(doc, y, item.headers, item.rows, 15, 180, item.columnStyles, sp, item.fontSize, rh);
+  }
 
   return toBlob(doc);
 }
