@@ -155,6 +155,7 @@ export function resolveExampleValue(field: string, data: any): string {
     "seat.code": v(data.seat?.code),
     "seat.finish_name": finishName,
     "seat.code_finish": `${v(data.seat?.code)} (${finishName})`,
+    "seat.summary": `${v(data.seat?.code)} - ${v(data.seat?.model_name)} - Wciąg`,
     "seat.type": "Wciąg",
     "seat.frame": v(data.seat?.frame),
     "seat.foams_summary": "T25 40×50×10 (1 szt)",
