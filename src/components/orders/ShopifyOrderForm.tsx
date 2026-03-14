@@ -14,9 +14,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import ShopifyLineItemsSelector from "./ShopifyLineItemsSelector";
 import { fetchShopifyOrder } from "@/utils/fetchShopifyOrder";
-import { parseSKU } from "@/utils/skuParser";
+import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
-import { decodeSKU, fetchSideExceptions } from "@/utils/skuDecoder";
+import { decodeSKU } from "@/utils/skuDecoder";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder } from "@/utils/supabaseQueries";
 import type { ShopifyLineItem } from "@/types/shopifyOrder";
@@ -132,7 +132,7 @@ const ShopifyOrderForm = () => {
         console.log("[ShopifyFlow] Original SKU:", JSON.stringify(item.sku), "Normalized:", JSON.stringify(normalizedSku));
 
         // 1. Validate SKU
-        const validation = validateSKU(normalizedSku);
+        const validation = await validateSKU(normalizedSku);
         console.log("[ShopifyFlow] Validation result:", validation);
         if (!validation.valid) {
           const errMsg = validation.errors.join("; ");
@@ -148,8 +148,8 @@ const ShopifyOrderForm = () => {
 
         // 2. Parse (with DB-sourced side exceptions)
         const seriesCode = normalizedSku.trim().toUpperCase().split("-")[0] || "";
-        const sideExceptions = await fetchSideExceptions(seriesCode);
-        const parsed = parseSKU(normalizedSku, sideExceptions);
+        const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+        const parsed = await parseSKUGeneric(normalizedSku, sideExceptions);
         console.log("[ShopifyFlow] Parsed SKU:", parsed);
 
         // 3. Validate finishes against DB

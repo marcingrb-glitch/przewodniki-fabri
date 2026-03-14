@@ -1,34 +1,57 @@
 
 
-## Etap 2.1 — Nowy Generic SKU Parser
 
-### Zakres zmian
+## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
-1. **Nowy plik `src/utils/skuParserGeneric.ts`** — async parser czytający reguły z `sku_segments` i side exceptions z `product_relations`. Kod dostarczony w briefie.
+### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
 
-2. **Aktualizacja 3 plików konsumenckich** — zmiana importów i dodanie `await`:
-   - `src/components/orders/OrderForm.tsx` — import `parseSKUGeneric` + `fetchSideExceptionsGeneric`, await na parsowaniu
-   - `src/components/orders/ShopifyOrderForm.tsx` — analogicznie
-   - `src/pages/OrderHistoryPage.tsx` — analogicznie
+Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
 
-3. **`src/utils/skuValidator.ts`** — zmiana na async (Opcja A z briefu):
-   - `validateSKU` → `async function validateSKU(...): Promise<ValidationResult>`
-   - Import z `skuParserGeneric`
-   - Aktualizacja callsites w OrderForm i ShopifyOrderForm (dodanie `await`)
+### Krok 2: AdminLayout.tsx — przeorganizuj linki
 
-4. **Bez zmian**: `skuParser.ts` (zostaje jako fallback), `skuDecoder.ts`, `types/index.ts`, `data/mappings.ts`, brak migracji SQL.
+- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
+- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
 
-### Callsites do zaktualizowania
+### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
 
-| Plik | Zmiana |
-|---|---|
-| `OrderForm.tsx` | `await validateSKU(sku)`, `await parseSKUGeneric(sku, sideExceptions)`, nowy import |
-| `ShopifyOrderForm.tsx` | `await validateSKU(normalizedSku)`, `await parseSKUGeneric(normalizedSku, sideExceptions)`, nowy import |
-| `OrderHistoryPage.tsx` | `await parseSKUGeneric(order.sku, sideExceptions)`, nowy import (validateSKU nie jest tu używane) |
+Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
 
-### Kolejność implementacji
+### Krok 4: App.tsx — routing
 
-1. Utwórz `skuParserGeneric.ts`
-2. Zmień `skuValidator.ts` na async
-3. Zaktualizuj importy i await w OrderForm, ShopifyOrderForm, OrderHistoryPage
+- Usuń import SKUConfig i route `sku-config`
+- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
 
+### Krok 5: skuDecoder.ts — uprość seat types
+
+- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
+- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
+- Dodaj `type_name` do select `seats_sofa`
+- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
+
+### Krok 6: SeatsSofa.tsx — dodaj pola type_name
+
+- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
+- Analogicznie w fields
+
+### Krok 7: Usuń SKUConfig.tsx
+
+Plik nie jest już potrzebny.
+
+---
+
+## Etap 2: Migracja na nowy system products/sku_segments
+
+### Etap 2.0: Walidacja sku_segments ✅
+
+Diagnostyka regex w `sku_segments` vs realne SKU. Wynik: 132/134 segmentów matchuje, 2 tkaniny Shopify (KIARA_866, RAVEN_18) nie matchują standardowego wzorca — to expected behavior.
+
+### Etap 2.1: Nowy Generic SKU Parser ✅
+
+- Utworzono `src/utils/skuParserGeneric.ts` — async parser z cache, czyta reguły z `sku_segments` i side exceptions z `product_relations`
+- Zmieniono `src/utils/skuValidator.ts` na async (`validateSKU` → `async function`)
+- Zaktualizowano callsites: `OrderForm.tsx`, `ShopifyOrderForm.tsx`, `OrderHistoryPage.tsx` — importy + await
+- Stary `skuParser.ts` zostaje jako fallback (nie usunięty)
+
+### Etap 2.2: Nowy Generic SKU Decoder (TODO)
+
+### Etap 2.3: Cleanup starych tabel (TODO)
