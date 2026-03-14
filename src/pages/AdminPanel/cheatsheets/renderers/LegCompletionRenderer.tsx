@@ -1,0 +1,95 @@
+import type { SectionRendererProps } from "../types";
+import { NoData } from "../shared/NoData";
+
+interface CheatRow {
+  element: string;
+  detail: string;
+  type: string;
+  height: string;
+  count: string;
+  reason?: string;
+}
+
+export function LegCompletionRenderer({ data }: SectionRendererProps) {
+  const config = data.seriesConfig;
+  if (!config) return <NoData label="konfiguracja serii" />;
+
+  const seatLegType = config.seat_leg_type ?? "from_sku";
+  const pufaLegType = config.pufa_leg_type ?? "from_sku";
+  const seatLegH = config.seat_leg_height_cm;
+  const pufaLegH = config.pufa_leg_height_cm;
+  const availableChests = (config as any)?.available_chests as string[] ?? [];
+
+  const chests = data.getByCategory("chest").filter(c => availableChests.includes(c.code));
+  const automatConfigs = data.getRelationsByType("automat_config");
+  const automats = data.getByCategory("automat");
+  const automatNameMap = Object.fromEntries(automats.map(a => [a.code, a.name]));
+
+  const doRows: CheatRow[] = [];
+  const dontRows: CheatRow[] = [];
+
+  // Chests
+  for (const c of chests) {
+    const legH = (c.properties as any)?.leg_height_cm ?? 0;
+    if (Number(legH) > 0) {
+      doRows.push({ element: "Pod skrzynią", detail: `${c.code} (${c.name})`, type: "N z SKU", height: `H${legH}cm`, count: "4szt" });
+    } else {
+      dontRows.push({ element: "Pod skrzynią", detail: `${c.code} (${c.name})`, type: "N4 plastikowe", height: "2.5cm", count: "4szt", reason: "tapicer ma na stanowisku" });
+    }
+  }
+
+  // Automats
+  for (const rel of automatConfigs) {
+    const props = rel.properties as any;
+    const aCode = props?.automat_code ?? "";
+    const aName = automatNameMap[aCode] ?? data.globalProducts.find(p => p.id === rel.target_product_id)?.name ?? "";
+    if (!props?.has_seat_legs) {
+      dontRows.push({ element: "Pod siedziskiem", detail: `${aCode} (${aName})`, type: "BRAK", height: "—", count: "—", reason: "brak nóżek pod siedziskiem" });
+    } else if (seatLegType === "from_sku") {
+      doRows.push({ element: "Pod siedziskiem", detail: `${aCode} (${aName})`, type: "N z SKU", height: `H${props?.seat_leg_height_cm ?? seatLegH ?? "?"}cm`, count: `${props?.seat_leg_count ?? 2}szt` });
+    } else {
+      dontRows.push({ element: "Pod siedziskiem", detail: `${aCode} (${aName})`, type: "N4 plastikowe", height: "2.5cm", count: `${props?.seat_leg_count ?? 2}szt`, reason: "tapicer ma na stanowisku" });
+    }
+  }
+
+  // Pufa
+  if (pufaLegType === "from_sku") {
+    doRows.push({ element: "Pufa", detail: "", type: "N z SKU", height: `H${pufaLegH ?? "?"}cm`, count: "4szt" });
+  } else {
+    dontRows.push({ element: "Pufa", detail: "", type: "N4 plastikowe", height: "2.5cm", count: "4szt", reason: "tapicer ma na stanowisku" });
+  }
+
+  // Fotel
+  doRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: `H${seatLegH ?? pufaLegH ?? "?"}cm`, count: "4szt" });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-xl font-bold mb-3 text-green-700 dark:text-green-400">🟢 CO KOMPLETOWAĆ</h3>
+        {doRows.length === 0 ? (
+          <p className="text-muted-foreground py-2">Brak elementów do kompletacji.</p>
+        ) : (
+          <div className="space-y-2 text-sm">
+            {doRows.map((r, i) => (
+              <div key={i} className="border border-border p-2 rounded">
+                <strong>{r.element}{r.detail ? ` ${r.detail}` : ""}:</strong> {r.type}, {r.height}, {r.count}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="border-4 border-red-600 rounded-lg p-4 bg-red-50 dark:bg-red-950/30">
+        <h3 className="text-2xl font-black mb-3 text-red-700 dark:text-red-400">🔴 CZEGO NIE KOMPLETOWAĆ!</h3>
+        <div className="space-y-2 text-lg font-bold">
+          <p className="warning underline text-xl">❌ Nóżki plastikowe 2.5cm — NIGDY nie kompletować!</p>
+          {dontRows.map((r, i) => (
+            <p key={i}>
+              ❌ {r.element}{r.detail ? ` ${r.detail}` : ""}: {r.type}{r.height !== "—" ? `, ${r.height}` : ""}{r.count !== "—" ? `, ${r.count}` : ""} — {r.reason}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
