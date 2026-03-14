@@ -1,38 +1,21 @@
 
 
-## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
+## Etap 2 Krok 0: Walidacja sku_segments na realnych SKU
 
-### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
+Plik zawiera 4 zapytania SQL do uruchomienia na bazie danych. Wykonam je sekwencyjnie przez `psql` i zapiszę wyniki.
 
-Dodaj kolumnę `type_name TEXT` i wypełnij na podstawie istniejącej kolumny `type` (N→Niskie, ND→Niskie dzielone, NB→Niskie oba półwałki, W→Wysokie, D→Zwykły).
+### Co zrobi skrypt
 
-### Krok 2: AdminLayout.tsx — przeorganizuj linki
+1. **Część 1** — Pokaże 15 ostatnich SKU z zamówień
+2. **Część 2** — Rozbije każde SKU na segmenty (po `-`), dopasuje do regexów z `sku_segments` i pokaże match/no-match per segment
+3. **Część 3** — Podsumowanie: ile segmentów matchuje vs nie
+4. **Część 4** — Referencja: aktualne definicje `sku_segments`
 
-- Usuń `{ to: "/admin/sku-config", label: "🔧 Konfiguracja SKU" }` z `sharedLinks`
-- Dodaj do `seriesLinks`: `parse-rules` (Reguły parsowania), `side-exceptions` (Wyjątki boczków)
+### Plan implementacji
 
-### Krok 3: Nowe pliki — ParseRules.tsx i SideExceptions.tsx
+1. Uruchomić każde z 4 zapytań SQL osobno przez `psql` na bazie projektu
+2. Zebrać wyniki i przedstawić je w czytelnej formie
+3. Jeśli jakieś segmenty nie matchują — zidentyfikować brakujące/błędne regexy w `sku_segments`
 
-Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielnych komponentów z `useOutletContext` i `series_id` injection (wzorzec identyczny jak Automats.tsx).
-
-### Krok 4: App.tsx — routing
-
-- Usuń import SKUConfig i route `sku-config`
-- Dodaj importy i route'y: `parse-rules`, `side-exceptions`
-
-### Krok 5: skuDecoder.ts — uprość seat types
-
-- Zamień fetch `seat_types` na `Promise.resolve({ data: null })`
-- Usuń budowanie mapy z DB, zostaw tylko statyczny fallback
-- Dodaj `type_name` do select `seats_sofa`
-- Uprość logikę typeName: `seatSofaRes.data.type_name || SEAT_TYPES[seatType] || seatType`
-
-### Krok 6: SeatsSofa.tsx — dodaj pola type_name
-
-- Zmień kolumnę `type` na `type (kod)`, dodaj `type_name (nazwa)`
-- Analogicznie w fields
-
-### Krok 7: Usuń SKUConfig.tsx
-
-Plik nie jest już potrzebny.
+Żadne zmiany w kodzie nie są potrzebne — to czysta diagnostyka danych.
 
