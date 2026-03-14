@@ -159,7 +159,7 @@ const OrderForm = () => {
       }
 
       // 1. Basic validation
-      const validation = validateSKU(sku);
+      const validation = await validateSKU(sku);
       if (!validation.valid) {
         validation.errors.forEach(err => toast.error(`❌ ${err}`));
         setLoading(false);
