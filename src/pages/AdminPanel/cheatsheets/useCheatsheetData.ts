@@ -43,10 +43,11 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
   const { data: seriesConfig = null, isLoading: scLoading } = useQuery({
     queryKey: ["cheatsheet-config", seriesProductId],
     queryFn: async () => {
-      const { data } = await supabase
+      // Try product_id lookup first (new FK)
+      const { data } = await (supabase
         .from("series_config")
-        .select("*")
-        .eq("product_id" as any, seriesProductId)
+        .select("*") as any)
+        .eq("product_id", seriesProductId)
         .maybeSingle();
       if (data) return data as any as (SeriesConfig & { product_id?: string });
       // Fallback: lookup via old series table
