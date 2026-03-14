@@ -88,6 +88,66 @@ export type Database = {
           },
         ]
       }
+      cheatsheet_sections: {
+        Row: {
+          active: boolean
+          columns: Json
+          created_at: string
+          data_source: string
+          filters: Json
+          id: string
+          notes: string | null
+          product_type_id: string | null
+          section_name: string
+          show_specs: boolean
+          sort_order: number
+          workstation_id: string
+        }
+        Insert: {
+          active?: boolean
+          columns: Json
+          created_at?: string
+          data_source: string
+          filters?: Json
+          id?: string
+          notes?: string | null
+          product_type_id?: string | null
+          section_name: string
+          show_specs?: boolean
+          sort_order?: number
+          workstation_id: string
+        }
+        Update: {
+          active?: boolean
+          columns?: Json
+          created_at?: string
+          data_source?: string
+          filters?: Json
+          id?: string
+          notes?: string | null
+          product_type_id?: string | null
+          section_name?: string
+          show_specs?: boolean
+          sort_order?: number
+          workstation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheatsheet_sections_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheatsheet_sections_workstation_id_fkey"
+            columns: ["workstation_id"]
+            isOneToOne: false
+            referencedRelation: "workstations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chests: {
         Row: {
           code: string
@@ -114,6 +174,69 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_name: string | null
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          notes: string | null
+          product_id: string | null
+          title: string
+          uploaded_by: string | null
+          version: number
+          workstation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          product_id?: string | null
+          title: string
+          uploaded_by?: string | null
+          version?: number
+          workstation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          product_id?: string | null
+          title?: string
+          uploaded_by?: string | null
+          version?: number
+          workstation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_workstation_id_fkey"
+            columns: ["workstation_id"]
+            isOneToOne: false
+            referencedRelation: "workstations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       extras: {
         Row: {
@@ -599,6 +722,223 @@ export type Database = {
             columns: ["series_id"]
             isOneToOne: false
             referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_relations: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          properties: Json
+          relation_type: string
+          series_id: string
+          source_product_id: string | null
+          target_product_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          properties?: Json
+          relation_type: string
+          series_id: string
+          source_product_id?: string | null
+          target_product_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          properties?: Json
+          relation_type?: string
+          series_id?: string
+          source_product_id?: string | null
+          target_product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_relations_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_relations_source_product_id_fkey"
+            columns: ["source_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_relations_target_product_id_fkey"
+            columns: ["target_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_specs: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          length: number | null
+          material: string | null
+          name: string | null
+          notes: string | null
+          position_number: number
+          product_id: string
+          quantity: number
+          spec_type: string
+          updated_at: string
+          variant_ref: string | null
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          length?: number | null
+          material?: string | null
+          name?: string | null
+          notes?: string | null
+          position_number?: number
+          product_id: string
+          quantity?: number
+          spec_type: string
+          updated_at?: string
+          variant_ref?: string | null
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          length?: number | null
+          material?: string | null
+          name?: string | null
+          notes?: string | null
+          position_number?: number
+          product_id?: string
+          quantity?: number
+          spec_type?: string
+          updated_at?: string
+          variant_ref?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_specs_variant_ref_fkey"
+            columns: ["variant_ref"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_types: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_standalone: boolean
+          name: string
+          sku_prefix: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_standalone?: boolean
+          name: string
+          sku_prefix?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_standalone?: boolean
+          name?: string
+          sku_prefix?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          allowed_finishes: string[] | null
+          category: string
+          code: string
+          colors: Json
+          created_at: string
+          default_finish: string | null
+          id: string
+          is_global: boolean
+          name: string
+          product_type_id: string | null
+          properties: Json
+          series_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          allowed_finishes?: string[] | null
+          category: string
+          code: string
+          colors?: Json
+          created_at?: string
+          default_finish?: string | null
+          id?: string
+          is_global?: boolean
+          name: string
+          product_type_id?: string | null
+          properties?: Json
+          series_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          allowed_finishes?: string[] | null
+          category?: string
+          code?: string
+          colors?: Json
+          created_at?: string
+          default_finish?: string | null
+          id?: string
+          is_global?: boolean
+          name?: string
+          product_type_id?: string | null
+          properties?: Json
+          series_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -1117,6 +1457,62 @@ export type Database = {
           },
         ]
       }
+      sku_segments: {
+        Row: {
+          capture_groups: Json
+          category: string
+          created_at: string
+          has_finish_suffix: boolean
+          id: string
+          is_optional: boolean
+          notes: string | null
+          position: number
+          prefix: string | null
+          product_type_id: string
+          regex_pattern: string
+          segment_name: string
+          zero_padded: boolean
+        }
+        Insert: {
+          capture_groups: Json
+          category: string
+          created_at?: string
+          has_finish_suffix?: boolean
+          id?: string
+          is_optional?: boolean
+          notes?: string | null
+          position: number
+          prefix?: string | null
+          product_type_id: string
+          regex_pattern: string
+          segment_name: string
+          zero_padded?: boolean
+        }
+        Update: {
+          capture_groups?: Json
+          category?: string
+          created_at?: string
+          has_finish_suffix?: boolean
+          id?: string
+          is_optional?: boolean
+          notes?: string | null
+          position?: number
+          prefix?: string | null
+          product_type_id?: string
+          regex_pattern?: string
+          segment_name?: string
+          zero_padded?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sku_segments_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           can_view_cheatsheets: boolean
@@ -1204,6 +1600,36 @@ export type Database = {
           id?: string
           insert_type?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      workstations: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
         }
         Relationships: []
       }
