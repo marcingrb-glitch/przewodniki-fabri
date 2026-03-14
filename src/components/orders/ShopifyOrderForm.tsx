@@ -148,8 +148,8 @@ const ShopifyOrderForm = () => {
 
         // 2. Parse (with DB-sourced side exceptions)
         const seriesCode = normalizedSku.trim().toUpperCase().split("-")[0] || "";
-        const sideExceptions = await fetchSideExceptions(seriesCode);
-        const parsed = parseSKU(normalizedSku, sideExceptions);
+        const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+        const parsed = await parseSKUGeneric(normalizedSku, sideExceptions);
         console.log("[ShopifyFlow] Parsed SKU:", parsed);
 
         // 3. Validate finishes against DB

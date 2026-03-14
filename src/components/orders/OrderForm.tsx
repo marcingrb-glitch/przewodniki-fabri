@@ -171,8 +171,8 @@ const OrderForm = () => {
 
       // 2. Parse (with DB-sourced side exceptions)
       const seriesCode = sku.trim().toUpperCase().split("-")[0] || "";
-      const sideExceptions = await fetchSideExceptions(seriesCode);
-      const parsed = parseSKU(sku, sideExceptions);
+      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+      const parsed = await parseSKUGeneric(sku, sideExceptions);
 
       // 3. Validate finishes against DB
       try {
