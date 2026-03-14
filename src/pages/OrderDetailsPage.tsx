@@ -176,7 +176,7 @@ const OrderDetailsPage = () => {
                   {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
                   {decoded.pillow && <InfoRow label="Poduszka" value={`${decoded.pillow.code} - ${decoded.pillow.name}`} />}
                   {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
-                  {decoded.walek && <InfoRow label="Wałek" value={decoded.walek.code} />}
+                  {decoded.walek && <InfoRow label="Wałek" value={`${decoded.walek.code} - ${decoded.walek.name}`} />}
                   <div className="mt-3 border-t pt-3">
                     <p className="font-semibold mb-1">Nóżki sofy:</p>
                     {decoded.legHeights.sofa_chest
