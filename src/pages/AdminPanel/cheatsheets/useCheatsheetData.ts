@@ -160,7 +160,9 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
   };
 
   const formatFoamsInlineFn = (productId: string): string => {
-    const specs = getSpecsForProduct(productId);
+    const specs = getSpecsForProduct(productId)
+      .filter(s => s.spec_type === "foam")
+      .filter(s => s.height != null || s.width != null || s.length != null);
     return formatFoams(specs);
   };
 

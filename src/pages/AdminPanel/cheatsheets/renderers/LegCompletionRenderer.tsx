@@ -30,11 +30,27 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
 
   // Chests
   for (const c of chests) {
-    const legH = (c.properties as any)?.leg_height_cm ?? 0;
-    if (Number(legH) > 0) {
-      doRows.push({ element: "Pod skrzynią", detail: `${c.code} (${c.name})`, type: "N z SKU", height: `H${legH}cm`, count: "4szt" });
+    const legH = Number((c.properties as any)?.leg_height_cm ?? 0);
+    const legCount = Number((c.properties as any)?.leg_count ?? 4);
+    if (legH > 2.5) {
+      // Nóżki z SKU — kompletujemy
+      doRows.push({
+        element: "Pod skrzynią", detail: `${c.code} (${c.name})`,
+        type: "N z SKU", height: `H${legH}cm`, count: `${legCount}szt`
+      });
+    } else if (legH > 0) {
+      // Nóżki plastikowe N4 (≤2.5cm) — tapicer montuje
+      dontRows.push({
+        element: "Pod skrzynią", detail: `${c.code} (${c.name})`,
+        type: "N4 plastikowe", height: `${legH}cm`, count: `${legCount}szt`,
+        reason: "tapicer ma na stanowisku"
+      });
     } else {
-      dontRows.push({ element: "Pod skrzynią", detail: `${c.code} (${c.name})`, type: "N4 plastikowe", height: "2.5cm", count: "4szt", reason: "tapicer ma na stanowisku" });
+      dontRows.push({
+        element: "Pod skrzynią", detail: `${c.code} (${c.name})`,
+        type: "BRAK", height: "—", count: "—",
+        reason: "brak nóżek"
+      });
     }
   }
 
