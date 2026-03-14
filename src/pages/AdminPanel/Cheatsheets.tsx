@@ -4,45 +4,56 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import MagazynSheet from "./cheatsheets/MagazynSheet";
-import KrojowniaSheet from "./cheatsheets/KrojowniaSheet";
-import NozkiSheet from "./cheatsheets/NozkiSheet";
-import KierownikSheet from "./cheatsheets/KierownikSheet";
-
-const stations = [
-  { id: "magazyn", label: "📦 Magazyn stolarki i pianek", icon: "📦" },
-  { id: "krojownia", label: "✂️ Krojownia (wykroje)", icon: "✂️" },
-  { id: "nozki", label: "👟 Kompletacja nóżek", icon: "👟" },
-  { id: "kierownik", label: "👔 Kierownik produkcji", icon: "👔" },
-] as const;
-
-type StationId = typeof stations[number]["id"];
+import CheatsheetRenderer from "./cheatsheets/CheatsheetRenderer";
 
 export default function Cheatsheets() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("");
-  const [selectedStation, setSelectedStation] = useState<StationId | "">("");
+  const [selectedStation, setSelectedStation] = useState<string>("");
 
+  // Load series from products table (category='series')
   const { data: seriesList = [] } = useQuery({
-    queryKey: ["cheatsheet-series"],
+    queryKey: ["cheatsheet-series-products"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("series").select("id, code, name").order("code");
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, code, name, properties")
+        .eq("category", "series")
+        .eq("active", true)
+        .order("code");
       if (error) throw error;
       return data;
     },
   });
 
-  const selectedSeries = seriesList.find(s => s.id === selectedSeriesId);
+  // Load workstations that have cheatsheet sections
+  const { data: stations = [] } = useQuery({
+    queryKey: ["cheatsheet-workstations"],
+    queryFn: async () => {
+      // Get distinct workstation IDs from active sections
+      const { data: sections } = await supabase
+        .from("cheatsheet_sections")
+        .select("workstation_id")
+        .eq("active", true);
+      const wsIds = [...new Set((sections ?? []).map((s: any) => s.workstation_id))];
+      if (wsIds.length === 0) return [];
+      const { data: ws } = await supabase
+        .from("workstations")
+        .select("*")
+        .in("id", wsIds)
+        .eq("active", true)
+        .order("sort_order");
+      return ws ?? [];
+    },
+  });
 
-  const renderSheet = () => {
-    if (!selectedSeriesId || !selectedStation) return null;
-    const props = { seriesId: selectedSeriesId, seriesCode: selectedSeries?.code ?? "", seriesName: selectedSeries?.name ?? "" };
-    switch (selectedStation) {
-      case "magazyn": return <MagazynSheet {...props} />;
-      case "krojownia": return <KrojowniaSheet {...props} />;
-      case "nozki": return <NozkiSheet {...props} />;
-      case "kierownik": return <KierownikSheet {...props} />;
-    }
+  const stationIcons: Record<string, string> = {
+    magazyn: "📦",
+    krojownia: "✂️",
+    nozki: "👟",
+    kierownik: "👔",
   };
+
+  const selectedSeries = seriesList.find(s => s.id === selectedSeriesId);
 
   return (
     <div className="space-y-6">
@@ -64,14 +75,14 @@ export default function Cheatsheets() {
         <div className="space-y-1">
           <label className="text-sm font-medium text-muted-foreground">Stanowisko</label>
           <div className="flex gap-2 flex-wrap">
-            {stations.map(st => (
+            {stations.map((st: any) => (
               <Button
                 key={st.id}
-                variant={selectedStation === st.id ? "default" : "outline"}
+                variant={selectedStation === st.code ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedStation(st.id)}
+                onClick={() => setSelectedStation(st.code)}
               >
-                {st.label}
+                {stationIcons[st.code] ?? "📋"} {st.name}
               </Button>
             ))}
           </div>
@@ -90,7 +101,12 @@ export default function Cheatsheets() {
         </div>
       ) : (
         <div className="print-area">
-          {renderSheet()}
+          <CheatsheetRenderer
+            seriesProductId={selectedSeriesId}
+            workstationCode={selectedStation}
+            seriesCode={selectedSeries?.code ?? ""}
+            seriesName={selectedSeries?.name ?? ""}
+          />
         </div>
       )}
     </div>

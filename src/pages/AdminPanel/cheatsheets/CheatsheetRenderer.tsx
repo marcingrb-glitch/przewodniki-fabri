@@ -1,0 +1,72 @@
+import { useCheatsheetData } from "./useCheatsheetData";
+import { rendererRegistry, sectionIcons } from "./renderers";
+import { Loader2 } from "lucide-react";
+
+interface Props {
+  seriesProductId: string;
+  workstationCode: string;
+  seriesCode: string;
+  seriesName: string;
+}
+
+export default function CheatsheetRenderer({ seriesProductId, workstationCode, seriesCode, seriesName }: Props) {
+  const data = useCheatsheetData(seriesProductId, workstationCode);
+
+  if (data.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!data.seriesProduct) {
+    return <p className="text-center text-destructive py-8">Nie znaleziono serii</p>;
+  }
+
+  const title = workstationCode === "kierownik"
+    ? `SPECYFIKACJA PRODUKCYJNA — ${seriesCode} ${seriesName}`
+    : `ŚCIĄGAWKA — ${getWorkstationLabel(workstationCode)} — ${seriesCode} ${seriesName}`;
+
+  return (
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">{title}</h1>
+
+      {data.sections.map(section => {
+        const Renderer = rendererRegistry[section.renderer_type];
+        if (!Renderer) return null;
+
+        const icon = sectionIcons[section.renderer_type] ?? "📋";
+
+        // For sewing_variants renderer, it handles its own header
+        if (section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend") {
+          return (
+            <section key={section.id} className="mb-6 avoid-break">
+              <Renderer section={section} data={data} seriesProduct={data.seriesProduct!} />
+            </section>
+          );
+        }
+
+        return (
+          <section key={section.id} className="mb-6 avoid-break">
+            <h2 className="text-lg font-bold mb-2">{icon} {section.section_name}</h2>
+            {section.notes && section.renderer_type !== "finish_warnings" && (
+              <p className="text-sm text-muted-foreground mb-2">{section.notes}</p>
+            )}
+            <Renderer section={section} data={data} seriesProduct={data.seriesProduct!} />
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function getWorkstationLabel(code: string): string {
+  const labels: Record<string, string> = {
+    magazyn: "Magazyn stolarki i pianek",
+    krojownia: "Krojownia",
+    nozki: "Kompletacja nóżek",
+    kierownik: "Kierownik produkcji",
+  };
+  return labels[code] ?? code;
+}
