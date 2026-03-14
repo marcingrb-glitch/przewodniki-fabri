@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
-import { decodeSKU } from "@/utils/skuDecoder";
+import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder, checkOrderNumberExists } from "@/utils/supabaseQueries";
 import { uploadVariantImage } from "@/utils/variantImageUpload";
