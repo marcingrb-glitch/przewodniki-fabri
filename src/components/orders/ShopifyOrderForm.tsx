@@ -16,7 +16,7 @@ import ShopifyLineItemsSelector from "./ShopifyLineItemsSelector";
 import { fetchShopifyOrder } from "@/utils/fetchShopifyOrder";
 import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
-import { decodeSKU } from "@/utils/skuDecoder";
+import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder } from "@/utils/supabaseQueries";
 import type { ShopifyLineItem } from "@/types/shopifyOrder";
