@@ -1,0 +1,50 @@
+import type { ProductRow, ProductSpec, SeriesConfig } from "../types";
+
+export function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((o, k) => o?.[k], obj);
+}
+
+export function getSpringForSeat(seat: ProductRow, config: SeriesConfig | null): string {
+  const exceptions = (config?.spring_exceptions as Array<{ model: string; spring: string }>) ?? [];
+  const exc = exceptions.find(e => e.model === seat.code);
+  if (exc) return exc.spring;
+  return (seat.properties as any)?.spring_type ?? config?.default_spring ?? "B";
+}
+
+export function isSpringException(seat: ProductRow, config: SeriesConfig | null): boolean {
+  const exceptions = (config?.spring_exceptions as Array<{ model: string; spring: string }>) ?? [];
+  return !!exceptions.find(e => e.model === seat.code);
+}
+
+export function formatFoamsInline(specs: ProductSpec[]): string {
+  if (!specs.length) return "—";
+  return specs
+    .sort((a, b) => (a.position_number ?? 0) - (b.position_number ?? 0))
+    .map(f => {
+      const qty = f.quantity && f.quantity > 1 ? `${f.quantity} × ` : "";
+      return `${qty}${f.height ?? "?"} × ${f.width ?? "?"} × ${f.length ?? "?"} ${f.material ?? ""}`.trim();
+    })
+    .join(" + ");
+}
+
+export function formatColors(colors: any): string {
+  if (!colors) return "—";
+  if (Array.isArray(colors)) {
+    if (colors.length === 0) return "—";
+    if (typeof colors[0] === "object") return colors.map((c: any) => `${c.code}=${c.name}`).join(", ");
+    return colors.join(", ");
+  }
+  if (typeof colors === "object") {
+    return Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(", ");
+  }
+  return String(colors);
+}
+
+export function formatLegType(type: string | null, height: number | null): string {
+  if (!type) return "—";
+  switch (type) {
+    case "plastic_2_5": return `N4 plastikowe, H${height}cm`;
+    case "from_sku": return `Z segmentu N (z SKU), H${height}cm`;
+    default: return `${type}, H${height}cm`;
+  }
+}
