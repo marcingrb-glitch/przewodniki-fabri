@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
 
     const productImageMap: Record<string, any> = {};
     await Promise.all(
-      uniqueProductIds.map(async (productId: number) => {
+      (uniqueProductIds as number[]).map(async (productId: number) => {
         try {
           const prodUrl = `https://${storeDomain}/admin/api/${apiVersion}/products/${productId}.json?fields=images,variants`;
           const prodRes = await fetch(prodUrl, {
