@@ -113,10 +113,14 @@ async function resolveBackrestProduct(
       .eq("series_id", seriesId);
 
     if (allBr && allBr.length > 0) {
-      // Find one whose model_name contains seatModelName
+      // Token-based bidirectional matching: split both by comma/space, check if ANY token overlaps
+      const seatTokens = seatModelName.toLowerCase().split(/[\s,/]+/).filter(Boolean);
+      
       const byModel = allBr.find((b: any) => {
         const mn = (b.properties as any)?.model_name;
-        return mn && typeof mn === "string" && mn.toLowerCase().includes(seatModelName.toLowerCase());
+        if (!mn || typeof mn !== "string") return false;
+        const brTokens = mn.toLowerCase().split(/[\s,/]+/).filter(Boolean);
+        return seatTokens.some(st => brTokens.some(bt => bt.includes(st) || st.includes(bt)));
       });
       if (byModel) return byModel as unknown as ProductRow;
 
