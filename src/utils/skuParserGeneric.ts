@@ -285,21 +285,21 @@ function applyToResult(
 
     case "pillow":
       result.pillow = {
-        code: captures.code || rawPart,
+        code: captures.code ? `P${captures.code}` : rawPart,
         finish: captures.finish || undefined,
       };
       break;
 
     case "jasiek":
       result.jaski = {
-        code: captures.code || rawPart,
+        code: captures.code ? `J${captures.code}` : rawPart,
         finish: captures.finish || undefined,
       };
       break;
 
     case "walek":
       result.walek = {
-        code: captures.code || rawPart,
+        code: captures.code ? `W${captures.code}` : rawPart,
         finish: captures.finish || undefined,
       };
       break;
