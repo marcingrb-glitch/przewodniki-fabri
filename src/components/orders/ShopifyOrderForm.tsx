@@ -132,7 +132,7 @@ const ShopifyOrderForm = () => {
         console.log("[ShopifyFlow] Original SKU:", JSON.stringify(item.sku), "Normalized:", JSON.stringify(normalizedSku));
 
         // 1. Validate SKU
-        const validation = validateSKU(normalizedSku);
+        const validation = await validateSKU(normalizedSku);
         console.log("[ShopifyFlow] Validation result:", validation);
         if (!validation.valid) {
           const errMsg = validation.errors.join("; ");
