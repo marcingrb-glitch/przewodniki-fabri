@@ -12,8 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getOrders, deleteOrder } from "@/utils/supabaseQueries";
-import { parseSKU } from "@/utils/skuParser";
-import { decodeSKU, fetchSideExceptions } from "@/utils/skuDecoder";
+import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
+import { decodeSKU } from "@/utils/skuDecoder";
 import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
 import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
