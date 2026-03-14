@@ -13,9 +13,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { parseSKU } from "@/utils/skuParser";
+import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
-import { decodeSKU, fetchSideExceptions } from "@/utils/skuDecoder";
+import { decodeSKU } from "@/utils/skuDecoder";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
 import { saveOrder, checkOrderNumberExists } from "@/utils/supabaseQueries";
 import { uploadVariantImage } from "@/utils/variantImageUpload";
