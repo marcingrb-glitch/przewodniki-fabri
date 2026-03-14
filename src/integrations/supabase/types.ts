@@ -98,6 +98,8 @@ export type Database = {
           id: string
           notes: string | null
           product_type_id: string | null
+          renderer_config: Json
+          renderer_type: string
           section_name: string
           show_specs: boolean
           sort_order: number
@@ -112,6 +114,8 @@ export type Database = {
           id?: string
           notes?: string | null
           product_type_id?: string | null
+          renderer_config?: Json
+          renderer_type?: string
           section_name: string
           show_specs?: boolean
           sort_order?: number
@@ -126,6 +130,8 @@ export type Database = {
           id?: string
           notes?: string | null
           product_type_id?: string | null
+          renderer_config?: Json
+          renderer_type?: string
           section_name?: string
           show_specs?: boolean
           sort_order?: number
@@ -1237,6 +1243,7 @@ export type Database = {
           fixed_chest: string | null
           id: string
           notes: string | null
+          product_id: string | null
           pufa_leg_count: number | null
           pufa_leg_height_cm: number | null
           pufa_leg_type: string | null
@@ -1254,6 +1261,7 @@ export type Database = {
           fixed_chest?: string | null
           id?: string
           notes?: string | null
+          product_id?: string | null
           pufa_leg_count?: number | null
           pufa_leg_height_cm?: number | null
           pufa_leg_type?: string | null
@@ -1271,6 +1279,7 @@ export type Database = {
           fixed_chest?: string | null
           id?: string
           notes?: string | null
+          product_id?: string | null
           pufa_leg_count?: number | null
           pufa_leg_height_cm?: number | null
           pufa_leg_type?: string | null
@@ -1280,6 +1289,13 @@ export type Database = {
           spring_exceptions?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "series_config_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "series_config_series_id_fkey"
             columns: ["series_id"]
