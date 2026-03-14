@@ -168,9 +168,9 @@ const OrderDetailsPage = () => {
                 <div className="space-y-2 text-sm">
                   <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`} />
                   <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, kolor ${decoded.fabric.colorName}`} />
-                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.type || '?'}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
+                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.modelName ? `${decoded.seat.modelName}${decoded.seat.type ? ` ${decoded.seat.type}` : ''}` : decoded.seat.type || '?'}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
                   <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykończenie ${decoded.side.finishName}`} />
-                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm, wykończenie ${decoded.backrest.finishName}`} />
+                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm${decoded.backrest.springType ? `, sprężyna ${decoded.backrest.springType}` : ''}, wykończenie ${decoded.backrest.finishName}`} />
                   <InfoRow label="Skrzynia" value={decoded.chest.code} />
                   <InfoRow label="Automat" value={`${decoded.automat.code} - ${decoded.automat.name}`} />
                   {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
