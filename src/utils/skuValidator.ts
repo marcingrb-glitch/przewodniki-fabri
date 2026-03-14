@@ -1,11 +1,11 @@
-import { ParsedSKU, ValidationResult } from "@/types";
-import { parseSKU } from "./skuParser";
+import { ValidationResult } from "@/types";
+import { parseSKUGeneric } from "./skuParserGeneric";
 
-export function validateSKU(sku: string): ValidationResult {
+export async function validateSKU(sku: string): Promise<ValidationResult> {
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  const parsed = parseSKU(sku);
+  const parsed = await parseSKUGeneric(sku);
 
   // Required components
   if (!parsed.series) errors.push("Brak serii (S1, S2, N1...)");
