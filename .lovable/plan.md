@@ -1,5 +1,6 @@
 
 
+
 ## Plan: Reorganizacja Konfiguracji SKU + eliminacja seat_types
 
 ### Krok 1: Migracja SQL — dodaj `type_name` do `seats_sofa`
@@ -36,3 +37,21 @@ Wydzielenie `ParseRulesTab` i `SideExceptionsTab` z SKUConfig.tsx do samodzielny
 
 Plik nie jest już potrzebny.
 
+---
+
+## Etap 2: Migracja na nowy system products/sku_segments
+
+### Etap 2.0: Walidacja sku_segments ✅
+
+Diagnostyka regex w `sku_segments` vs realne SKU. Wynik: 132/134 segmentów matchuje, 2 tkaniny Shopify (KIARA_866, RAVEN_18) nie matchują standardowego wzorca — to expected behavior.
+
+### Etap 2.1: Nowy Generic SKU Parser ✅
+
+- Utworzono `src/utils/skuParserGeneric.ts` — async parser z cache, czyta reguły z `sku_segments` i side exceptions z `product_relations`
+- Zmieniono `src/utils/skuValidator.ts` na async (`validateSKU` → `async function`)
+- Zaktualizowano callsites: `OrderForm.tsx`, `ShopifyOrderForm.tsx`, `OrderHistoryPage.tsx` — importy + await
+- Stary `skuParser.ts` zostaje jako fallback (nie usunięty)
+
+### Etap 2.2: Nowy Generic SKU Decoder (TODO)
+
+### Etap 2.3: Cleanup starych tabel (TODO)
