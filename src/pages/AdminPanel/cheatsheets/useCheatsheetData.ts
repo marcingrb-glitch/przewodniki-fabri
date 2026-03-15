@@ -117,7 +117,7 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
       source_product_id: r.source_product_id,
     }));
 
-  const isLoading = sectionsLoading || spLoading || scLoading || compLoading || globalLoading || specsLoading || relLoading;
+  const isLoading = sectionsLoading || spLoading || compLoading || globalLoading || specsLoading || relLoading;
 
   const allProducts = [...seriesComponents, ...globalProducts];
 
