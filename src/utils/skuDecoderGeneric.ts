@@ -209,14 +209,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     ? await resolveBackrestProduct(parsed.backrest.code, seriesId, seatModelName)
     : null;
 
-  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat, seriesConfig ----
-  const oldSeriesIdPromise = getOldSeriesId(parsed.series);
-
+  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat ----
   const [
     fabricRes, sideRes, chestRes, automatRes, legRes,
     pillowRes, jaskiRes, walekRes, finishesRes,
     extrasRes, pufaSeatRes, automatConfigRes,
-    oldSeriesId,
   ] = await Promise.all([
     // fabric (global)
     supabase.from("products").select(PRODUCT_SELECT)
@@ -271,13 +268,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     // automat config from product_relations
     seriesId && parsed.automat
       ? (async () => {
-          // We need automat product id first — but we already have automatRes pending.
-          // So we'll handle this after the parallel block. Return null for now.
           return { data: null };
         })()
       : Promise.resolve({ data: null }),
-    // old series id for series_config
-    oldSeriesIdPromise,
   ]);
 
   const fabricProduct = fabricRes.data as unknown as ProductRow | null;
