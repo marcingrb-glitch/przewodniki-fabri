@@ -305,16 +305,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     }
   }
 
-  // ---- Series config (from old series table) ----
-  let seriesConfigData: any = null;
-  if (oldSeriesId) {
-    const { data: sc } = await supabase
-      .from("series_config")
-      .select("pufa_leg_height_cm, pufa_leg_count, pufa_leg_type")
-      .eq("series_id", oldSeriesId)
-      .maybeSingle();
-    seriesConfigData = sc;
-  }
+  // ---- Series config (from products.properties on series) ----
+  const seriesProps = (seriesP?.properties ?? {}) as Record<string, any>;
 
   // ---- Build finishes map ----
   const FINISHES: Record<string, string> = {};
