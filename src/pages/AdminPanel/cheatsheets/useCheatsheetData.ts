@@ -39,26 +39,9 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     enabled: !!seriesProductId,
   });
 
-  // Series config via product_id
-  const { data: seriesConfig = null, isLoading: scLoading } = useQuery({
-    queryKey: ["cheatsheet-config", seriesProductId],
-    queryFn: async () => {
-      // Try product_id lookup first (new FK)
-      const { data } = await (supabase
-        .from("series_config")
-        .select("*") as any)
-        .eq("product_id", seriesProductId)
-        .maybeSingle();
-      if (data) return data as any as (SeriesConfig & { product_id?: string });
-      // Fallback: lookup via old series table
-      if (!seriesProduct) return null;
-      const { data: oldSeries } = await supabase.from("series").select("id").eq("code", seriesProduct.code).maybeSingle();
-      if (!oldSeries) return null;
-      const { data: cfg } = await supabase.from("series_config").select("*").eq("series_id", oldSeries.id).maybeSingle();
-      return cfg as any;
-    },
-    enabled: !!seriesProductId,
-  });
+  // Series config from series product properties
+  const seriesConfig = seriesProduct ? (seriesProduct.properties as any as SeriesConfig) : null;
+  const scLoading = spLoading;
 
   // Series components
   const { data: seriesComponents = [], isLoading: compLoading } = useQuery({
@@ -134,7 +117,7 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
       source_product_id: r.source_product_id,
     }));
 
-  const isLoading = sectionsLoading || spLoading || scLoading || compLoading || globalLoading || specsLoading || relLoading;
+  const isLoading = sectionsLoading || spLoading || compLoading || globalLoading || specsLoading || relLoading;
 
   const allProducts = [...seriesComponents, ...globalProducts];
 

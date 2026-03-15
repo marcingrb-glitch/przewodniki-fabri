@@ -33,7 +33,9 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
   const [chests, setChests] = useState<Tables<"chests">[]>([]);
   const [seats, setSeats] = useState<{ code: string; spring_type: string | null; model_name: string | null }[]>([]);
 
-  const availableChests: string[] = (config as any)?.available_chests ?? [];
+  const availableChests: string[] = Array.isArray((config as any)?.available_chests) 
+    ? (config as any).available_chests 
+    : [];
 
   useEffect(() => {
     const fetchData = async () => {
