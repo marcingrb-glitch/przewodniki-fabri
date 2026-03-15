@@ -121,25 +121,20 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     enabled: !!seriesProductId,
   });
 
-  // Sewing variants (uses old series.id)
-  const { data: sewingVariants = [], isLoading: svLoading } = useQuery({
-    queryKey: ["cheatsheet-sewing", seriesProductId],
-    queryFn: async () => {
-      if (!seriesProduct) return [];
-      const { data: oldSeries } = await supabase.from("series").select("id").eq("code", seriesProduct.code).maybeSingle();
-      if (!oldSeries) return [];
-      const { data } = await supabase
-        .from("sewing_variants")
-        .select("*")
-        .eq("series_id", oldSeries.id)
-        .eq("component_type", "backrest")
-        .order("variant_name");
-      return (data ?? []) as any[];
-    },
-    enabled: !!seriesProduct,
-  });
+  // Sewing variants derived from product_relations
+  const sewingVariants = productRelations
+    .filter((r: any) => r.relation_type === 'sewing_variant')
+    .map((r: any) => ({
+      id: r.id,
+      variant_name: r.properties?.variant_name ?? '',
+      models: r.properties?.models ?? [],
+      description: r.properties?.description ?? null,
+      component_type: r.properties?.component_type ?? 'backrest',
+      component_code: r.properties?.component_code ?? '',
+      source_product_id: r.source_product_id,
+    }));
 
-  const isLoading = sectionsLoading || spLoading || scLoading || compLoading || globalLoading || specsLoading || relLoading || svLoading;
+  const isLoading = sectionsLoading || spLoading || scLoading || compLoading || globalLoading || specsLoading || relLoading;
 
   const allProducts = [...seriesComponents, ...globalProducts];
 
