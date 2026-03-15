@@ -482,8 +482,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- PUFA / FOTEL LEGS ----
-  const pufaLegHeight = seriesConfigData?.pufa_leg_height_cm ?? 16;
-  const pufaLegCount = seriesConfigData?.pufa_leg_count ?? 4;
+  const pufaLegHeight = seriesProps?.pufa_leg_height_cm ?? 16;
+  const pufaLegCount = seriesProps?.pufa_leg_count ?? 4;
 
   let pufaLegsDecoded: DecodedSKU["pufaLegs"] = undefined;
   let fotelLegsDecoded: DecodedSKU["fotelLegs"] = undefined;
