@@ -68,15 +68,23 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
     }
   }
 
-  // Pufa
-  if (pufaLegType === "from_sku") {
-    doRows.push({ element: "Pufa", detail: "", type: "N z SKU", height: `H${pufaLegH ?? "?"}cm`, count: "4szt" });
-  } else {
-    dontRows.push({ element: "Pufa", detail: "", type: "N4 plastikowe", height: "2.5cm", count: "4szt", reason: "tapicer ma na stanowisku" });
+  // Pufa (only if series has PF or PFO extras)
+  const extras = data.getByCategory("extra");
+  const hasPufa = extras.some(e => e.code === "PF" || e.code === "PFO");
+  const hasFotel = extras.some(e => e.code === "FT");
+
+  if (hasPufa) {
+    if (pufaLegType === "from_sku") {
+      doRows.push({ element: "Pufa", detail: "", type: "N z SKU", height: `H${pufaLegH ?? "?"}cm`, count: "4szt" });
+    } else {
+      dontRows.push({ element: "Pufa", detail: "", type: "N4 plastikowe", height: "2.5cm", count: "4szt", reason: "tapicer ma na stanowisku" });
+    }
   }
 
-  // Fotel
-  doRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: `H${seatLegH ?? pufaLegH ?? "?"}cm`, count: "4szt" });
+  // Fotel (only if series has FT extra)
+  if (hasFotel) {
+    doRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: `H${seatLegH ?? pufaLegH ?? "?"}cm`, count: "4szt" });
+  }
 
   return (
     <div className="space-y-6">
