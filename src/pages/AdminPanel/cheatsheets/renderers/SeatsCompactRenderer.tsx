@@ -34,7 +34,7 @@ export function SeatsCompactRenderer({ data }: SectionRendererProps) {
               <td className="border border-border px-1 py-0.5">{props?.frame ?? "—"}</td>
               <td className="border border-border px-1 py-0.5">{props?.frame_modification ?? "—"}</td>
               <td className="border border-border px-1 py-0.5 font-bold">{spring}</td>
-              <td className="border border-border px-1 py-0.5">{data.formatFoamsInline(s.id)}</td>
+              <td className="border border-border px-1 py-0.5">{data.formatFoamsInlineWithFallback(s)}</td>
               <td className="border border-border px-1 py-0.5 font-bold">{props?.center_strip ? "TAK" : "—"}</td>
               <td className="border border-border px-1 py-0.5">{(s.allowed_finishes ?? []).join(",")}</td>
             </tr>
