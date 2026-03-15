@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CheatsheetData, CheatsheetSection, ProductRow, ProductSpec, SeriesConfig } from "./types";
-import { getSpringForSeat as getSpring, formatFoamsInline as formatFoams } from "./shared/helpers";
+import { getSpringForSeat as getSpring, formatFoamsInline as formatFoams, formatFoamsInlineWithFallback } from "./shared/helpers";
 
 export function useCheatsheetData(seriesProductId: string, workstationCode: string): CheatsheetData {
   // Load sections
