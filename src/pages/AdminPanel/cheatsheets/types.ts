@@ -38,7 +38,7 @@ export interface CheatsheetData {
   globalProducts: ProductRow[];
   productSpecs: ProductSpec[];
   productRelations: ProductRelation[];
-  sewingVariants: SewingVariant[];
+  sewingVariants: any[];
   isLoading: boolean;
   // helpers
   getByCategory: (category: string) => ProductRow[];
