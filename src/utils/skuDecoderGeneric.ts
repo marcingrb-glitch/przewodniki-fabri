@@ -20,15 +20,6 @@ type ProductRow = {
 
 const PRODUCT_SELECT = "id, code, name, category, series_id, properties, colors, allowed_finishes, default_finish";
 
-/** Lookup old series.id for series_config table (still references old series table). */
-async function getOldSeriesId(seriesCode: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("series")
-    .select("id")
-    .eq("code", seriesCode)
-    .maybeSingle();
-  return data?.id ?? null;
-}
 
 // ---------------------------------------------------------------------------
 // Seat lookup (3-step: exact → zero-padded → strip finish)
