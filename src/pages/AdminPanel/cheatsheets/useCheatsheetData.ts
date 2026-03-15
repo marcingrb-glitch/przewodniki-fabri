@@ -166,6 +166,10 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     return formatFoams(specs);
   };
 
+  const formatFoamsInlineWithFallbackFn = (seat: ProductRow): string => {
+    return formatFoamsInlineWithFallback(seat, productSpecs, getByCategory('seat'));
+  };
+
   return {
     sections,
     seriesProduct,
@@ -181,5 +185,6 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     getRelationsByType,
     getSpringForSeat: getSpringForSeatFn,
     formatFoamsInline: formatFoamsInlineFn,
+    formatFoamsInlineWithFallback: formatFoamsInlineWithFallbackFn,
   };
 }
