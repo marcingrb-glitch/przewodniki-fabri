@@ -12,9 +12,14 @@ export default function AdminLayout() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() => localStorage.getItem("admin_series_id") || "");
 
   const { data: seriesList = [] } = useQuery({
-    queryKey: ["admin-series-list"],
+    queryKey: ["admin-series-products"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("series").select("id, code, name").order("code");
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, code, name")
+        .eq("category", "series")
+        .eq("active", true)
+        .order("code");
       if (error) throw error;
       return data as { id: string; code: string; name: string }[];
     },

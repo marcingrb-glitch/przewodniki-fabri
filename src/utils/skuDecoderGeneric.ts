@@ -20,15 +20,6 @@ type ProductRow = {
 
 const PRODUCT_SELECT = "id, code, name, category, series_id, properties, colors, allowed_finishes, default_finish";
 
-/** Lookup old series.id for series_config table (still references old series table). */
-async function getOldSeriesId(seriesCode: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("series")
-    .select("id")
-    .eq("code", seriesCode)
-    .maybeSingle();
-  return data?.id ?? null;
-}
 
 // ---------------------------------------------------------------------------
 // Seat lookup (3-step: exact → zero-padded → strip finish)
@@ -218,14 +209,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     ? await resolveBackrestProduct(parsed.backrest.code, seriesId, seatModelName)
     : null;
 
-  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat, seriesConfig ----
-  const oldSeriesIdPromise = getOldSeriesId(parsed.series);
-
+  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat ----
   const [
     fabricRes, sideRes, chestRes, automatRes, legRes,
     pillowRes, jaskiRes, walekRes, finishesRes,
     extrasRes, pufaSeatRes, automatConfigRes,
-    oldSeriesId,
   ] = await Promise.all([
     // fabric (global)
     supabase.from("products").select(PRODUCT_SELECT)
@@ -280,13 +268,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     // automat config from product_relations
     seriesId && parsed.automat
       ? (async () => {
-          // We need automat product id first — but we already have automatRes pending.
-          // So we'll handle this after the parallel block. Return null for now.
           return { data: null };
         })()
       : Promise.resolve({ data: null }),
-    // old series id for series_config
-    oldSeriesIdPromise,
   ]);
 
   const fabricProduct = fabricRes.data as unknown as ProductRow | null;
@@ -321,16 +305,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     }
   }
 
-  // ---- Series config (from old series table) ----
-  let seriesConfigData: any = null;
-  if (oldSeriesId) {
-    const { data: sc } = await supabase
-      .from("series_config")
-      .select("pufa_leg_height_cm, pufa_leg_count, pufa_leg_type")
-      .eq("series_id", oldSeriesId)
-      .maybeSingle();
-    seriesConfigData = sc;
-  }
+  // ---- Series config (from products.properties on series) ----
+  const seriesProps = (seriesP?.properties ?? {}) as Record<string, any>;
 
   // ---- Build finishes map ----
   const FINISHES: Record<string, string> = {};
@@ -506,8 +482,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- PUFA / FOTEL LEGS ----
-  const pufaLegHeight = seriesConfigData?.pufa_leg_height_cm ?? 16;
-  const pufaLegCount = seriesConfigData?.pufa_leg_count ?? 4;
+  const pufaLegHeight = seriesProps?.pufa_leg_height_cm ?? 16;
+  const pufaLegCount = seriesProps?.pufa_leg_count ?? 4;
 
   let pufaLegsDecoded: DecodedSKU["pufaLegs"] = undefined;
   let fotelLegsDecoded: DecodedSKU["fotelLegs"] = undefined;

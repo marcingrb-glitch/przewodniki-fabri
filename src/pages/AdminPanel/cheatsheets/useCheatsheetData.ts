@@ -39,9 +39,30 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     enabled: !!seriesProductId,
   });
 
-  // Series config from series product properties
-  const seriesConfig = seriesProduct ? (seriesProduct.properties as any as SeriesConfig) : null;
-  const scLoading = spLoading;
+  // Series config derived from seriesProduct.properties (no more series_config query)
+  const seriesConfig = (() => {
+    if (!seriesProduct) return null;
+    const props = seriesProduct.properties as Record<string, any> | null;
+    if (!props) return null;
+    return {
+      id: seriesProduct.id,
+      series_id: seriesProduct.id,
+      product_id: seriesProduct.id,
+      created_at: seriesProduct.created_at ?? new Date().toISOString(),
+      available_chests: props.available_chests ?? null,
+      default_spring: props.default_spring ?? null,
+      spring_exceptions: props.spring_exceptions ?? null,
+      fixed_automat: props.fixed_automat ?? null,
+      fixed_backrest: props.fixed_backrest ?? null,
+      fixed_chest: props.fixed_chest ?? null,
+      pufa_leg_type: props.pufa_leg_type ?? null,
+      pufa_leg_height_cm: props.pufa_leg_height_cm ?? null,
+      pufa_leg_count: props.pufa_leg_count ?? null,
+      seat_leg_type: props.seat_leg_type ?? null,
+      seat_leg_height_cm: props.seat_leg_height_cm ?? null,
+      notes: props.notes ?? null,
+    } as SeriesConfig & { product_id?: string };
+  })();
 
   // Series components
   const { data: seriesComponents = [], isLoading: compLoading } = useQuery({
