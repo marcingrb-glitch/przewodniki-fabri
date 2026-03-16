@@ -6,9 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import SeriesOverview from "./spec/SeriesOverview";
-import SeriesModels from "./spec/SeriesModels";
-import SeriesSides from "./spec/SeriesSides";
-import SeriesBackrests from "./spec/SeriesBackrests";
+import GenericSpecSection from "./spec/GenericSpecSection";
+import { SPEC_SECTION_CONFIGS } from "./spec/specSectionConfigs";
 import SeriesLegs from "./spec/SeriesLegs";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
@@ -51,13 +50,9 @@ export default function SeriesSpecification() {
   const { seriesCode } = useParams<{ seriesCode: string }>();
   const navigate = useNavigate();
 
-  // New: series data from products table
   const [seriesProduct, setSeriesProduct] = useState<SeriesProduct | null>(null);
-  // Shim: config object compatible with Tables<"series_config">
   const [config, setConfig] = useState<Tables<"series_config"> | null>(null);
-  // Old series.id needed by child components that still query old tables
   const [oldSeriesId, setOldSeriesId] = useState<string | null>(null);
-  // Extras for conditional tab rendering
   const [extras, setExtras] = useState<{ code: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +60,6 @@ export default function SeriesSpecification() {
     if (!seriesCode) return;
     setLoading(true);
 
-    // 1. Load series from products table (new)
     const { data: sp } = await supabase
       .from("products")
       .select("*")
@@ -75,7 +69,6 @@ export default function SeriesSpecification() {
     setSeriesProduct(sp);
 
     if (sp) {
-      // 2. Load old series.id for child components (temporary shim)
       const { data: oldSeries } = await supabase
         .from("series")
         .select("id")
@@ -84,7 +77,6 @@ export default function SeriesSpecification() {
       const oldSId = oldSeries?.id ?? "";
       setOldSeriesId(oldSId);
 
-      // 3. Load old series_config.id for write operations in SeriesOverview (temporary shim)
       let oldConfigId = "";
       if (oldSId) {
         const { data: oldConfig } = await supabase
@@ -95,10 +87,8 @@ export default function SeriesSpecification() {
         oldConfigId = oldConfig?.id ?? "";
       }
 
-      // 4. Build config shim from products.properties
       setConfig(buildConfigShim(sp, oldSId, oldConfigId));
 
-      // 5. Load extras for conditional tab visibility (data-driven, not hardcoded)
       const { data: extrasData } = await supabase
         .from("products")
         .select("code")
@@ -120,7 +110,6 @@ export default function SeriesSpecification() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
           <ArrowLeft className="h-5 w-5" />
@@ -137,7 +126,6 @@ export default function SeriesSpecification() {
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="overview">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="overview">Przegląd</TabsTrigger>
@@ -154,13 +142,13 @@ export default function SeriesSpecification() {
           <SeriesOverview config={config} seriesId={oldSeriesId ?? ""} onConfigUpdate={fetchData} />
         </TabsContent>
         <TabsContent value="models">
-          <SeriesModels seriesId={oldSeriesId ?? ""} />
+          <GenericSpecSection seriesProductId={seriesProduct.id} category="seat" config={SPEC_SECTION_CONFIGS.seat} />
         </TabsContent>
         <TabsContent value="sides">
-          <SeriesSides seriesId={oldSeriesId ?? ""} />
+          <GenericSpecSection seriesProductId={seriesProduct.id} category="side" config={SPEC_SECTION_CONFIGS.side} />
         </TabsContent>
         <TabsContent value="backrests">
-          <SeriesBackrests seriesId={oldSeriesId ?? ""} />
+          <GenericSpecSection seriesProductId={seriesProduct.id} category="backrest" config={SPEC_SECTION_CONFIGS.backrest} />
         </TabsContent>
         <TabsContent value="automats">
           <SeriesAutomats seriesId={oldSeriesId ?? ""} />
