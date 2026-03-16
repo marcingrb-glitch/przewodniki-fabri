@@ -125,14 +125,62 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           <TableBody>
             {displayFoams.map((foam: any) => (
               <TableRow key={foam.id}>
-                <TableCell><InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.height} type="number" onSave={(v) => updateFoam(foam.id, "height", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.width} type="number" onSave={(v) => updateFoam(foam.id, "width", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.length} type="number" onSave={(v) => updateFoam(foam.id, "length", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.material} onSave={(v) => updateFoam(foam.id, "material", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.quantity} type="number" onSave={(v) => updateFoam(foam.id, "quantity", v)} /></TableCell>
-                <TableCell><InlineEditCell value={foam.notes} onSave={(v) => updateFoam(foam.id, "notes", v)} /></TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.position_number ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.name ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.height ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.height} type="number" onSave={(v) => updateFoam(foam.id, "height", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.width ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.width} type="number" onSave={(v) => updateFoam(foam.id, "width", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.length ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.length} type="number" onSave={(v) => updateFoam(foam.id, "length", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.material ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.material} onSave={(v) => updateFoam(foam.id, "material", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.quantity ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.quantity} type="number" onSave={(v) => updateFoam(foam.id, "quantity", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm text-muted-foreground">{foam.notes ?? "—"}</span>
+                  ) : (
+                    <InlineEditCell value={foam.notes} onSave={(v) => updateFoam(foam.id, "notes", v)} />
+                  )}
+                </TableCell>
                 <TableCell>
                   {!isFallback && (
                     <AlertDialog>
