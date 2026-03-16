@@ -139,6 +139,7 @@ export default function SewingVariants({ productId, productCode, modelName, seri
             <TableRow>
               <TableHead className="w-[140px]">Wariant</TableHead>
               <TableHead>Opis</TableHead>
+              <TableHead className="w-[80px]">Wykończenie</TableHead>
               <TableHead>Modele</TableHead>
               <TableHead className="w-[40px]"></TableHead>
             </TableRow>
