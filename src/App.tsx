@@ -12,11 +12,7 @@ import NewOrderPage from "@/pages/NewOrderPage";
 import OrderDetailsPage from "@/pages/OrderDetailsPage";
 import OrderHistoryPage from "@/pages/OrderHistoryPage";
 import AdminLayout from "@/pages/AdminPanel/AdminLayout";
-import Series from "@/pages/AdminPanel/Series";
 import ProductListPage from "@/pages/AdminPanel/ProductListPage";
-import SeatsSofa from "@/pages/AdminPanel/SeatsSofa";
-import Backrests from "@/pages/AdminPanel/Backrests";
-import Sides from "@/pages/AdminPanel/Sides";
 import Users from "@/pages/AdminPanel/Users";
 import ParseRules from "@/pages/AdminPanel/ParseRules";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
@@ -44,9 +40,6 @@ const App = () => (
                 <Route path="/order/:id" element={<OrderDetailsPage />} />
                 <Route path="/history" element={<OrderHistoryPage />} />
                 <Route path="/admin" element={<AdminLayout />}>
-                  {/* Admin-only routes */}
-                  <Route index element={<ProtectedRoute adminOnly><Series /></ProtectedRoute>} />
-                  <Route path="series" element={<ProtectedRoute adminOnly><Series /></ProtectedRoute>} />
                   {/* Global product categories */}
                   <Route path="fabrics" element={<ProtectedRoute adminOnly><ProductListPage category="fabric" /></ProtectedRoute>} />
                   <Route path="chests" element={<ProtectedRoute adminOnly><ProductListPage category="chest" /></ProtectedRoute>} />
@@ -59,10 +52,6 @@ const App = () => (
                   {/* Per-series product categories */}
                   <Route path="extras" element={<ProtectedRoute adminOnly><ProductListPage category="extra" /></ProtectedRoute>} />
                   <Route path="seats-pufa" element={<ProtectedRoute adminOnly><ProductListPage category="seat_pufa" /></ProtectedRoute>} />
-                  {/* Legacy standalone pages (kept until SeriesSpecification migration) */}
-                  <Route path="seats-sofa" element={<ProtectedRoute adminOnly><SeatsSofa /></ProtectedRoute>} />
-                  <Route path="backrests" element={<ProtectedRoute adminOnly><Backrests /></ProtectedRoute>} />
-                  <Route path="sides" element={<ProtectedRoute adminOnly><Sides /></ProtectedRoute>} />
                   <Route path="users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
                   <Route path="parse-rules" element={<ProtectedRoute adminOnly><ParseRules /></ProtectedRoute>} />
                   <Route path="side-exceptions" element={<ProtectedRoute adminOnly><SideExceptions /></ProtectedRoute>} />
