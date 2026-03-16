@@ -186,6 +186,9 @@ export default function GenericSpecSection({ seriesProductId, category, config }
         toast.success(`✅ ${config.labelSingular} dodany`);
       }
       queryClient.invalidateQueries({ queryKey });
+      if (category === "seat" && packed.properties?.model_name) {
+        setActiveTab(packed.properties.model_name);
+      }
       setFormOpen(false);
       setEditingItem(null);
     } catch (err: any) {
