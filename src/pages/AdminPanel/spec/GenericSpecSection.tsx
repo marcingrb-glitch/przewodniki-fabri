@@ -359,7 +359,7 @@ export default function GenericSpecSection({ seriesProductId, category, config }
         </div>
       ) : config.groupByModel && hasModels ? (
         /* Seat: grouped by model_name in tabs */
-        <Tabs defaultValue={modelNames[0]}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto">
             {modelNames.map((name) => (
               <TabsTrigger key={name} value={name}>{name}</TabsTrigger>
