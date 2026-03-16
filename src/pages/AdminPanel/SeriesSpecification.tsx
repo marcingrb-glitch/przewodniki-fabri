@@ -158,7 +158,7 @@ export default function SeriesSpecification() {
         </TabsContent>
         {hasPufa && (
           <TabsContent value="pufa">
-            <SeriesPufa seriesId={oldSeriesId ?? ""} config={config} />
+            <SeriesPufa seriesProductId={seriesProduct.id} seriesProperties={(seriesProduct.properties as Record<string, any>) ?? {}} />
           </TabsContent>
         )}
         {hasFotel && (
