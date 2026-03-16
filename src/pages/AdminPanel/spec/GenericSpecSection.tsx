@@ -111,6 +111,17 @@ export default function GenericSpecSection({ seriesProductId, category, config }
     return [...new Set(products.map((p: any) => p.model_name).filter(Boolean))] as string[];
   }, [products, hasModels]);
 
+  // Auto-select valid tab when modelNames change
+  useEffect(() => {
+    if (!hasModels || modelNames.length === 0) {
+      setActiveTab("");
+      return;
+    }
+    if (activeTab && modelNames.includes(activeTab)) return;
+    setActiveTab(modelNames[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelNames, hasModels]);
+
   // CRUD: inline update single field on products table
   const updateField = useCallback(async (productId: string, field: string, value: string) => {
     const product = products.find((p: any) => p.id === productId);
