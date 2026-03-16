@@ -58,6 +58,7 @@ export default function SewingVariants({ productId, productCode, modelName, seri
         variant_name: `Wariant ${nextNum}`,
         models: [],
         description: defaultDescriptions[nextNum] || null,
+        finish: null,
         component_type: "backrest",
         component_code: productCode,
       },
@@ -138,6 +139,7 @@ export default function SewingVariants({ productId, productCode, modelName, seri
             <TableRow>
               <TableHead className="w-[140px]">Wariant</TableHead>
               <TableHead>Opis</TableHead>
+              <TableHead className="w-[80px]">Wykończenie</TableHead>
               <TableHead>Modele</TableHead>
               <TableHead className="w-[40px]"></TableHead>
             </TableRow>
@@ -150,6 +152,13 @@ export default function SewingVariants({ productId, productCode, modelName, seri
                 </TableCell>
                 <TableCell>
                   <InlineEditCell value={v.description} onSave={(val) => updateVariant(v.id, "description", val || null)} placeholder="uzupełnij" />
+                </TableCell>
+                <TableCell>
+                  <InlineEditCell
+                    value={v.properties?.finish ?? null}
+                    onSave={(val) => updateVariant(v.id, "finish", val || null)}
+                    placeholder="—"
+                  />
                 </TableCell>
                 <TableCell>
                   <ModelMultiSelect
