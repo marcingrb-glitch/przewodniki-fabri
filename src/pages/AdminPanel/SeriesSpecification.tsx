@@ -139,7 +139,7 @@ export default function SeriesSpecification() {
         </TabsList>
 
         <TabsContent value="overview">
-          <SeriesOverview config={config} seriesId={oldSeriesId ?? ""} onConfigUpdate={fetchData} />
+          <SeriesOverview seriesProductId={seriesProduct.id} seriesProduct={seriesProduct} onSeriesUpdate={fetchData} />
         </TabsContent>
         <TabsContent value="models">
           <GenericSpecSection seriesProductId={seriesProduct.id} category="seat" config={SPEC_SECTION_CONFIGS.seat} />
