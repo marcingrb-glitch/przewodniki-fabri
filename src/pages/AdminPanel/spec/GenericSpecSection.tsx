@@ -52,6 +52,7 @@ export default function GenericSpecSection({ seriesProductId, category, config }
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("");
 
   const queryKey = ["spec-products", category, seriesProductId];
 
