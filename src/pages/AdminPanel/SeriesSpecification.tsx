@@ -139,7 +139,7 @@ export default function SeriesSpecification() {
         </TabsList>
 
         <TabsContent value="overview">
-          <SeriesOverview config={config} seriesId={oldSeriesId ?? ""} onConfigUpdate={fetchData} />
+          <SeriesOverview seriesProductId={seriesProduct.id} seriesProduct={seriesProduct} onSeriesUpdate={fetchData} />
         </TabsContent>
         <TabsContent value="models">
           <GenericSpecSection seriesProductId={seriesProduct.id} category="seat" config={SPEC_SECTION_CONFIGS.seat} />
@@ -158,7 +158,7 @@ export default function SeriesSpecification() {
         </TabsContent>
         {hasPufa && (
           <TabsContent value="pufa">
-            <SeriesPufa seriesId={oldSeriesId ?? ""} config={config} />
+            <SeriesPufa seriesProductId={seriesProduct.id} seriesProperties={(seriesProduct.properties as Record<string, any>) ?? {}} />
           </TabsContent>
         )}
         {hasFotel && (
