@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 interface CompatibilityMatrixProps {
   sides: any[];
@@ -51,30 +52,84 @@ export default function CompatibilityMatrix({ sides, seriesProductId }: Compatib
 
   const toggleCompat = async (seatId: string, sideId: string) => {
     const existing = getCompat(seatId, sideId);
-    if (existing) {
-      const currentCompatible = (existing as any).properties?.compatible ?? false;
-      const { error } = await supabase
-        .from("product_relations")
-        .update({ properties: { compatible: !currentCompatible } })
-        .eq("id", existing.id);
-      if (error) toast.error("Błąd zapisu");
-      else queryClient.invalidateQueries({ queryKey: compatQueryKey });
+    const currentlyCompatible = existing
+      ? ((existing as any).properties?.compatible ?? true)
+      : true;
+
+    if (currentlyCompatible) {
+      // Checked → uncheck: create/update record with compatible=false
+      if (existing) {
+        const { error } = await supabase
+          .from("product_relations")
+          .update({ properties: { compatible: false } })
+          .eq("id", existing.id);
+        if (error) toast.error("Błąd zapisu");
+        else queryClient.invalidateQueries({ queryKey: compatQueryKey });
+      } else {
+        const { error } = await supabase.from("product_relations").insert({
+          series_id: seriesProductId,
+          relation_type: "seat_side_compat",
+          source_product_id: seatId,
+          target_product_id: sideId,
+          properties: { compatible: false },
+        });
+        if (error) toast.error("Błąd zapisu");
+        else queryClient.invalidateQueries({ queryKey: compatQueryKey });
+      }
     } else {
-      const { error } = await supabase.from("product_relations").insert({
-        series_id: seriesProductId,
-        relation_type: "seat_side_compat",
-        source_product_id: seatId,
-        target_product_id: sideId,
-        properties: { compatible: true },
-      });
-      if (error) toast.error("Błąd zapisu");
-      else queryClient.invalidateQueries({ queryKey: compatQueryKey });
+      // Unchecked → check: delete exception record (restore default compatibility)
+      if (existing) {
+        const { error } = await supabase
+          .from("product_relations")
+          .delete()
+          .eq("id", existing.id);
+        if (error) toast.error("Błąd zapisu");
+        else queryClient.invalidateQueries({ queryKey: compatQueryKey });
+      }
+    }
+  };
+
+  const incompatibleCount = compat.filter(
+    (c: any) => c.properties?.compatible === false
+  ).length;
+
+  const resetAll = async () => {
+    const ids = compat
+      .filter((c: any) => c.properties?.compatible === false)
+      .map((c: any) => c.id);
+    if (ids.length === 0) return;
+    const { error } = await supabase
+      .from("product_relations")
+      .delete()
+      .in("id", ids);
+    if (error) toast.error("Błąd zapisu");
+    else {
+      toast.success("Przywrócono pełną kompatybilność");
+      queryClient.invalidateQueries({ queryKey: compatQueryKey });
     }
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-lg">Kompatybilność boczek ↔ siedzisko</CardTitle></CardHeader>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Kompatybilność boczek ↔ siedzisko</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetAll}
+            disabled={incompatibleCount === 0}
+          >
+            Zaznacz wszystkie
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Domyślnie wszystko kompatybilne. Odznacz pary, które <strong>nie</strong> są dozwolone.
+          {incompatibleCount > 0 && (
+            <span className="ml-1">({incompatibleCount} {incompatibleCount === 1 ? "wyjątek" : "wyjątków"})</span>
+          )}
+        </p>
+      </CardHeader>
       <CardContent>
         <div className="rounded-md border overflow-auto">
           <Table>
@@ -97,7 +152,7 @@ export default function CompatibilityMatrix({ sides, seriesProductId }: Compatib
                   <TableCell className="font-medium">{side.code} {side.name}</TableCell>
                   {seats.map((seat: any) => {
                     const c = getCompat(seat.id, side.id);
-                    const isCompatible = (c as any)?.properties?.compatible ?? false;
+                    const isCompatible = c ? ((c as any).properties?.compatible ?? true) : true;
                     return (
                       <TableCell key={seat.id} className="text-center">
                         <Checkbox
