@@ -58,6 +58,7 @@ export default function SewingVariants({ productId, productCode, modelName, seri
         variant_name: `Wariant ${nextNum}`,
         models: [],
         description: defaultDescriptions[nextNum] || null,
+        finish: null,
         component_type: "backrest",
         component_code: productCode,
       },
