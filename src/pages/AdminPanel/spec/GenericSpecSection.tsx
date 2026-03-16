@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +52,7 @@ export default function GenericSpecSection({ seriesProductId, category, config }
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("");
 
   const queryKey = ["spec-products", category, seriesProductId];
 
@@ -109,6 +110,17 @@ export default function GenericSpecSection({ seriesProductId, category, config }
     if (!hasModels) return [];
     return [...new Set(products.map((p: any) => p.model_name).filter(Boolean))] as string[];
   }, [products, hasModels]);
+
+  // Auto-select valid tab when modelNames change
+  useEffect(() => {
+    if (!hasModels || modelNames.length === 0) {
+      setActiveTab("");
+      return;
+    }
+    if (activeTab && modelNames.includes(activeTab)) return;
+    setActiveTab(modelNames[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelNames, hasModels]);
 
   // CRUD: inline update single field on products table
   const updateField = useCallback(async (productId: string, field: string, value: string) => {
@@ -174,6 +186,9 @@ export default function GenericSpecSection({ seriesProductId, category, config }
         toast.success(`✅ ${config.labelSingular} dodany`);
       }
       queryClient.invalidateQueries({ queryKey });
+      if (category === "seat" && packed.properties?.model_name) {
+        setActiveTab(packed.properties.model_name);
+      }
       setFormOpen(false);
       setEditingItem(null);
     } catch (err: any) {
@@ -344,7 +359,7 @@ export default function GenericSpecSection({ seriesProductId, category, config }
         </div>
       ) : config.groupByModel && hasModels ? (
         /* Seat: grouped by model_name in tabs */
-        <Tabs defaultValue={modelNames[0]}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto">
             {modelNames.map((name) => (
               <TabsTrigger key={name} value={name}>{name}</TabsTrigger>
