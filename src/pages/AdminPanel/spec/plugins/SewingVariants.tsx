@@ -154,6 +154,13 @@ export default function SewingVariants({ productId, productCode, modelName, seri
                   <InlineEditCell value={v.description} onSave={(val) => updateVariant(v.id, "description", val || null)} placeholder="uzupełnij" />
                 </TableCell>
                 <TableCell>
+                  <InlineEditCell
+                    value={v.properties?.finish ?? null}
+                    onSave={(val) => updateVariant(v.id, "finish", val || null)}
+                    placeholder="—"
+                  />
+                </TableCell>
+                <TableCell>
                   <ModelMultiSelect
                     selected={v.models}
                     onChange={(models) => updateVariant(v.id, "models", models)}
