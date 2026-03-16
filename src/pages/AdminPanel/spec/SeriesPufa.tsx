@@ -12,8 +12,8 @@ import InlineEditCell from "./InlineEditCell";
 import ComponentForm, { FieldDefinition } from "@/components/admin/ComponentForm";
 
 interface Props {
-  seriesId: string;
-  config: Tables<"series_config"> | null;
+  seriesProductId: string;
+  seriesProperties: Record<string, any>;
 }
 
 const LEG_TYPE_LABELS: Record<string, string> = {
@@ -29,24 +29,57 @@ const pufaFields: FieldDefinition[] = [
   { name: "box_height", label: "Wysokość skrzyni", type: "text" },
 ];
 
-export default function SeriesPufa({ seriesId, config }: Props) {
-  const [pufas, setPufas] = useState<Tables<"seats_pufa">[]>([]);
+type ProductRow = Tables<"products">;
+
+const prop = (p: ProductRow, key: string): string | null => {
+  const props = p.properties as Record<string, any> | null;
+  return props?.[key] ?? null;
+};
+
+const getInitialData = (item: ProductRow | null) => {
+  if (!item) return null;
+  const props = (item.properties as Record<string, any>) ?? {};
+  return {
+    code: item.code,
+    front_back: props.front_back ?? "",
+    sides: props.sides ?? "",
+    base_foam: props.base_foam ?? "",
+    box_height: props.box_height ?? "",
+  };
+};
+
+export default function SeriesPufa({ seriesProductId, seriesProperties }: Props) {
+  const [pufas, setPufas] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Tables<"seats_pufa"> | null>(null);
+  const [editingItem, setEditingItem] = useState<ProductRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
-    const { data } = await supabase.from("seats_pufa").select("*").eq("series_id", seriesId).order("code");
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("category", "seat_pufa")
+      .eq("series_id", seriesProductId)
+      .order("code");
     setPufas(data ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchAll(); }, [seriesId]);
+  useEffect(() => { fetchAll(); }, [seriesProductId]);
 
   const updateField = async (id: string, field: string, value: string) => {
-    const { error } = await supabase.from("seats_pufa").update({ [field]: value || null }).eq("id", id);
+    if (field === "code") {
+      const { error } = await supabase.from("products").update({ code: value || "" }).eq("id", id);
+      if (error) toast.error("Błąd zapisu");
+      else { toast.success("Zapisano"); fetchAll(); }
+      return;
+    }
+    const current = pufas.find(p => p.id === id);
+    const currentProps = (current?.properties as Record<string, any>) ?? {};
+    const updatedProps = { ...currentProps, [field]: value || null };
+    const { error } = await supabase.from("products").update({ properties: updatedProps }).eq("id", id);
     if (error) toast.error("Błąd zapisu");
     else { toast.success("Zapisano"); fetchAll(); }
   };
@@ -55,11 +88,33 @@ export default function SeriesPufa({ seriesId, config }: Props) {
     setSubmitting(true);
     try {
       if (editingItem) {
-        const { error } = await supabase.from("seats_pufa").update(data).eq("id", editingItem.id);
+        const currentProps = (editingItem.properties as Record<string, any>) ?? {};
+        const { error } = await supabase.from("products").update({
+          code: data.code,
+          name: `Pufa ${data.code}`,
+          properties: {
+            ...currentProps,
+            front_back: data.front_back || null,
+            sides: data.sides || null,
+            base_foam: data.base_foam || null,
+            box_height: data.box_height || null,
+          },
+        }).eq("id", editingItem.id);
         if (error) throw error;
         toast.success("✅ Siedzisko pufy zaktualizowane");
       } else {
-        const { error } = await supabase.from("seats_pufa").insert({ ...data, series_id: seriesId });
+        const { error } = await supabase.from("products").insert({
+          code: data.code,
+          name: `Pufa ${data.code}`,
+          category: "seat_pufa",
+          series_id: seriesProductId,
+          properties: {
+            front_back: data.front_back || null,
+            sides: data.sides || null,
+            base_foam: data.base_foam || null,
+            box_height: data.box_height || null,
+          },
+        });
         if (error) throw error;
         toast.success("✅ Siedzisko pufy dodane");
       }
@@ -69,23 +124,26 @@ export default function SeriesPufa({ seriesId, config }: Props) {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("seats_pufa").delete().eq("id", id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) toast.error("Błąd usuwania");
     else { toast.success("✅ Siedzisko pufy usunięte"); fetchAll(); }
   };
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
+  const legType = seriesProperties?.pufa_leg_type;
+  const legHeight = seriesProperties?.pufa_leg_height_cm;
+
   return (
     <div className="space-y-4">
-      {config && (
+      {legType && (
         <Card>
           <CardContent className="py-4">
             <div className="flex gap-4 text-sm flex-wrap">
-              <Badge variant="outline">Nóżki: {LEG_TYPE_LABELS[config.pufa_leg_type ?? ""] ?? config.pufa_leg_type ?? "—"}</Badge>
-              {config.pufa_leg_height_cm != null && <Badge variant="outline">Wysokość: {config.pufa_leg_height_cm} cm</Badge>}
+              <Badge variant="outline">Nóżki: {LEG_TYPE_LABELS[legType] ?? legType}</Badge>
+              {legHeight != null && <Badge variant="outline">Wysokość: {legHeight} cm</Badge>}
               <Badge variant="secondary">
-                Kompletacja: {config.pufa_leg_type === "plastic_2_5" ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)"}
+                Kompletacja: {legType === "plastic_2_5" ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)"}
               </Badge>
             </div>
           </CardContent>
@@ -118,10 +176,10 @@ export default function SeriesPufa({ seriesId, config }: Props) {
                 ) : pufas.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell><InlineEditCell value={p.code} onSave={(v) => updateField(p.id, "code", v)} /></TableCell>
-                    <TableCell><InlineEditCell value={p.front_back} onSave={(v) => updateField(p.id, "front_back", v)} /></TableCell>
-                    <TableCell><InlineEditCell value={p.sides} onSave={(v) => updateField(p.id, "sides", v)} /></TableCell>
-                    <TableCell><InlineEditCell value={p.base_foam} onSave={(v) => updateField(p.id, "base_foam", v)} /></TableCell>
-                    <TableCell><InlineEditCell value={p.box_height} onSave={(v) => updateField(p.id, "box_height", v)} /></TableCell>
+                    <TableCell><InlineEditCell value={prop(p, "front_back")} onSave={(v) => updateField(p.id, "front_back", v)} /></TableCell>
+                    <TableCell><InlineEditCell value={prop(p, "sides")} onSave={(v) => updateField(p.id, "sides", v)} /></TableCell>
+                    <TableCell><InlineEditCell value={prop(p, "base_foam")} onSave={(v) => updateField(p.id, "base_foam", v)} /></TableCell>
+                    <TableCell><InlineEditCell value={prop(p, "box_height")} onSave={(v) => updateField(p.id, "box_height", v)} /></TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingItem(p); setFormOpen(true); }}>
@@ -156,7 +214,7 @@ export default function SeriesPufa({ seriesId, config }: Props) {
         open={formOpen}
         title={editingItem ? `Edytuj siedzisko ${editingItem.code}` : "Dodaj siedzisko pufy"}
         fields={pufaFields}
-        initialData={editingItem}
+        initialData={getInitialData(editingItem)}
         onSubmit={handleSubmit}
         onCancel={() => { setFormOpen(false); setEditingItem(null); }}
         isLoading={submitting}

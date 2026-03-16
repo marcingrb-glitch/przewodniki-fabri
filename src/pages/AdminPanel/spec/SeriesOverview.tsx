@@ -8,9 +8,9 @@ import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
 
 interface Props {
-  config: Tables<"series_config"> | null;
-  seriesId: string;
-  onConfigUpdate: () => void;
+  seriesProductId: string;
+  seriesProduct: Tables<"products">;
+  onSeriesUpdate: () => void;
 }
 
 const formatLegType = (type: string | null, height: number | null): string => {
@@ -27,44 +27,50 @@ const LEG_COMPLETION_LABELS: Record<string, string> = {
   plastic_2_5: "Tapicer (na stanowisku)",
 };
 
-export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Props) {
-  const [notes, setNotes] = useState(config?.notes ?? "");
+type ChestProduct = Tables<"products">;
+
+export default function SeriesOverview({ seriesProductId, seriesProduct, onSeriesUpdate }: Props) {
+  const props = (seriesProduct.properties as Record<string, any>) ?? {};
+
+  const [notes, setNotes] = useState(props.notes ?? "");
   const [saving, setSaving] = useState(false);
-  const [chests, setChests] = useState<Tables<"chests">[]>([]);
+  const [chests, setChests] = useState<ChestProduct[]>([]);
   const [seats, setSeats] = useState<{ code: string; spring_type: string | null; model_name: string | null }[]>([]);
 
-  const availableChests: string[] = Array.isArray((config as any)?.available_chests) 
-    ? (config as any).available_chests 
-    : [];
+  const availableChests: string[] = Array.isArray(props.available_chests) ? props.available_chests : [];
 
   useEffect(() => {
     const fetchData = async () => {
-      const seatsRes = await supabase.from("seats_sofa").select("code, spring_type, model_name").eq("series_id", seriesId).order("code");
-      setSeats(seatsRes.data ?? []);
+      const seatsRes = await supabase
+        .from("products")
+        .select("code, properties")
+        .eq("category", "seat")
+        .eq("series_id", seriesProductId)
+        .order("code");
+      setSeats((seatsRes.data ?? []).map(s => ({
+        code: s.code,
+        spring_type: (s.properties as any)?.spring_type ?? null,
+        model_name: (s.properties as any)?.model_name ?? null,
+      })));
+
       if (availableChests.length > 0) {
-        const chestsRes = await supabase.from("chests").select("*").in("code", availableChests).order("code");
+        const chestsRes = await supabase
+          .from("products")
+          .select("*")
+          .eq("category", "chest")
+          .in("code", availableChests)
+          .order("code");
         setChests(chestsRes.data ?? []);
       }
     };
     fetchData();
-  }, [seriesId, config]);
+  }, [seriesProductId, seriesProduct]);
 
-  if (!config) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Brak konfiguracji dla tej serii. Skontaktuj się z administratorem.
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Derive spring summary from seats_sofa
+  // Derive spring summary from seats
   const springTypes = [...new Set(seats.map((s) => s.spring_type).filter(Boolean))];
-  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (springTypes[0] ?? config.default_spring ?? "—");
+  const defaultSpring = springTypes.length === 1 ? springTypes[0] : (springTypes[0] ?? props.default_spring ?? "—");
   const springExceptions = seats.filter((s) => s.spring_type && s.spring_type !== defaultSpring);
-  
-  // Build spring summary string
+
   let springSummary = defaultSpring ?? "—";
   if (springExceptions.length > 0) {
     const exceptionTexts = springExceptions.map((s) => {
@@ -76,10 +82,15 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
 
   const saveNotes = async () => {
     setSaving(true);
-    const { error } = await supabase.from("series_config").update({ notes }).eq("id", config.id);
+    const currentProps = (seriesProduct.properties as Record<string, any>) ?? {};
+    const updatedProps = { ...currentProps, notes };
+    const { error } = await supabase
+      .from("products")
+      .update({ properties: updatedProps })
+      .eq("id", seriesProductId);
     setSaving(false);
     if (error) toast.error("Błąd zapisu notatek");
-    else { toast.success("Notatki zapisane"); onConfigUpdate(); }
+    else { toast.success("Notatki zapisane"); onSeriesUpdate(); }
   };
 
   return (
@@ -87,9 +98,9 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Stałe elementy</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Oparcie:</span> {config.fixed_backrest ? `zawsze ${config.fixed_backrest}` : "dowolne"}</div>
-          <div><span className="font-medium">Skrzynia:</span> {config.fixed_chest ? `zawsze ${config.fixed_chest}` : "dowolna"}</div>
-          <div><span className="font-medium">Automat:</span> {config.fixed_automat ? `zawsze ${config.fixed_automat}` : "dowolny"}</div>
+          <div><span className="font-medium">Oparcie:</span> {props.fixed_backrest ? `zawsze ${props.fixed_backrest}` : "dowolne"}</div>
+          <div><span className="font-medium">Skrzynia:</span> {props.fixed_chest ? `zawsze ${props.fixed_chest}` : "dowolna"}</div>
+          <div><span className="font-medium">Automat:</span> {props.fixed_automat ? `zawsze ${props.fixed_automat}` : "dowolny"}</div>
         </CardContent>
       </Card>
 
@@ -103,8 +114,8 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
       <Card>
         <CardHeader><CardTitle className="text-lg">Nóżki pufy</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><span className="font-medium">Typ:</span> {formatLegType(config.pufa_leg_type, config.pufa_leg_height_cm)}</div>
-          <div><span className="font-medium">Kompletacja:</span> {LEG_COMPLETION_LABELS[config.pufa_leg_type ?? "from_sku"] ?? "—"}</div>
+          <div><span className="font-medium">Typ:</span> {formatLegType(props.pufa_leg_type, props.pufa_leg_height_cm)}</div>
+          <div><span className="font-medium">Kompletacja:</span> {LEG_COMPLETION_LABELS[props.pufa_leg_type ?? "from_sku"] ?? "—"}</div>
         </CardContent>
       </Card>
 
@@ -115,9 +126,9 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
             <p className="text-muted-foreground text-sm">Brak skrzyń przypisanych do serii</p>
           ) : (
             <>
-              {config.fixed_chest && (
+              {props.fixed_chest && (
                 <p className="text-sm mb-3 font-medium">
-                  Skrzynia: zawsze {config.fixed_chest}. Nóżki plastikowe N4 H2.5cm.
+                  Skrzynia: zawsze {props.fixed_chest}. Nóżki plastikowe N4 H2.5cm.
                 </p>
               )}
               <div className="rounded-md border">
@@ -130,13 +141,16 @@ export default function SeriesOverview({ config, seriesId, onConfigUpdate }: Pro
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {chests.map(c => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.code}</TableCell>
-                        <TableCell>{c.name}</TableCell>
-                        <TableCell>{c.leg_height_cm} cm</TableCell>
-                      </TableRow>
-                    ))}
+                    {chests.map(c => {
+                      const cProps = (c.properties as Record<string, any>) ?? {};
+                      return (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.code}</TableCell>
+                          <TableCell>{c.name}</TableCell>
+                          <TableCell>{cProps.leg_height_cm ?? "—"} cm</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
