@@ -18,9 +18,8 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
   const pufaLegType = config.pufa_leg_type ?? "from_sku";
   const seatLegH = config.seat_leg_height_cm;
   const pufaLegH = config.pufa_leg_height_cm;
-  const availableChests = (config as any)?.available_chests as string[] ?? [];
-
-  const chests = data.getByCategory("chest").filter(c => availableChests.includes(c.code));
+  const allowedChestCodes = data.getAllowedChestCodes();
+  const chests = data.getByCategory("chest").filter(c => allowedChestCodes.includes(c.code));
   const automatConfigs = data.getRelationsByType("automat_config");
   const automats = data.getByCategory("automat");
   const automatNameMap = Object.fromEntries(automats.map(a => [a.code, a.name]));

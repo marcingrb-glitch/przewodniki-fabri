@@ -49,7 +49,7 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
       series_id: seriesProduct.id,
       product_id: seriesProduct.id,
       created_at: seriesProduct.created_at ?? new Date().toISOString(),
-      available_chests: props.available_chests ?? null,
+      available_chests: null, // deprecated — now in product_relations (allowed_chest)
       default_spring: props.default_spring ?? null,
       spring_exceptions: props.spring_exceptions ?? null,
       fixed_automat: props.fixed_automat ?? null,
@@ -169,6 +169,16 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     return formatFoamsInlineWithFallback(seat, productSpecs, getByCategory('seat'));
   };
 
+  const getAllowedChestCodes = (): string[] => {
+    return productRelations
+      .filter((r: any) => r.relation_type === 'allowed_chest')
+      .map((r: any) => {
+        const target = allProducts.find(p => p.id === r.target_product_id);
+        return target?.code;
+      })
+      .filter(Boolean) as string[];
+  };
+
   return {
     sections,
     seriesProduct,
@@ -185,5 +195,6 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     getSpringForSeat: getSpringForSeatFn,
     formatFoamsInline: formatFoamsInlineFn,
     formatFoamsInlineWithFallback: formatFoamsInlineWithFallbackFn,
+    getAllowedChestCodes,
   };
 }

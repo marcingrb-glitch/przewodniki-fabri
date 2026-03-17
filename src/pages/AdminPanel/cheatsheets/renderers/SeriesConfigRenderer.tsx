@@ -6,9 +6,7 @@ export function SeriesConfigRenderer({ data }: SectionRendererProps) {
   const config = data.seriesConfig;
   if (!config) return <NoData label="konfiguracja" />;
 
-  const availableChests = Array.isArray((config as any)?.available_chests)
-    ? (config as any).available_chests
-    : [];
+  const allowedChestCodes = data.getAllowedChestCodes();
 
   return (
     <div className="grid grid-cols-2 gap-2 text-sm border border-border p-3 rounded">
@@ -18,7 +16,7 @@ export function SeriesConfigRenderer({ data }: SectionRendererProps) {
       <div><span className="text-muted-foreground">Stały automat:</span> <strong>{config.fixed_automat ?? "brak"}</strong></div>
       <div><span className="text-muted-foreground">Stałe oparcie:</span> <strong>{config.fixed_backrest ?? "brak"}</strong></div>
       <div><span className="text-muted-foreground">Stała skrzynia:</span> <strong>{config.fixed_chest ?? "brak"}</strong></div>
-      <div><span className="text-muted-foreground">Dostępne skrzynie:</span> <strong>{availableChests.join(", ") || "—"}</strong></div>
+      <div><span className="text-muted-foreground">Dostępne skrzynie:</span> <strong>{allowedChestCodes.join(", ") || "—"}</strong></div>
       {config.notes && <div className="col-span-2"><span className="text-muted-foreground">Notatki:</span> {config.notes}</div>}
     </div>
   );

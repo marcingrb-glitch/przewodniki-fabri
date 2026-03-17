@@ -147,8 +147,11 @@ export default function SeriesAutomats({ seriesProductId }: Props) {
           <Button size="sm" onClick={openAdd}><Plus className="h-4 w-4 mr-1" /> Dodaj</Button>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground mb-1">
             Globalne automaty zarządzasz w <strong>Wspólne → Automaty</strong>. Tutaj przypisujesz je do serii i ustawiasz parametry nóżek pod siedziskiem.
+          </p>
+          <p className="text-sm text-muted-foreground mb-3">
+            Automaty dodane poniżej = dozwolone w tej serii. Aby ograniczyć, usuń zbędne.
           </p>
           <div className="rounded-md border">
             <Table>
