@@ -111,6 +111,9 @@ export default function SeriesSpecification() {
         <TabsContent value="legs">
           <SeriesLegs seriesProductId={seriesProduct.id} seriesProperties={seriesProps} seriesCode={seriesCode} />
         </TabsContent>
+        <TabsContent value="side-exceptions">
+          <SeriesSideExceptions seriesProductId={seriesProduct.id} />
+        </TabsContent>
         {hasPufa && (
           <TabsContent value="pufa">
             <SeriesPufa seriesProductId={seriesProduct.id} seriesProperties={seriesProps} />
