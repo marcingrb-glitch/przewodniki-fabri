@@ -4,6 +4,14 @@ import { formatFoamsSummary } from "@/utils/foamHelpers";
 
 // ---------------------------------------------------------------------------
 // Helpers
+/**
+ * Normalize component codes: strip leading zeros after prefix letter.
+ * P01 → P1, J01 → J1, W01 → W1. Already-normalized codes pass through.
+ */
+function normalizeComponentCode(code: string): string {
+  return code.replace(/^([A-Z])0+(\d)/, "$1$2");
+}
+
 // ---------------------------------------------------------------------------
 
 type ProductRow = {
