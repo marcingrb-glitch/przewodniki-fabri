@@ -131,12 +131,12 @@ const ShopifyOrderForm = () => {
         const normalizedSku = item.sku.trim().replace(/\s+/g, "-").toUpperCase();
         console.log("[ShopifyFlow] Original SKU:", JSON.stringify(item.sku), "Normalized:", JSON.stringify(normalizedSku));
 
-        // 1. Fetch side exceptions first
+        // 1. Fetch SKU aliases first
         const seriesCode = normalizedSku.trim().toUpperCase().split("-")[0] || "";
-        const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+        const skuAliases = await fetchSkuAliases(seriesCode);
 
-        // 2. Validate SKU (with side exceptions)
-        const validation = await validateSKU(normalizedSku, sideExceptions);
+        // 2. Validate SKU (with SKU aliases)
+        const validation = await validateSKU(normalizedSku, skuAliases);
         console.log("[ShopifyFlow] Validation result:", validation);
         if (!validation.valid) {
           const errMsg = validation.errors.join("; ");
