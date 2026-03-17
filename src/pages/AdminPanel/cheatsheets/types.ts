@@ -48,7 +48,6 @@ export interface CheatsheetData {
   formatFoamsInline: (productId: string) => string;
   formatFoamsInlineWithFallback: (seat: ProductRow) => string;
   getAllowedChestCodes: () => string[];
-  formatFoamsInlineWithFallback: (seat: ProductRow) => string;
 }
 
 export interface SectionRendererProps {
