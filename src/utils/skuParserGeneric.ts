@@ -164,22 +164,44 @@ export async function parseSKUGeneric(
   for (const part of parts) {
     let matched = false;
 
-    // Pre-check: side exceptions
-    if (sideExceptions && sideExceptions[part]) {
-      const original = part;
-      const mappedCode = sideExceptions[part];
-      result.sideException = `Zamieniono ${original} → ${mappedCode} (wyjątek Shopify)`;
+    // Pre-check: side exceptions (B6S→B6, B6W→B10, B6D→B6C, etc.)
+    if (sideExceptions) {
+      let mappedSegment: string | null = null;
+      const originalPart = part;
 
-      const sideRule = rules.find((r) => r.segment_name === "side");
-      if (sideRule) {
-        const sideResult = applyRule(sideRule, mappedCode);
-        if (sideResult) {
-          applySideResult(result, sideResult);
-          matchedRules.add("side");
-          matched = true;
+      if (sideExceptions[part]) {
+        // Exact match (e.g. "B6S"→"B6", "B6D"→"B6C", "B6WC"→"B10C")
+        mappedSegment = sideExceptions[part];
+      } else if (part.length >= 3 && /[A-D]$/.test(part)) {
+        // Strip finish, check base code (e.g. "B6SC" → base "B6S", finish "C")
+        const baseCode = part.slice(0, -1);
+        const finish = part.slice(-1);
+        if (sideExceptions[baseCode]) {
+          const mappedBase = sideExceptions[baseCode];
+          // If mapped code already ends with A-D, it's an exact mapping — don't append finish
+          // If not (alias), append the original finish
+          if (/[A-D]$/.test(mappedBase)) {
+            mappedSegment = mappedBase;
+          } else {
+            mappedSegment = mappedBase + finish;
+          }
         }
       }
-      if (matched) continue;
+
+      if (mappedSegment) {
+        result.sideException = `Zamieniono ${originalPart} → ${mappedSegment} (wyjątek Shopify)`;
+
+        const sideRule = rules.find((r) => r.segment_name === "side");
+        if (sideRule) {
+          const sideResult = applyRule(sideRule, mappedSegment);
+          if (sideResult) {
+            applySideResult(result, sideResult);
+            matchedRules.add("side");
+            matched = true;
+          }
+        }
+        if (matched) continue;
+      }
     }
 
     // Try each rule
@@ -224,9 +246,7 @@ function applyRule(rule: SegmentRule, part: string): Record<string, string> | nu
 }
 
 function applySideResult(result: ParsedSKU, captures: Record<string, string>) {
-  let code = captures.code || "";
-  code = code.replace(/([SW])$/, (m) => m.toLowerCase());
-  if (code === "6") code = "6s";
+  const code = captures.code || "";
   result.side = { code: `B${code}`, finish: captures.finish || "" };
 }
 

@@ -13,6 +13,7 @@ import SeriesChests from "./spec/SeriesChests";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
 import SeriesAutomats from "./spec/SeriesAutomats";
+import SeriesSideExceptions from "./spec/SeriesSideExceptions";
 
 type SeriesProduct = Tables<"products">;
 
@@ -84,6 +85,7 @@ export default function SeriesSpecification() {
           <TabsTrigger value="chests">Skrzynie</TabsTrigger>
           <TabsTrigger value="automats">Automaty</TabsTrigger>
           <TabsTrigger value="legs">Nóżki & Montaż</TabsTrigger>
+          <TabsTrigger value="side-exceptions">⚠️ Wyjątki boczków</TabsTrigger>
           {hasPufa && <TabsTrigger value="pufa">Pufa</TabsTrigger>}
           {hasFotel && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
         </TabsList>
@@ -108,6 +110,9 @@ export default function SeriesSpecification() {
         </TabsContent>
         <TabsContent value="legs">
           <SeriesLegs seriesProductId={seriesProduct.id} seriesProperties={seriesProps} seriesCode={seriesCode} />
+        </TabsContent>
+        <TabsContent value="side-exceptions">
+          <SeriesSideExceptions seriesProductId={seriesProduct.id} />
         </TabsContent>
         {hasPufa && (
           <TabsContent value="pufa">
