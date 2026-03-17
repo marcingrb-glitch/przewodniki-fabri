@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
+import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
