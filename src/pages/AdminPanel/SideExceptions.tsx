@@ -8,11 +8,12 @@ import ComponentForm, { FieldDefinition } from "@/components/admin/ComponentForm
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Transform product_relations row into flat object for DataTable
 interface FlatException {
   id: string;
   original_code: string;
   mapped_code: string;
+  component_type: string;
+  is_global: boolean;
   description: string;
   active: boolean;
 }
@@ -23,14 +24,40 @@ function flattenRow(row: any): FlatException {
     id: row.id,
     original_code: props.original_code ?? "",
     mapped_code: props.mapped_code ?? "",
+    component_type: props.component_type ?? "side",
+    is_global: props.is_global ?? false,
     description: props.description ?? "",
     active: row.active ?? true,
   };
 }
 
+const COMPONENT_TYPES = [
+  { value: "side", label: "Boczek" },
+  { value: "chest", label: "Skrzynia" },
+  { value: "fabric", label: "Tkanina" },
+  { value: "seat", label: "Siedzisko" },
+  { value: "backrest", label: "Oparcie" },
+  { value: "leg", label: "Nóżka" },
+  { value: "automat", label: "Automat" },
+];
+
 const columns: Column[] = [
   { key: "original_code", label: "Kod oryginalny" },
   { key: "mapped_code", label: "Kod zamapowany" },
+  {
+    key: "component_type",
+    label: "Komponent",
+    render: (val: string) => {
+      const found = COMPONENT_TYPES.find((c) => c.value === val);
+      return <Badge variant="outline">{found?.label ?? val}</Badge>;
+    },
+  },
+  {
+    key: "is_global",
+    label: "Globalny",
+    render: (val: boolean) =>
+      val ? <Badge variant="default">Globalny</Badge> : null,
+  },
   { key: "description", label: "Opis" },
   {
     key: "active",
@@ -44,6 +71,14 @@ const columns: Column[] = [
 const fields: FieldDefinition[] = [
   { name: "original_code", label: "Kod oryginalny (Shopify)", type: "text", required: true },
   { name: "mapped_code", label: "Kod zamapowany (poprawny)", type: "text", required: true },
+  {
+    name: "component_type",
+    label: "Komponent",
+    type: "select",
+    options: COMPONENT_TYPES.map((c) => ({ value: c.value, label: c.label })),
+    required: true,
+  },
+  { name: "is_global", label: "Globalny (dotyczy wszystkich serii)", type: "boolean" },
   { name: "description", label: "Opis", type: "textarea" },
   { name: "active", label: "Aktywny", type: "boolean" },
 ];
@@ -51,7 +86,6 @@ const fields: FieldDefinition[] = [
 export default function SideExceptions() {
   const queryClient = useQueryClient();
 
-  // Series list for dropdown
   const { data: seriesList = [] } = useQuery({
     queryKey: ["admin-series-products"],
     queryFn: async () => {
@@ -76,7 +110,7 @@ export default function SideExceptions() {
     }
   }, [seriesList, selectedSeriesId]);
 
-  const queryKey = ["admin-side-exceptions", selectedSeriesId];
+  const queryKey = ["admin-sku-aliases", selectedSeriesId];
 
   const { data = [], isLoading } = useQuery({
     queryKey,
@@ -85,7 +119,7 @@ export default function SideExceptions() {
         .from("product_relations")
         .select("id, properties, active")
         .eq("series_id", selectedSeriesId)
-        .eq("relation_type", "side_exception")
+        .eq("relation_type", "sku_alias")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []).map(flattenRow);
@@ -107,6 +141,8 @@ export default function SideExceptions() {
       const properties = {
         original_code: (formData.original_code || "").toUpperCase(),
         mapped_code: (formData.mapped_code || "").toUpperCase(),
+        component_type: formData.component_type || "side",
+        is_global: formData.is_global ?? false,
         description: formData.description || "",
       };
       const active = formData.active ?? true;
@@ -117,18 +153,18 @@ export default function SideExceptions() {
           .update({ properties, active })
           .eq("id", editingItem.id);
         if (error) throw error;
-        toast.success("✅ Wyjątek zaktualizowany");
+        toast.success("✅ Alias zaktualizowany");
       } else {
         const { error } = await supabase
           .from("product_relations")
           .insert([{
             series_id: selectedSeriesId,
-            relation_type: "side_exception",
+            relation_type: "sku_alias",
             properties,
             active,
           }]);
         if (error) throw error;
-        toast.success("✅ Wyjątek dodany");
+        toast.success("✅ Alias dodany");
       }
       queryClient.invalidateQueries({ queryKey });
       setFormOpen(false);
@@ -144,7 +180,7 @@ export default function SideExceptions() {
     try {
       const { error } = await supabase.from("product_relations").delete().eq("id", id);
       if (error) throw error;
-      toast.success("✅ Wyjątek usunięty");
+      toast.success("✅ Alias usunięty");
       queryClient.invalidateQueries({ queryKey });
     } catch (err: any) {
       toast.error(`❌ ${getUserFriendlyError(err)}`);
@@ -168,10 +204,12 @@ export default function SideExceptions() {
         .from("product_relations")
         .insert([{
           series_id: selectedSeriesId,
-          relation_type: "side_exception",
+          relation_type: "sku_alias",
           properties: {
             original_code: item.original_code + " (kopia)",
             mapped_code: item.mapped_code,
+            component_type: item.component_type || "side",
+            is_global: item.is_global ?? false,
             description: item.description,
           },
           active: item.active,
@@ -203,11 +241,11 @@ export default function SideExceptions() {
       </div>
 
       {!selectedSeriesId ? (
-        <p className="text-muted-foreground py-8 text-center">Wybierz serię, aby zobaczyć wyjątki.</p>
+        <p className="text-muted-foreground py-8 text-center">Wybierz serię, aby zobaczyć aliasy SKU.</p>
       ) : (
         <>
           <DataTable
-            title="Wyjątki boczków (Shopify legacy)"
+            title="Wyjątki SKU (aliasy Shopify)"
             columns={columns}
             data={data}
             onAdd={handleAdd}
@@ -219,7 +257,7 @@ export default function SideExceptions() {
           />
           <ComponentForm
             open={formOpen}
-            title={editingItem ? "Edytuj wyjątek" : "Dodaj wyjątek"}
+            title={editingItem ? "Edytuj alias SKU" : "Dodaj alias SKU"}
             fields={fields}
             initialData={editingItem}
             onSubmit={handleSubmit}
