@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tables } from "@/integrations/supabase/types";
@@ -27,17 +26,12 @@ const LEG_COMPLETION_LABELS: Record<string, string> = {
   plastic_2_5: "Tapicer (na stanowisku)",
 };
 
-type ChestProduct = Tables<"products">;
-
 export default function SeriesOverview({ seriesProductId, seriesProduct, onSeriesUpdate }: Props) {
   const props = (seriesProduct.properties as Record<string, any>) ?? {};
 
   const [notes, setNotes] = useState(props.notes ?? "");
   const [saving, setSaving] = useState(false);
-  const [chests, setChests] = useState<ChestProduct[]>([]);
   const [seats, setSeats] = useState<{ code: string; spring_type: string | null; model_name: string | null }[]>([]);
-
-  const availableChests: string[] = Array.isArray(props.available_chests) ? props.available_chests : [];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,16 +46,6 @@ export default function SeriesOverview({ seriesProductId, seriesProduct, onSerie
         spring_type: (s.properties as any)?.spring_type ?? null,
         model_name: (s.properties as any)?.model_name ?? null,
       })));
-
-      if (availableChests.length > 0) {
-        const chestsRes = await supabase
-          .from("products")
-          .select("*")
-          .eq("category", "chest")
-          .in("code", availableChests)
-          .order("code");
-        setChests(chestsRes.data ?? []);
-      }
     };
     fetchData();
   }, [seriesProductId, seriesProduct]);
@@ -116,46 +100,6 @@ export default function SeriesOverview({ seriesProductId, seriesProduct, onSerie
         <CardContent className="space-y-2 text-sm">
           <div><span className="font-medium">Typ:</span> {formatLegType(props.pufa_leg_type, props.pufa_leg_height_cm)}</div>
           <div><span className="font-medium">Kompletacja:</span> {LEG_COMPLETION_LABELS[props.pufa_leg_type ?? "from_sku"] ?? "—"}</div>
-        </CardContent>
-      </Card>
-
-      <Card className="md:col-span-2">
-        <CardHeader><CardTitle className="text-lg">Skrzynie dostępne w serii</CardTitle></CardHeader>
-        <CardContent>
-          {chests.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Brak skrzyń przypisanych do serii</p>
-          ) : (
-            <>
-              {props.fixed_chest && (
-                <p className="text-sm mb-3 font-medium">
-                  Skrzynia: zawsze {props.fixed_chest}. Nóżki plastikowe N4 H2.5cm.
-                </p>
-              )}
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Kod</TableHead>
-                      <TableHead>Nazwa</TableHead>
-                      <TableHead>Wys. nóżek</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {chests.map(c => {
-                      const cProps = (c.properties as Record<string, any>) ?? {};
-                      return (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-medium">{c.code}</TableCell>
-                          <TableCell>{c.name}</TableCell>
-                          <TableCell>{cProps.leg_height_cm ?? "—"} cm</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
 

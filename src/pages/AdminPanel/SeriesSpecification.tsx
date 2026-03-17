@@ -9,6 +9,7 @@ import SeriesOverview from "./spec/SeriesOverview";
 import GenericSpecSection from "./spec/GenericSpecSection";
 import { SPEC_SECTION_CONFIGS } from "./spec/specSectionConfigs";
 import SeriesLegs from "./spec/SeriesLegs";
+import SeriesChests from "./spec/SeriesChests";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
 import SeriesAutomats from "./spec/SeriesAutomats";
@@ -80,6 +81,7 @@ export default function SeriesSpecification() {
           <TabsTrigger value="models">Modele / Siedziska</TabsTrigger>
           <TabsTrigger value="sides">Boczki</TabsTrigger>
           <TabsTrigger value="backrests">Oparcia</TabsTrigger>
+          <TabsTrigger value="chests">Skrzynie</TabsTrigger>
           <TabsTrigger value="automats">Automaty</TabsTrigger>
           <TabsTrigger value="legs">Nóżki & Montaż</TabsTrigger>
           {hasPufa && <TabsTrigger value="pufa">Pufa</TabsTrigger>}
@@ -97,6 +99,9 @@ export default function SeriesSpecification() {
         </TabsContent>
         <TabsContent value="backrests">
           <GenericSpecSection seriesProductId={seriesProduct.id} category="backrest" config={SPEC_SECTION_CONFIGS.backrest} />
+        </TabsContent>
+        <TabsContent value="chests">
+          <SeriesChests seriesProductId={seriesProduct.id} seriesProperties={seriesProps} onUpdate={fetchData} />
         </TabsContent>
         <TabsContent value="automats">
           <SeriesAutomats seriesProductId={seriesProduct.id} />
