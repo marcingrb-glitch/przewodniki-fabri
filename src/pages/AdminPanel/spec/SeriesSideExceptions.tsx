@@ -10,22 +10,35 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
 
 interface Props {
   seriesProductId: string;
 }
 
-interface SideException {
+interface SkuAlias {
   id: string;
   original_code: string;
   mapped_code: string;
+  component_type: string;
+  is_global: boolean;
   description: string;
 }
 
+const COMPONENT_TYPES = [
+  { value: "side", label: "Boczek" },
+  { value: "chest", label: "Skrzynia" },
+  { value: "fabric", label: "Tkanina" },
+  { value: "seat", label: "Siedzisko" },
+  { value: "backrest", label: "Oparcie" },
+  { value: "leg", label: "Nóżka" },
+  { value: "automat", label: "Automat" },
+];
+
 export default function SeriesSideExceptions({ seriesProductId }: Props) {
   const queryClient = useQueryClient();
-  const queryKey = ["side-exceptions", seriesProductId];
+  const queryKey = ["sku-aliases", seriesProductId];
 
   const { data: exceptions = [], isLoading } = useQuery({
     queryKey,
@@ -34,32 +47,37 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
         .from("product_relations")
         .select("id, properties")
         .eq("series_id", seriesProductId)
-        .eq("relation_type", "side_exception")
+        .eq("relation_type", "sku_alias")
         .eq("active", true);
       if (error) throw error;
-      return (data ?? []).map((r) => ({
-        id: r.id,
-        original_code: (r.properties as any)?.original_code ?? "",
-        mapped_code: (r.properties as any)?.mapped_code ?? "",
-        description: (r.properties as any)?.description ?? "",
-      })) as SideException[];
+      return (data ?? []).map((r) => {
+        const props = r.properties as any;
+        return {
+          id: r.id,
+          original_code: props?.original_code ?? "",
+          mapped_code: props?.mapped_code ?? "",
+          component_type: props?.component_type ?? "side",
+          is_global: props?.is_global ?? false,
+          description: props?.description ?? "",
+        } as SkuAlias;
+      });
     },
   });
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<SideException | null>(null);
-  const [form, setForm] = useState({ original_code: "", mapped_code: "", description: "" });
+  const [editing, setEditing] = useState<SkuAlias | null>(null);
+  const [form, setForm] = useState({ original_code: "", mapped_code: "", component_type: "side", description: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ original_code: "", mapped_code: "", description: "" });
+    setForm({ original_code: "", mapped_code: "", component_type: "side", description: "" });
     setFormOpen(true);
   };
 
-  const openEdit = (item: SideException) => {
+  const openEdit = (item: SkuAlias) => {
     setEditing(item);
-    setForm({ original_code: item.original_code, mapped_code: item.mapped_code, description: item.description });
+    setForm({ original_code: item.original_code, mapped_code: item.mapped_code, component_type: item.component_type, description: item.description });
     setFormOpen(true);
   };
 
@@ -73,6 +91,7 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
       const properties = {
         original_code: form.original_code.toUpperCase(),
         mapped_code: form.mapped_code.toUpperCase(),
+        component_type: form.component_type,
         description: form.description,
       };
       if (editing) {
@@ -81,17 +100,17 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
           .update({ properties })
           .eq("id", editing.id);
         if (error) throw error;
-        toast.success("✅ Wyjątek zaktualizowany");
+        toast.success("✅ Alias zaktualizowany");
       } else {
         const { error } = await supabase
           .from("product_relations")
           .insert([{
             series_id: seriesProductId,
-            relation_type: "side_exception",
+            relation_type: "sku_alias",
             properties,
           }]);
         if (error) throw error;
-        toast.success("✅ Wyjątek dodany");
+        toast.success("✅ Alias dodany");
       }
       queryClient.invalidateQueries({ queryKey });
       setFormOpen(false);
@@ -103,11 +122,11 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
   }, [form, editing, seriesProductId, queryClient, queryKey]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm("Usunąć ten wyjątek?")) return;
+    if (!confirm("Usunąć ten alias?")) return;
     try {
       const { error } = await supabase.from("product_relations").delete().eq("id", id);
       if (error) throw error;
-      toast.success("✅ Wyjątek usunięty");
+      toast.success("✅ Alias usunięty");
       queryClient.invalidateQueries({ queryKey });
     } catch (err: any) {
       toast.error(`❌ ${getUserFriendlyError(err)}`);
@@ -123,13 +142,13 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg">Wyjątki boczków (Shopify)</CardTitle>
+            <CardTitle className="text-lg">Wyjątki SKU (aliasy Shopify)</CardTitle>
             <CardDescription className="mt-1">
-              Mapowania kodów boczków z zewnętrznych systemów na kody wewnętrzne
+              Mapowania kodów z zewnętrznych systemów na kody wewnętrzne
             </CardDescription>
           </div>
           <Button size="sm" onClick={openAdd}>
-            <Plus className="h-4 w-4 mr-1" /> Dodaj wyjątek
+            <Plus className="h-4 w-4 mr-1" /> Dodaj alias
           </Button>
         </div>
       </CardHeader>
@@ -144,13 +163,14 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
         </div>
 
         {exceptions.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">Brak wyjątków dla tej serii.</p>
+          <p className="text-muted-foreground text-center py-4">Brak aliasów dla tej serii.</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Kod w SKU (Shopify)</TableHead>
                 <TableHead>Zamień na</TableHead>
+                <TableHead>Komponent</TableHead>
                 <TableHead>Typ</TableHead>
                 <TableHead>Opis</TableHead>
                 <TableHead className="w-24">Akcje</TableHead>
@@ -162,9 +182,17 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
                   <TableCell className="font-mono font-medium">{ex.original_code}</TableCell>
                   <TableCell className="font-mono font-medium">{ex.mapped_code}</TableCell>
                   <TableCell>
-                    <Badge variant={isAlias(ex.mapped_code) ? "default" : "secondary"}>
-                      {isAlias(ex.mapped_code) ? "Alias" : "Exact"}
+                    <Badge variant="outline">
+                      {COMPONENT_TYPES.find((c) => c.value === ex.component_type)?.label ?? ex.component_type}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Badge variant={isAlias(ex.mapped_code) ? "default" : "secondary"}>
+                        {isAlias(ex.mapped_code) ? "Alias" : "Exact"}
+                      </Badge>
+                      {ex.is_global && <Badge variant="default">Globalny</Badge>}
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{ex.description}</TableCell>
                   <TableCell>
@@ -186,7 +214,7 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editing ? "Edytuj wyjątek" : "Dodaj wyjątek"}</DialogTitle>
+              <DialogTitle>{editing ? "Edytuj alias" : "Dodaj alias"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -194,7 +222,7 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
                 <Input
                   value={form.original_code}
                   onChange={(e) => setForm({ ...form, original_code: e.target.value })}
-                  placeholder="np. B6S"
+                  placeholder="np. B6S, SK22"
                   className="font-mono"
                 />
               </div>
@@ -203,9 +231,22 @@ export default function SeriesSideExceptions({ seriesProductId }: Props) {
                 <Input
                   value={form.mapped_code}
                   onChange={(e) => setForm({ ...form, mapped_code: e.target.value })}
-                  placeholder="np. B6"
+                  placeholder="np. B6, SK23"
                   className="font-mono"
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Komponent</label>
+                <Select value={form.component_type} onValueChange={(v) => setForm({ ...form, component_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPONENT_TYPES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-sm font-medium">Opis</label>

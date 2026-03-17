@@ -414,9 +414,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- Leg heights for sofa ----
-  const isSK23 = parsed.chest === "SK23";
-  const sofaChestLeg = isSK23
-    ? { leg: "N4", height: 2.5, count: 4 }
+  const chestOverrideLeg = prop(chestProduct, "override_leg", null) as string | null;
+  const sofaChestLeg = chestOverrideLeg
+    ? { leg: chestOverrideLeg, height: chestLegHeight, count: chestLegCount }
     : legsDecoded
       ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: chestLegHeight, count: chestLegCount }
       : null;
@@ -501,18 +501,15 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     };
   }
 
-  // ---- PUFA / FOTEL LEGS ----
-  const pufaLegHeight = seriesProps?.pufa_leg_height_cm ?? 16;
-  const pufaLegCount = seriesProps?.pufa_leg_count ?? 4;
-
+  // ---- PUFA / FOTEL LEGS (same as sofa seat legs from automat_config) ----
   let pufaLegsDecoded: DecodedSKU["pufaLegs"] = undefined;
   let fotelLegsDecoded: DecodedSKU["fotelLegs"] = undefined;
 
   if (hasPufa && legsDecoded) {
     pufaLegsDecoded = {
       code: `${legsDecoded.code}${legsDecoded.color || ""}`,
-      height: pufaLegHeight,
-      count: pufaLegCount,
+      height: automatSeatLegHeight,
+      count: automatSeatLegCount,
     };
   }
 
@@ -520,8 +517,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   if (hasFotel && legsDecoded) {
     fotelLegsDecoded = {
       code: `${legsDecoded.code}${legsDecoded.color || ""}`,
-      height: pufaLegHeight,
-      count: pufaLegCount,
+      height: automatSeatLegHeight,
+      count: automatSeatLegCount,
     };
   }
 

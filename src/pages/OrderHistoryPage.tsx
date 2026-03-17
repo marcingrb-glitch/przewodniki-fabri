@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getOrders, deleteOrder } from "@/utils/supabaseQueries";
-import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
+import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
@@ -112,8 +112,8 @@ const OrderHistoryPage = () => {
     setRegeneratingId(order.id);
     try {
       const seriesCode = order.sku.trim().toUpperCase().split("-")[0] || "";
-      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
-      const parsed = await parseSKUGeneric(order.sku, sideExceptions);
+      const skuAliases = await fetchSkuAliases(seriesCode);
+      const parsed = await parseSKUGeneric(order.sku, skuAliases);
       const decoded = await decodeSKU(parsed);
       decoded.orderNumber = order.order_number;
       decoded.orderDate = format(new Date(order.order_date), "dd.MM.yyyy");

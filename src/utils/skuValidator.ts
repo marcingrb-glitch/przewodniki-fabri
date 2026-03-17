@@ -1,11 +1,11 @@
 import { ValidationResult } from "@/types";
 import { parseSKUGeneric } from "./skuParserGeneric";
 
-export async function validateSKU(sku: string, sideExceptions?: Record<string, string>): Promise<ValidationResult> {
+export async function validateSKU(sku: string, skuAliases?: Record<string, string>): Promise<ValidationResult> {
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  const parsed = await parseSKUGeneric(sku, sideExceptions);
+  const parsed = await parseSKUGeneric(sku, skuAliases);
 
   // Required components
   if (!parsed.series) errors.push("Brak serii (S1, S2, N1...)");

@@ -68,10 +68,11 @@ async function loadSegmentRules(productTypeId: string): Promise<SegmentRule[]> {
 }
 
 // ======================================================
-// Side exceptions — from product_relations (relation_type='side_exception')
+// SKU Aliases — from product_relations (relation_type='sku_alias')
+// Covers: side exceptions, chest aliases, etc.
 // ======================================================
 
-export async function fetchSideExceptionsGeneric(
+export async function fetchSkuAliases(
   seriesCode: string
 ): Promise<Record<string, string>> {
   const { data: seriesProduct } = await supabase
@@ -83,12 +84,13 @@ export async function fetchSideExceptionsGeneric(
 
   if (!seriesProduct) return {};
 
+  // Fetch aliases for this series + global aliases
   const { data: relations } = await supabase
     .from("product_relations")
     .select("properties")
-    .eq("series_id", seriesProduct.id)
-    .eq("relation_type", "side_exception")
-    .eq("active", true);
+    .eq("relation_type", "sku_alias")
+    .eq("active", true)
+    .or(`series_id.eq.${seriesProduct.id},properties->>is_global.eq.true`);
 
   if (!relations) return {};
 
@@ -101,6 +103,9 @@ export async function fetchSideExceptionsGeneric(
   }
   return map;
 }
+
+/** @deprecated Use fetchSkuAliases instead */
+export const fetchSideExceptionsGeneric = fetchSkuAliases;
 
 // ======================================================
 // Detect product type from first SKU segment
@@ -125,7 +130,7 @@ async function detectProductType(firstSegment: string): Promise<ProductTypeInfo 
 
 export async function parseSKUGeneric(
   sku: string,
-  sideExceptions?: Record<string, string>
+  skuAliases?: Record<string, string>
 ): Promise<ParsedSKU> {
   const parts = sku.trim().toUpperCase().split("-");
 
@@ -161,23 +166,23 @@ export async function parseSKUGeneric(
   const matchedRules = new Set<string>();
   let automatMatched = false;
 
-  for (const part of parts) {
+  for (let part of parts) {
     let matched = false;
 
-    // Pre-check: side exceptions (B6S→B6, B6W→B10, B6D→B6C, etc.)
-    if (sideExceptions) {
+    // Pre-check: SKU aliases (side exceptions, chest aliases, etc.)
+    if (skuAliases) {
       let mappedSegment: string | null = null;
       const originalPart = part;
 
-      if (sideExceptions[part]) {
-        // Exact match (e.g. "B6S"→"B6", "B6D"→"B6C", "B6WC"→"B10C")
-        mappedSegment = sideExceptions[part];
+      if (skuAliases[part]) {
+        // Exact match (e.g. "B6D"→"B6C", "SK22"→"SK23")
+        mappedSegment = skuAliases[part];
       } else if (part.length >= 3 && /[A-D]$/.test(part)) {
         // Strip finish, check base code (e.g. "B6SC" → base "B6S", finish "C")
         const baseCode = part.slice(0, -1);
         const finish = part.slice(-1);
-        if (sideExceptions[baseCode]) {
-          const mappedBase = sideExceptions[baseCode];
+        if (skuAliases[baseCode]) {
+          const mappedBase = skuAliases[baseCode];
           // If mapped code already ends with A-D, it's an exact mapping — don't append finish
           // If not (alias), append the original finish
           if (/[A-D]$/.test(mappedBase)) {
@@ -190,21 +195,12 @@ export async function parseSKUGeneric(
 
       if (mappedSegment) {
         result.sideException = `Zamieniono ${originalPart} → ${mappedSegment} (wyjątek Shopify)`;
-
-        const sideRule = rules.find((r) => r.segment_name === "side");
-        if (sideRule) {
-          const sideResult = applyRule(sideRule, mappedSegment);
-          if (sideResult) {
-            applySideResult(result, sideResult);
-            matchedRules.add("side");
-            matched = true;
-          }
-        }
-        if (matched) continue;
+        // Replace part and let normal rule matching handle it
+        part = mappedSegment;
       }
     }
 
-    // Try each rule
+    // Try each rule (now with potentially aliased part)
     for (const rule of rules) {
       if (matchedRules.has(rule.segment_name) && rule.segment_name !== "extra") continue;
 
@@ -245,11 +241,6 @@ function applyRule(rule: SegmentRule, part: string): Record<string, string> | nu
   return captures;
 }
 
-function applySideResult(result: ParsedSKU, captures: Record<string, string>) {
-  const code = captures.code || "";
-  result.side = { code: `B${code}`, finish: captures.finish || "" };
-}
-
 function applyToResult(
   result: ParsedSKU,
   rule: SegmentRule,
@@ -275,9 +266,11 @@ function applyToResult(
       };
       break;
 
-    case "side":
-      applySideResult(result, captures);
+    case "side": {
+      const code = captures.code || "";
+      result.side = { code: `B${code}`, finish: captures.finish || "" };
       break;
+    }
 
     case "backrest":
       result.backrest = {
@@ -288,7 +281,8 @@ function applyToResult(
 
     case "chest": {
       const chestCode = captures.code ? `SK${captures.code}` : rawPart;
-      result.chest = chestCode === "SK22" ? "SK23" : chestCode;
+      // No more hardcoded SK22→SK23 — handled by sku_alias system
+      result.chest = chestCode;
       break;
     }
 

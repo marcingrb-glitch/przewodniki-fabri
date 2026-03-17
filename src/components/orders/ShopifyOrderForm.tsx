@@ -14,7 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import ShopifyLineItemsSelector from "./ShopifyLineItemsSelector";
 import { fetchShopifyOrder } from "@/utils/fetchShopifyOrder";
-import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
+import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
@@ -131,12 +131,12 @@ const ShopifyOrderForm = () => {
         const normalizedSku = item.sku.trim().replace(/\s+/g, "-").toUpperCase();
         console.log("[ShopifyFlow] Original SKU:", JSON.stringify(item.sku), "Normalized:", JSON.stringify(normalizedSku));
 
-        // 1. Fetch side exceptions first
+        // 1. Fetch SKU aliases first
         const seriesCode = normalizedSku.trim().toUpperCase().split("-")[0] || "";
-        const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+        const skuAliases = await fetchSkuAliases(seriesCode);
 
-        // 2. Validate SKU (with side exceptions)
-        const validation = await validateSKU(normalizedSku, sideExceptions);
+        // 2. Validate SKU (with SKU aliases)
+        const validation = await validateSKU(normalizedSku, skuAliases);
         console.log("[ShopifyFlow] Validation result:", validation);
         if (!validation.valid) {
           const errMsg = validation.errors.join("; ");
@@ -150,8 +150,8 @@ const ShopifyOrderForm = () => {
           validation.warnings.forEach((w) => sonnerToast.warning(`⚠️ ${item.title}: ${w}`));
         }
 
-        // 3. Parse (reuse side exceptions)
-        const parsed = await parseSKUGeneric(normalizedSku, sideExceptions);
+        // 3. Parse (reuse SKU aliases)
+        const parsed = await parseSKUGeneric(normalizedSku, skuAliases);
         console.log("[ShopifyFlow] Parsed SKU:", parsed);
 
         // 3. Validate finishes against DB
@@ -179,10 +179,10 @@ const ShopifyOrderForm = () => {
         decoded.orderNumber = itemOrderNumber;
         decoded.orderDate = format(new Date(), "dd.MM.yyyy");
 
-        // Apply side exception to SKU string
+        // Apply SKU alias to SKU string
         let correctedSku = normalizedSku;
-        if (parsed.sideException && sideExceptions) {
-          for (const [original, mapped] of Object.entries(sideExceptions)) {
+        if (parsed.sideException && skuAliases) {
+          for (const [original, mapped] of Object.entries(skuAliases)) {
             correctedSku = correctedSku.replace(`-${original}-`, `-${mapped}-`);
             if (correctedSku.endsWith(`-${original}`)) {
               correctedSku = correctedSku.slice(0, -original.length) + mapped;

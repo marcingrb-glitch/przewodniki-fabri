@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
+import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
@@ -158,12 +158,12 @@ const OrderForm = () => {
         return;
       }
 
-      // 1. Parse series & fetch side exceptions first
+      // 1. Parse series & fetch SKU aliases first
       const seriesCode = sku.trim().toUpperCase().split("-")[0] || "";
-      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+      const skuAliases = await fetchSkuAliases(seriesCode);
 
-      // 2. Basic validation (with side exceptions)
-      const validation = await validateSKU(sku, sideExceptions);
+      // 2. Basic validation (with SKU aliases)
+      const validation = await validateSKU(sku, skuAliases);
       if (!validation.valid) {
         validation.errors.forEach(err => toast.error(`❌ ${err}`));
         setLoading(false);
@@ -173,8 +173,8 @@ const OrderForm = () => {
         validation.warnings.forEach(w => toast.warning(`⚠️ ${w}`));
       }
 
-      // 3. Parse (reuse side exceptions)
-      const parsed = await parseSKUGeneric(sku, sideExceptions);
+      // 3. Parse (reuse SKU aliases)
+      const parsed = await parseSKUGeneric(sku, skuAliases);
 
       // 3. Validate finishes against DB
       try {
@@ -202,9 +202,9 @@ const OrderForm = () => {
       decoded.orderDate = format(orderDate, "dd.MM.yyyy");
       let finalSku = sku.trim().toUpperCase();
 
-      // 4c. Apply side exception to SKU string
-      if (parsed.sideException && sideExceptions) {
-        for (const [original, mapped] of Object.entries(sideExceptions)) {
+      // 4c. Apply SKU alias to SKU string
+      if (parsed.sideException && skuAliases) {
+        for (const [original, mapped] of Object.entries(skuAliases)) {
           finalSku = finalSku.replace(`-${original}-`, `-${mapped}-`);
           // Handle if it's the last segment (no trailing dash)
           if (finalSku.endsWith(`-${original}`)) {
