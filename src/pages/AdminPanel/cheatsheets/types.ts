@@ -47,6 +47,8 @@ export interface CheatsheetData {
   getSpringForSeat: (seat: ProductRow) => string;
   formatFoamsInline: (productId: string) => string;
   formatFoamsInlineWithFallback: (seat: ProductRow) => string;
+  getAllowedChestCodes: () => string[];
+  formatFoamsInlineWithFallback: (seat: ProductRow) => string;
 }
 
 export interface SectionRendererProps {

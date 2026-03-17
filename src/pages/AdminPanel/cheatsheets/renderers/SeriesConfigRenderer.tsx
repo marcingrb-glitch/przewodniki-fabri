@@ -16,7 +16,7 @@ export function SeriesConfigRenderer({ data }: SectionRendererProps) {
       <div><span className="text-muted-foreground">Stały automat:</span> <strong>{config.fixed_automat ?? "brak"}</strong></div>
       <div><span className="text-muted-foreground">Stałe oparcie:</span> <strong>{config.fixed_backrest ?? "brak"}</strong></div>
       <div><span className="text-muted-foreground">Stała skrzynia:</span> <strong>{config.fixed_chest ?? "brak"}</strong></div>
-      <div><span className="text-muted-foreground">Dostępne skrzynie:</span> <strong>{availableChests.join(", ") || "—"}</strong></div>
+      <div><span className="text-muted-foreground">Dostępne skrzynie:</span> <strong>{allowedChestCodes.join(", ") || "—"}</strong></div>
       {config.notes && <div className="col-span-2"><span className="text-muted-foreground">Notatki:</span> {config.notes}</div>}
     </div>
   );

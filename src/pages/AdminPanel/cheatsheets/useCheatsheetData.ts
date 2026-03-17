@@ -169,6 +169,16 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     return formatFoamsInlineWithFallback(seat, productSpecs, getByCategory('seat'));
   };
 
+  const getAllowedChestCodes = (): string[] => {
+    return productRelations
+      .filter((r: any) => r.relation_type === 'allowed_chest')
+      .map((r: any) => {
+        const target = allProducts.find(p => p.id === r.target_product_id);
+        return target?.code;
+      })
+      .filter(Boolean) as string[];
+  };
+
   return {
     sections,
     seriesProduct,
@@ -185,5 +195,6 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
     getSpringForSeat: getSpringForSeatFn,
     formatFoamsInline: formatFoamsInlineFn,
     formatFoamsInlineWithFallback: formatFoamsInlineWithFallbackFn,
+    getAllowedChestCodes,
   };
 }
