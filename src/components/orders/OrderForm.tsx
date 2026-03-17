@@ -158,12 +158,12 @@ const OrderForm = () => {
         return;
       }
 
-      // 1. Parse series & fetch side exceptions first
+      // 1. Parse series & fetch SKU aliases first
       const seriesCode = sku.trim().toUpperCase().split("-")[0] || "";
-      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+      const skuAliases = await fetchSkuAliases(seriesCode);
 
-      // 2. Basic validation (with side exceptions)
-      const validation = await validateSKU(sku, sideExceptions);
+      // 2. Basic validation (with SKU aliases)
+      const validation = await validateSKU(sku, skuAliases);
       if (!validation.valid) {
         validation.errors.forEach(err => toast.error(`❌ ${err}`));
         setLoading(false);
