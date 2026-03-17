@@ -158,8 +158,12 @@ const OrderForm = () => {
         return;
       }
 
-      // 1. Basic validation
-      const validation = await validateSKU(sku);
+      // 1. Parse series & fetch side exceptions first
+      const seriesCode = sku.trim().toUpperCase().split("-")[0] || "";
+      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+
+      // 2. Basic validation (with side exceptions)
+      const validation = await validateSKU(sku, sideExceptions);
       if (!validation.valid) {
         validation.errors.forEach(err => toast.error(`❌ ${err}`));
         setLoading(false);
@@ -169,9 +173,7 @@ const OrderForm = () => {
         validation.warnings.forEach(w => toast.warning(`⚠️ ${w}`));
       }
 
-      // 2. Parse (with DB-sourced side exceptions)
-      const seriesCode = sku.trim().toUpperCase().split("-")[0] || "";
-      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+      // 3. Parse (reuse side exceptions)
       const parsed = await parseSKUGeneric(sku, sideExceptions);
 
       // 3. Validate finishes against DB
