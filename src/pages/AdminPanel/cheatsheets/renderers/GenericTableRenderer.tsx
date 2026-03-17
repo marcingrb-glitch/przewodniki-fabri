@@ -7,16 +7,11 @@ export function GenericTableRenderer({ section, data }: SectionRendererProps) {
   
   let products = data.getByCategory(filters.category ?? "");
   
-  // Filter by series config field (e.g. available_chests)
-  if (config.filter_by_series_config) {
-    let allowedCodes: string[] | undefined;
-    if (config.filter_by_series_config === 'available_chests') {
-      allowedCodes = data.getAllowedChestCodes();
-    } else if (data.seriesConfig) {
-      allowedCodes = (data.seriesConfig as any)?.[config.filter_by_series_config] as string[] | undefined;
-    }
-    if (allowedCodes && allowedCodes.length > 0) {
-      products = products.filter(p => allowedCodes!.includes(p.code));
+  // Filter by allowed codes from product_relations
+  if (config.filter_by_series_config === 'allowed_chest') {
+    const allowedCodes = data.getAllowedChestCodes();
+    if (allowedCodes.length > 0) {
+      products = products.filter(p => allowedCodes.includes(p.code));
     }
   }
 
