@@ -202,9 +202,9 @@ const OrderForm = () => {
       decoded.orderDate = format(orderDate, "dd.MM.yyyy");
       let finalSku = sku.trim().toUpperCase();
 
-      // 4c. Apply side exception to SKU string
-      if (parsed.sideException && sideExceptions) {
-        for (const [original, mapped] of Object.entries(sideExceptions)) {
+      // 4c. Apply SKU alias to SKU string
+      if (parsed.sideException && skuAliases) {
+        for (const [original, mapped] of Object.entries(skuAliases)) {
           finalSku = finalSku.replace(`-${original}-`, `-${mapped}-`);
           // Handle if it's the last segment (no trailing dash)
           if (finalSku.endsWith(`-${original}`)) {

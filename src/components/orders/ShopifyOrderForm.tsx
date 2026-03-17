@@ -179,10 +179,10 @@ const ShopifyOrderForm = () => {
         decoded.orderNumber = itemOrderNumber;
         decoded.orderDate = format(new Date(), "dd.MM.yyyy");
 
-        // Apply side exception to SKU string
+        // Apply SKU alias to SKU string
         let correctedSku = normalizedSku;
-        if (parsed.sideException && sideExceptions) {
-          for (const [original, mapped] of Object.entries(sideExceptions)) {
+        if (parsed.sideException && skuAliases) {
+          for (const [original, mapped] of Object.entries(skuAliases)) {
             correctedSku = correctedSku.replace(`-${original}-`, `-${mapped}-`);
             if (correctedSku.endsWith(`-${original}`)) {
               correctedSku = correctedSku.slice(0, -original.length) + mapped;

@@ -112,8 +112,8 @@ const OrderHistoryPage = () => {
     setRegeneratingId(order.id);
     try {
       const seriesCode = order.sku.trim().toUpperCase().split("-")[0] || "";
-      const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
-      const parsed = await parseSKUGeneric(order.sku, sideExceptions);
+      const skuAliases = await fetchSkuAliases(seriesCode);
+      const parsed = await parseSKUGeneric(order.sku, skuAliases);
       const decoded = await decodeSKU(parsed);
       decoded.orderNumber = order.order_number;
       decoded.orderDate = format(new Date(order.order_date), "dd.MM.yyyy");
