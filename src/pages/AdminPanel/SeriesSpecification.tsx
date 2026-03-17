@@ -85,6 +85,7 @@ export default function SeriesSpecification() {
           <TabsTrigger value="chests">Skrzynie</TabsTrigger>
           <TabsTrigger value="automats">Automaty</TabsTrigger>
           <TabsTrigger value="legs">Nóżki & Montaż</TabsTrigger>
+          <TabsTrigger value="side-exceptions">⚠️ Wyjątki boczków</TabsTrigger>
           {hasPufa && <TabsTrigger value="pufa">Pufa</TabsTrigger>}
           {hasFotel && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
         </TabsList>
