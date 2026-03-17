@@ -14,7 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import ShopifyLineItemsSelector from "./ShopifyLineItemsSelector";
 import { fetchShopifyOrder } from "@/utils/fetchShopifyOrder";
-import { parseSKUGeneric, fetchSideExceptionsGeneric } from "@/utils/skuParserGeneric";
+import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { validateSKU } from "@/utils/skuValidator";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { validateFinishesFromDB } from "@/utils/finishValidator";
