@@ -414,9 +414,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- Leg heights for sofa ----
-  const isSK23 = parsed.chest === "SK23";
-  const sofaChestLeg = isSK23
-    ? { leg: "N4", height: 2.5, count: 4 }
+  const chestOverrideLeg = prop(chestProduct, "override_leg", null) as string | null;
+  const sofaChestLeg = chestOverrideLeg
+    ? { leg: chestOverrideLeg, height: chestLegHeight, count: chestLegCount }
     : legsDecoded
       ? { leg: `${legsDecoded.code}${legsDecoded.color || ""}`, height: chestLegHeight, count: chestLegCount }
       : null;
