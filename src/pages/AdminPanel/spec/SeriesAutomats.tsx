@@ -12,46 +12,40 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { getUserFriendlyError } from "@/utils/errorHandler";
+import { Tables } from "@/integrations/supabase/types";
 
 interface Props {
-  seriesId: string;
+  seriesProductId: string;
 }
 
-interface SeriesAutomat {
-  id: string;
-  series_id: string;
-  automat_code: string;
-  has_seat_legs: boolean;
-  seat_leg_height_cm: number;
-  seat_leg_count: number;
-}
+type ProductRow = Tables<"products">;
+type RelationRow = Tables<"product_relations">;
 
-interface GlobalAutomat {
-  code: string;
-  name: string;
-  type: string | null;
-}
-
-export default function SeriesAutomats({ seriesId }: Props) {
+export default function SeriesAutomats({ seriesProductId }: Props) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<SeriesAutomat | null>(null);
+  const [editing, setEditing] = useState<RelationRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
-  const [automatCode, setAutomatCode] = useState("");
+  const [selectedAutomatId, setSelectedAutomatId] = useState("");
   const [hasSeatLegs, setHasSeatLegs] = useState(false);
   const [seatLegHeight, setSeatLegHeight] = useState("0");
   const [seatLegCount, setSeatLegCount] = useState("0");
 
-  const queryKey = ["series-automats", seriesId];
+  const queryKey = ["series-automats", seriesProductId];
 
   const { data: globalAutomats = [] } = useQuery({
-    queryKey: ["global-automats"],
+    queryKey: ["global-automats-products"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("automats").select("code, name, type").order("code");
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, code, name, properties")
+        .eq("category", "automat")
+        .eq("is_global", true)
+        .order("code");
       if (error) throw error;
-      return data as GlobalAutomat[];
+      return data as ProductRow[];
     },
   });
 
@@ -59,53 +53,63 @@ export default function SeriesAutomats({ seriesId }: Props) {
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("series_automats" as any)
-        .select("*")
-        .eq("series_id", seriesId)
-        .order("automat_code");
+        .from("product_relations")
+        .select("id, source_product_id, target_product_id, properties, series_id, relation_type, active, created_at")
+        .eq("series_id", seriesProductId)
+        .eq("relation_type", "automat_config")
+        .order("created_at");
       if (error) throw error;
-      return data as unknown as SeriesAutomat[];
+      return data as RelationRow[];
     },
-    enabled: !!seriesId,
+    enabled: !!seriesProductId,
   });
 
-  const automatMap = Object.fromEntries(globalAutomats.map(a => [a.code, a]));
+  const automatMap = new Map(globalAutomats.map(a => [a.id, a]));
 
   const openAdd = () => {
     setEditing(null);
-    setAutomatCode("");
+    setSelectedAutomatId("");
     setHasSeatLegs(false);
     setSeatLegHeight("0");
     setSeatLegCount("0");
     setFormOpen(true);
   };
 
-  const openEdit = (sa: SeriesAutomat) => {
+  const openEdit = (sa: RelationRow) => {
     setEditing(sa);
-    setAutomatCode(sa.automat_code);
-    setHasSeatLegs(sa.has_seat_legs);
-    setSeatLegHeight(String(sa.seat_leg_height_cm ?? 0));
-    setSeatLegCount(String(sa.seat_leg_count ?? 0));
+    setSelectedAutomatId(sa.source_product_id ?? "");
+    const saProps = (sa.properties as Record<string, any>) ?? {};
+    setHasSeatLegs(saProps.has_seat_legs ?? false);
+    setSeatLegHeight(String(saProps.seat_leg_height_cm ?? 0));
+    setSeatLegCount(String(saProps.seat_leg_count ?? 0));
     setFormOpen(true);
   };
 
   const handleSubmit = useCallback(async () => {
-    if (!automatCode) { toast.error("Wybierz automat"); return; }
+    if (!selectedAutomatId) { toast.error("Wybierz automat"); return; }
     setSubmitting(true);
     try {
-      const payload = {
-        series_id: seriesId,
-        automat_code: automatCode,
+      const properties = {
         has_seat_legs: hasSeatLegs,
         seat_leg_height_cm: parseFloat(seatLegHeight) || 0,
         seat_leg_count: parseInt(seatLegCount) || 0,
       };
       if (editing) {
-        const { error } = await supabase.from("series_automats" as any).update(payload).eq("id", editing.id);
+        const { error } = await supabase
+          .from("product_relations")
+          .update({ properties })
+          .eq("id", editing.id);
         if (error) throw error;
         toast.success("✅ Zaktualizowano");
       } else {
-        const { error } = await supabase.from("series_automats" as any).insert([payload]);
+        const { error } = await supabase
+          .from("product_relations")
+          .insert([{
+            series_id: seriesProductId,
+            relation_type: "automat_config",
+            source_product_id: selectedAutomatId,
+            properties,
+          }]);
         if (error) throw error;
         toast.success("✅ Dodano automat do serii");
       }
@@ -116,11 +120,11 @@ export default function SeriesAutomats({ seriesId }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [automatCode, hasSeatLegs, seatLegHeight, seatLegCount, editing, seriesId, queryClient, queryKey]);
+  }, [selectedAutomatId, hasSeatLegs, seatLegHeight, seatLegCount, editing, seriesProductId, queryClient, queryKey]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const { error } = await supabase.from("series_automats" as any).delete().eq("id", id);
+      const { error } = await supabase.from("product_relations").delete().eq("id", id);
       if (error) throw error;
       toast.success("✅ Usunięto");
       queryClient.invalidateQueries({ queryKey });
@@ -129,9 +133,9 @@ export default function SeriesAutomats({ seriesId }: Props) {
     }
   }, [queryClient, queryKey]);
 
-  // Codes already assigned
-  const assignedCodes = new Set(seriesAutomats.map(sa => sa.automat_code));
-  const availableForAdd = globalAutomats.filter(a => !assignedCodes.has(a.code) || editing?.automat_code === a.code);
+  // IDs already assigned
+  const assignedIds = new Set(seriesAutomats.map(sa => sa.source_product_id));
+  const availableForAdd = globalAutomats.filter(a => !assignedIds.has(a.id) || editing?.source_product_id === a.id);
 
   if (isLoading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
@@ -163,15 +167,16 @@ export default function SeriesAutomats({ seriesId }: Props) {
                 {seriesAutomats.length === 0 ? (
                   <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-4">Brak automatów w tej serii</TableCell></TableRow>
                 ) : seriesAutomats.map((sa) => {
-                  const global = automatMap[sa.automat_code];
+                  const global = automatMap.get(sa.source_product_id ?? "");
+                  const saProps = (sa.properties as Record<string, any>) ?? {};
                   return (
                     <TableRow key={sa.id}>
-                      <TableCell className="font-mono font-bold">{sa.automat_code}</TableCell>
+                      <TableCell className="font-mono font-bold">{global?.code ?? "?"}</TableCell>
                       <TableCell>{global?.name ?? "?"}</TableCell>
-                      <TableCell>{global?.type ?? "—"}</TableCell>
-                      <TableCell>{sa.has_seat_legs ? "Tak" : "Nie"}</TableCell>
-                      <TableCell>{sa.has_seat_legs ? sa.seat_leg_height_cm : "—"}</TableCell>
-                      <TableCell>{sa.has_seat_legs ? `${sa.seat_leg_count} szt` : "—"}</TableCell>
+                      <TableCell>{(global?.properties as any)?.type ?? "—"}</TableCell>
+                      <TableCell>{saProps.has_seat_legs ? "Tak" : "Nie"}</TableCell>
+                      <TableCell>{saProps.has_seat_legs ? saProps.seat_leg_height_cm : "—"}</TableCell>
+                      <TableCell>{saProps.has_seat_legs ? `${saProps.seat_leg_count} szt` : "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(sa)}><Pencil className="h-4 w-4" /></Button>
@@ -195,11 +200,11 @@ export default function SeriesAutomats({ seriesId }: Props) {
           <div className="space-y-4">
             <div>
               <Label>Automat</Label>
-              <Select value={automatCode} onValueChange={setAutomatCode} disabled={!!editing}>
+              <Select value={selectedAutomatId} onValueChange={setSelectedAutomatId} disabled={!!editing}>
                 <SelectTrigger><SelectValue placeholder="Wybierz automat..." /></SelectTrigger>
                 <SelectContent>
                   {(editing ? globalAutomats : availableForAdd).map(a => (
-                    <SelectItem key={a.code} value={a.code}>{a.code} — {a.name}</SelectItem>
+                    <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
