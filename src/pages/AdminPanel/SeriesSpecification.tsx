@@ -13,6 +13,7 @@ import SeriesChests from "./spec/SeriesChests";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
 import SeriesAutomats from "./spec/SeriesAutomats";
+import SeriesSideExceptions from "./spec/SeriesSideExceptions";
 
 type SeriesProduct = Tables<"products">;
 
