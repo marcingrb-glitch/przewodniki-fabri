@@ -4,6 +4,14 @@ import { formatFoamsSummary } from "@/utils/foamHelpers";
 
 // ---------------------------------------------------------------------------
 // Helpers
+/**
+ * Normalize component codes: strip leading zeros after prefix letter.
+ * P01 → P1, J01 → J1, W01 → W1. Already-normalized codes pass through.
+ */
+function normalizeComponentCode(code: string): string {
+  return code.replace(/^([A-Z])0+(\d)/, "$1$2");
+}
+
 // ---------------------------------------------------------------------------
 
 type ProductRow = {
@@ -238,20 +246,32 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? supabase.from("products").select(PRODUCT_SELECT)
           .eq("code", parsed.legs.code).eq("category", "leg").maybeSingle()
       : Promise.resolve({ data: null }),
-    // pillow (global)
+    // pillow (global, normalize P01→P1)
     parsed.pillow
       ? supabase.from("products").select(PRODUCT_SELECT)
-          .eq("code", parsed.pillow.code).eq("category", "pillow").maybeSingle()
+          .eq("code", normalizeComponentCode(parsed.pillow.code)).eq("category", "pillow").maybeSingle()
       : Promise.resolve({ data: null }),
-    // jasiek (global)
+    // jasiek (global first, then series-scoped)
     parsed.jaski
-      ? supabase.from("products").select(PRODUCT_SELECT)
-          .eq("code", parsed.jaski.code).eq("category", "jasiek").maybeSingle()
+      ? (async () => {
+          const code = normalizeComponentCode(parsed.jaski!.code);
+          // Try global first
+          const { data: global } = await supabase.from("products").select(PRODUCT_SELECT)
+            .eq("code", code).eq("category", "jasiek").eq("is_global", true).maybeSingle();
+          if (global) return { data: global };
+          // Fallback: series-scoped (e.g. J3 in S2)
+          if (seriesId) {
+            const { data: scoped } = await supabase.from("products").select(PRODUCT_SELECT)
+              .eq("code", code).eq("category", "jasiek").eq("series_id", seriesId).maybeSingle();
+            return { data: scoped };
+          }
+          return { data: null };
+        })()
       : Promise.resolve({ data: null }),
-    // walek (global)
+    // walek (global, normalize W01→W1)
     parsed.walek
       ? supabase.from("products").select(PRODUCT_SELECT)
-          .eq("code", parsed.walek.code).eq("category", "walek").maybeSingle()
+          .eq("code", normalizeComponentCode(parsed.walek.code)).eq("category", "walek").maybeSingle()
       : Promise.resolve({ data: null }),
     // finishes (all)
     supabase.from("products").select("code, name").eq("category", "finish"),
