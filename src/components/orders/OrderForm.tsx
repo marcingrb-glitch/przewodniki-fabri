@@ -173,8 +173,8 @@ const OrderForm = () => {
         validation.warnings.forEach(w => toast.warning(`⚠️ ${w}`));
       }
 
-      // 3. Parse (reuse side exceptions)
-      const parsed = await parseSKUGeneric(sku, sideExceptions);
+      // 3. Parse (reuse SKU aliases)
+      const parsed = await parseSKUGeneric(sku, skuAliases);
 
       // 3. Validate finishes against DB
       try {
