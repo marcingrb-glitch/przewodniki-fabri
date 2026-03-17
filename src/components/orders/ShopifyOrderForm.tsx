@@ -131,8 +131,12 @@ const ShopifyOrderForm = () => {
         const normalizedSku = item.sku.trim().replace(/\s+/g, "-").toUpperCase();
         console.log("[ShopifyFlow] Original SKU:", JSON.stringify(item.sku), "Normalized:", JSON.stringify(normalizedSku));
 
-        // 1. Validate SKU
-        const validation = await validateSKU(normalizedSku);
+        // 1. Fetch side exceptions first
+        const seriesCode = normalizedSku.trim().toUpperCase().split("-")[0] || "";
+        const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+
+        // 2. Validate SKU (with side exceptions)
+        const validation = await validateSKU(normalizedSku, sideExceptions);
         console.log("[ShopifyFlow] Validation result:", validation);
         if (!validation.valid) {
           const errMsg = validation.errors.join("; ");
@@ -146,9 +150,7 @@ const ShopifyOrderForm = () => {
           validation.warnings.forEach((w) => sonnerToast.warning(`⚠️ ${item.title}: ${w}`));
         }
 
-        // 2. Parse (with DB-sourced side exceptions)
-        const seriesCode = normalizedSku.trim().toUpperCase().split("-")[0] || "";
-        const sideExceptions = await fetchSideExceptionsGeneric(seriesCode);
+        // 3. Parse (reuse side exceptions)
         const parsed = await parseSKUGeneric(normalizedSku, sideExceptions);
         console.log("[ShopifyFlow] Parsed SKU:", parsed);
 
