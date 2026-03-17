@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,7 +6,7 @@ import { getUserFriendlyError } from "@/utils/errorHandler";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import ComponentForm, { FieldDefinition } from "@/components/admin/ComponentForm";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface FlatException {
   id: string;
@@ -16,19 +16,8 @@ interface FlatException {
   is_global: boolean;
   description: string;
   active: boolean;
-}
-
-function flattenRow(row: any): FlatException {
-  const props = row.properties as Record<string, any> ?? {};
-  return {
-    id: row.id,
-    original_code: props.original_code ?? "",
-    mapped_code: props.mapped_code ?? "",
-    component_type: props.component_type ?? "side",
-    is_global: props.is_global ?? false,
-    description: props.description ?? "",
-    active: row.active ?? true,
-  };
+  series_id: string;
+  series_label: string;
 }
 
 const COMPONENT_TYPES = [
@@ -53,10 +42,10 @@ const columns: Column[] = [
     },
   },
   {
-    key: "is_global",
-    label: "Globalny",
-    render: (val: boolean) =>
-      val ? <Badge variant="default">Globalny</Badge> : null,
+    key: "series_label",
+    label: "Seria",
+    render: (val: string, item: any) =>
+      item.is_global ? <Badge variant="default">Globalny</Badge> : <span>{val}</span>,
   },
   { key: "description", label: "Opis" },
   {
@@ -100,32 +89,45 @@ export default function SideExceptions() {
     },
   });
 
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() =>
-    localStorage.getItem("admin_series_id") || ""
-  );
+  const seriesMap = Object.fromEntries(seriesList.map((s) => [s.id, s]));
 
-  useEffect(() => {
-    if (!selectedSeriesId && seriesList.length > 0) {
-      setSelectedSeriesId(seriesList[0].id);
-    }
-  }, [seriesList, selectedSeriesId]);
+  const queryKey = ["admin-sku-aliases-all"];
 
-  const queryKey = ["admin-sku-aliases", selectedSeriesId];
-
-  const { data = [], isLoading } = useQuery({
+  const { data: allData = [], isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_relations")
-        .select("id, properties, active")
-        .eq("series_id", selectedSeriesId)
+        .select("id, series_id, properties, active")
         .eq("relation_type", "sku_alias")
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map(flattenRow);
+      return (data ?? []).map((row: any): FlatException => {
+        const props = (row.properties as Record<string, any>) ?? {};
+        const series = seriesMap[row.series_id];
+        return {
+          id: row.id,
+          original_code: props.original_code ?? "",
+          mapped_code: props.mapped_code ?? "",
+          component_type: props.component_type ?? "side",
+          is_global: props.is_global ?? false,
+          description: props.description ?? "",
+          active: row.active ?? true,
+          series_id: row.series_id,
+          series_label: series ? `${series.code} — ${series.name}` : row.series_id,
+        };
+      });
     },
-    enabled: !!selectedSeriesId,
+    enabled: seriesList.length > 0,
   });
+
+  const [filter, setFilter] = useState("all");
+
+  const filtered = filter === "all"
+    ? allData
+    : filter === "global"
+      ? allData.filter((r) => r.is_global)
+      : allData.filter((r) => r.series_id === filter);
 
   const [editingItem, setEditingItem] = useState<FlatException | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -134,6 +136,9 @@ export default function SideExceptions() {
   const handleAdd = () => { setEditingItem(null); setFormOpen(true); };
   const handleEdit = (item: any) => { setEditingItem(item); setFormOpen(true); };
   const handleCancel = () => { setFormOpen(false); setEditingItem(null); };
+
+  // Default series for insert — first series
+  const defaultSeriesId = seriesList.length > 0 ? seriesList[0].id : "";
 
   const handleSubmit = useCallback(async (formData: any) => {
     setSubmitting(true);
@@ -155,10 +160,11 @@ export default function SideExceptions() {
         if (error) throw error;
         toast.success("✅ Alias zaktualizowany");
       } else {
+        const seriesId = filter !== "all" && filter !== "global" ? filter : defaultSeriesId;
         const { error } = await supabase
           .from("product_relations")
           .insert([{
-            series_id: selectedSeriesId,
+            series_id: seriesId,
             relation_type: "sku_alias",
             properties,
             active,
@@ -174,7 +180,7 @@ export default function SideExceptions() {
     } finally {
       setSubmitting(false);
     }
-  }, [editingItem, selectedSeriesId, queryClient, queryKey]);
+  }, [editingItem, filter, defaultSeriesId, queryClient, queryKey]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -203,7 +209,7 @@ export default function SideExceptions() {
       const { error } = await supabase
         .from("product_relations")
         .insert([{
-          series_id: selectedSeriesId,
+          series_id: item.series_id,
           relation_type: "sku_alias",
           properties: {
             original_code: item.original_code + " (kopia)",
@@ -220,52 +226,40 @@ export default function SideExceptions() {
     } catch (err: any) {
       toast.error(`❌ ${getUserFriendlyError(err)}`);
     }
-  }, [selectedSeriesId, queryClient, queryKey]);
+  }, [queryClient, queryKey]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium whitespace-nowrap">Seria:</label>
-        <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
-          <SelectTrigger className="w-[240px]">
-            <SelectValue placeholder="Wybierz serię" />
-          </SelectTrigger>
-          <SelectContent>
-            {seriesList.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.code} — {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Tabs value={filter} onValueChange={setFilter}>
+        <TabsList>
+          <TabsTrigger value="all">Wszystkie</TabsTrigger>
+          {seriesList.map((s) => (
+            <TabsTrigger key={s.id} value={s.id}>{s.code}</TabsTrigger>
+          ))}
+          <TabsTrigger value="global">Globalne</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      {!selectedSeriesId ? (
-        <p className="text-muted-foreground py-8 text-center">Wybierz serię, aby zobaczyć aliasy SKU.</p>
-      ) : (
-        <>
-          <DataTable
-            title="Wyjątki SKU (aliasy Shopify)"
-            columns={columns}
-            data={data}
-            onAdd={handleAdd}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onBulkDelete={handleBulkDelete}
-            onDuplicate={handleDuplicate}
-            isLoading={isLoading}
-          />
-          <ComponentForm
-            open={formOpen}
-            title={editingItem ? "Edytuj alias SKU" : "Dodaj alias SKU"}
-            fields={fields}
-            initialData={editingItem}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isLoading={submitting}
-          />
-        </>
-      )}
+      <DataTable
+        title="Wyjątki SKU (aliasy Shopify)"
+        columns={columns}
+        data={filtered}
+        onAdd={handleAdd}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onBulkDelete={handleBulkDelete}
+        onDuplicate={handleDuplicate}
+        isLoading={isLoading}
+      />
+      <ComponentForm
+        open={formOpen}
+        title={editingItem ? "Edytuj alias SKU" : "Dodaj alias SKU"}
+        fields={fields}
+        initialData={editingItem}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isLoading={submitting}
+      />
     </div>
   );
 }

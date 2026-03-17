@@ -65,7 +65,7 @@ export default function AdminLayout() {
   const skuConfigLinks = isAdmin
     ? [
         { to: "/admin/parse-rules", label: "Reguły parsowania" },
-        { to: "/admin/side-exceptions", label: "Wyjątki boczków" },
+        { to: "/admin/side-exceptions", label: "Aliasy SKU" },
         { to: "/admin/label-templates", label: "🏷️ Etykiety" },
         { to: "/admin/guide-templates", label: "📄 Przewodniki" },
         { to: "/admin/decoding-templates", label: "🔍 Dekodowanie" },
