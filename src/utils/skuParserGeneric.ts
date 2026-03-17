@@ -246,9 +246,7 @@ function applyRule(rule: SegmentRule, part: string): Record<string, string> | nu
 }
 
 function applySideResult(result: ParsedSKU, captures: Record<string, string>) {
-  let code = captures.code || "";
-  code = code.replace(/([SW])$/, (m) => m.toLowerCase());
-  if (code === "6") code = "6s";
+  const code = captures.code || "";
   result.side = { code: `B${code}`, finish: captures.finish || "" };
 }
 
