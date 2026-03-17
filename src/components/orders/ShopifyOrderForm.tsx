@@ -150,8 +150,8 @@ const ShopifyOrderForm = () => {
           validation.warnings.forEach((w) => sonnerToast.warning(`⚠️ ${item.title}: ${w}`));
         }
 
-        // 3. Parse (reuse side exceptions)
-        const parsed = await parseSKUGeneric(normalizedSku, sideExceptions);
+        // 3. Parse (reuse SKU aliases)
+        const parsed = await parseSKUGeneric(normalizedSku, skuAliases);
         console.log("[ShopifyFlow] Parsed SKU:", parsed);
 
         // 3. Validate finishes against DB
