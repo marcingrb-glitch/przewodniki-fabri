@@ -6,9 +6,7 @@ export function SeriesConfigRenderer({ data }: SectionRendererProps) {
   const config = data.seriesConfig;
   if (!config) return <NoData label="konfiguracja" />;
 
-  const availableChests = Array.isArray((config as any)?.available_chests)
-    ? (config as any).available_chests
-    : [];
+  const allowedChestCodes = data.getAllowedChestCodes();
 
   return (
     <div className="grid grid-cols-2 gap-2 text-sm border border-border p-3 rounded">
