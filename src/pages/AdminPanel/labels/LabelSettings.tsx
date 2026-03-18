@@ -91,6 +91,7 @@ export default function LabelSettings() {
     series_collection_size: 7,
     content_max_size: 14,
     content_min_size: 7,
+    header_font_size: 6,
   });
 
   useEffect(() => {
