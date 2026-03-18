@@ -50,7 +50,8 @@ export function formatLegType(type: string | null, height: number | null): strin
 }
 
 /**
- * For Dzielone seats without foams, find the Gładkie equivalent's foams.
+ * For Dzielone seats without own foams, find the Gładkie equivalent's foams.
+ * seat_type values: 'Gładkie' | 'Wciąg' | 'Dzielone'
  */
 export function getFoamsWithFallback(
   seat: ProductRow,
@@ -66,7 +67,7 @@ export function getFoamsWithFallback(
   }
 
   const seatType = (seat.properties as any)?.seat_type;
-  const isDzielone = seatType === 'Dzielone' || seatType === 'dzielone';
+  const isDzielone = seatType === 'Dzielone';
 
   if (!isDzielone) {
     return { specs: [], isReference: false, referenceCode: null };
