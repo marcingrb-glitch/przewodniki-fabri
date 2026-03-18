@@ -14,7 +14,7 @@ import OrderHistoryPage from "@/pages/OrderHistoryPage";
 import AdminLayout from "@/pages/AdminPanel/AdminLayout";
 import ProductListPage from "@/pages/AdminPanel/ProductListPage";
 import Users from "@/pages/AdminPanel/Users";
-import ParseRules from "@/pages/AdminPanel/ParseRules";
+import SkuFormatReference from "@/pages/AdminPanel/SkuFormatReference";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
 import LabelTemplates from "@/pages/AdminPanel/LabelTemplates";
 import GuideTemplates from "@/pages/AdminPanel/GuideTemplates";
