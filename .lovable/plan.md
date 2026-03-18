@@ -55,3 +55,18 @@ Diagnostyka regex w `sku_segments` vs realne SKU. Wynik: 132/134 segmentów matc
 ### Etap 2.2: Nowy Generic SKU Decoder (TODO)
 
 ### Etap 2.3: Cleanup starych tabel (TODO)
+
+---
+
+## Etap 3: Eliminacja starej tabeli `series`
+
+### Etap 3A: Przełączenie queries `from("series")` → `from("products")` ✅
+
+- Migracja SQL: FK `guide_sections.series_id` i `label_templates.series_id` przepięte ze starej `series` na `products`
+- 8 plików: mechaniczne podmianki `from("series")` → `from("products").eq("category","series")`
+- `finishValidator.ts`: 4 stare tabele (`seats_sofa`, `sides`, `backrests`, `pillows`) → `products`
+- Zostały 2 referencje w plikach mock data (GuidePreview, LabelConfigurator) — krok B
+
+### Etap 3B: Preview/mock refaktor (TODO)
+
+### Etap 3C: Drop starej tabeli `series` (TODO)
