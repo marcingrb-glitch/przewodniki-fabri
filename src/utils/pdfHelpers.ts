@@ -282,24 +282,40 @@ export function addLabel(
   const contentRight = pageW - 3;
   const contentWidth = contentRight - contentLeft;
   const contentCenterX = contentLeft + contentWidth / 2;
+  const availableHeight = pageH - 2 * marginY;
+
+  // --- Header line (first of mainLines) rendered smaller at top ---
+  const headerLine = mainLines[0];
+  const contentLines = mainLines.slice(1);
+  const headerFontSize = 6;
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(headerFontSize);
+  const headerY = marginY + headerFontSize * 0.4;
+  doc.text(headerLine, contentCenterX, headerY, { align: "center" });
+
+  // --- Content lines below header ---
+  if (contentLines.length === 0) return;
+
+  const headerSpace = headerFontSize * 0.55 + 1;
+  const contentAvailableHeight = availableHeight - headerSpace;
 
   doc.setFont("Roboto", "bold");
-  const availableHeight = pageH - 2 * marginY;
-  let mainFontSize = Math.min(s.contentMaxSize, availableHeight / mainLines.length * 2);
+  let mainFontSize = Math.min(s.contentMaxSize, contentAvailableHeight / contentLines.length * 2);
   let fits = false;
   while (!fits && mainFontSize > s.contentMinSize) {
     doc.setFontSize(mainFontSize);
-    fits = mainLines.every(line => doc.getTextWidth(line) <= contentWidth);
+    fits = contentLines.every(line => doc.getTextWidth(line) <= contentWidth);
     if (!fits) mainFontSize -= 0.5;
   }
 
   doc.setFontSize(mainFontSize);
   const lineHeight = mainFontSize * 0.55;
-  const totalTextHeight = mainLines.length * lineHeight;
-  const startY = marginY + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
+  const totalTextHeight = contentLines.length * lineHeight;
+  const contentStartY = marginY + headerSpace + (contentAvailableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
 
-  mainLines.forEach((line, i) => {
-    doc.text(line, contentCenterX, startY + i * lineHeight, { align: "center" });
+  contentLines.forEach((line, i) => {
+    doc.text(line, contentCenterX, contentStartY + i * lineHeight, { align: "center" });
   });
 }
 
