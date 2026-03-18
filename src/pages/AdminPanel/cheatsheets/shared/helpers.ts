@@ -67,7 +67,7 @@ export function getFoamsWithFallback(
   }
 
   const seatType = (seat.properties as any)?.seat_type;
-  const isDzielone = seatType === 'Dzielone' || seatType === 'dzielone';
+  const isDzielone = seatType === 'Dzielone';
 
   if (!isDzielone) {
     return { specs: [], isReference: false, referenceCode: null };
