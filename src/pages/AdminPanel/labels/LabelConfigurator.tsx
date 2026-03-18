@@ -2,15 +2,19 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { X, Plus, Trash2 } from "lucide-react";
 import { COMPONENT_FIELDS } from "./DisplayFieldsSelector";
 import { useLabelSettings, type LabelSettingsData } from "./LabelSettings";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { formatFieldWithLabel } from "@/utils/fieldLabels";
+import { resolveDecodedField } from "@/utils/pdfGenerators/decodingFieldResolver";
+import { useSkuPreviewDecoder } from "./useSkuPreviewDecoder";
+import { DEFAULT_EXAMPLE_SKUS, FALLBACK_EXAMPLE_SKU } from "./defaultExampleSkus";
+import LabelPdfPreview from "./LabelPdfPreview";
+import type { LabelSettings as LabelSettingsType } from "@/utils/pdfHelpers";
 
 interface LabelTemplate {
   id: string;
@@ -25,116 +29,19 @@ interface LabelConfiguratorProps {
   template: LabelTemplate;
   onFieldsChange: (fields: string[][]) => void;
   onClose: () => void;
+  previewSeriesCode?: string;
 }
 
-// Fetch real example data from DB
-function useExampleData() {
-  return useQuery({
-    queryKey: ["label-example-data"],
-    queryFn: async () => {
-      const [seatRes, sideRes, backrestRes, chestRes, automatRes, seriesRes, legRes, pufaSeatRes, pillowRes, finishRes, legsRes] = await Promise.all([
-        supabase.from("products").select("code, name, properties").eq("category", "seat").eq("active", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties").eq("category", "side").eq("active", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties").eq("category", "backrest").eq("active", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties").eq("category", "chest").eq("is_global", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties").eq("category", "automat").eq("is_global", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties").eq("category", "series").eq("active", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties, colors").eq("category", "leg").eq("is_global", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties").eq("category", "seat_pufa").eq("active", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name").eq("category", "pillow").eq("is_global", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name").eq("category", "finish").eq("is_global", true).limit(1).maybeSingle(),
-        supabase.from("products").select("code, name, properties, colors").eq("category", "leg").eq("is_global", true).limit(1).maybeSingle(),
-      ]);
-      return {
-        seat: seatRes.data ? { ...seatRes.data, ...(seatRes.data as any).properties } : null,
-        side: sideRes.data ? { ...sideRes.data, ...(sideRes.data as any).properties } : null,
-        backrest: backrestRes.data ? { ...backrestRes.data, ...(backrestRes.data as any).properties } : null,
-        chest: chestRes.data ? { ...chestRes.data, ...(chestRes.data as any).properties } : null,
-        automat: automatRes.data ? { ...automatRes.data, ...(automatRes.data as any).properties } : null,
-        series: seriesRes.data ? { ...seriesRes.data, collection: (seriesRes.data as any).properties?.collection } : null,
-        leg: legRes.data ? { ...legRes.data, ...(legRes.data as any).properties } : null,
-        pufaSeat: pufaSeatRes.data ? { ...pufaSeatRes.data, ...(pufaSeatRes.data as any).properties } : null,
-        pillow: pillowRes.data,
-        finish: finishRes.data,
-        legs: legsRes.data ? { ...legsRes.data, ...(legsRes.data as any).properties } : null,
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-function buildExampleValues(data: ReturnType<typeof useExampleData>["data"]): Record<string, string> {
-  if (!data) return {};
-  const v = (val: unknown, fallback = "(brak)") => (val != null && val !== "" ? String(val) : fallback);
-  const finishCode = v(data.finish?.code, "A");
-  const finishName = v(data.finish?.name, "Zwykły");
-  // Extract first color from legs.colors if available
-  let legColor = "(brak)";
-  let legColorName = "(brak)";
-  if (data.legs?.colors && Array.isArray(data.legs.colors) && (data.legs.colors as any[]).length > 0) {
-    const first = (data.legs.colors as any[])[0];
-    legColor = first?.code || "(brak)";
-    legColorName = first?.name || "(brak)";
-  }
-
+function toLabelSettings(db: LabelSettingsData): LabelSettingsType {
   return {
-    "seat.code": v(data.seat?.code),
-    "seat.type": v(data.seat?.seat_type),
-    "seat.frame": v(data.seat?.frame),
-    "seat.foamsList": "—",
-    "seat.front": v(data.seat?.front),
-    "seat.finish": finishCode,
-    "seat.finishName": finishName,
-    "seat.midStrip": data.seat?.center_strip ? "Tak" : "Nie",
-    "seat.springType": v(data.seat?.spring_type),
-    "automat.code": v(data.automat?.code),
-    "automat.name": v(data.automat?.name),
-    "automat.type": v(data.automat?.type),
-    "side.code": v(data.side?.code),
-    "side.name": v(data.side?.name),
-    "side.frame": v(data.side?.frame),
-    "side.finish": finishCode,
-    "side.finishName": finishName,
-    "backrest.code": v(data.backrest?.code),
-    "backrest.height": v(data.backrest?.height_cm),
-    "backrest.frame": v(data.backrest?.frame),
-    "backrest.foamsList": "—",
-    "backrest.top": v(data.backrest?.top),
-    "backrest.finish": finishCode,
-    "backrest.finishName": finishName,
-    "backrest.springType": v(data.backrest?.spring_type),
-    "chest.code": v(data.chest?.code),
-    "chest.name": v(data.chest?.name),
-    "chest.legHeight": v(data.chest?.leg_height_cm),
-    "chest.legCount": v(data.chest?.leg_count),
-    "legHeights.sofa_chest.leg": v(data.leg?.name),
-    "legHeights.sofa_chest.height": v(data.chest?.leg_height_cm),
-    "legHeights.sofa_chest.count": v(data.chest?.leg_count),
-    "legHeights.sofa_seat.leg": v(data.leg?.name),
-    "legHeights.sofa_seat.height": "(brak)",
-    "legHeights.sofa_seat.count": "(brak)",
-    "leg.code": v(data.leg?.name),
-    "leg.height": v(data.chest?.leg_height_cm),
-    "leg.count": v(data.chest?.leg_count),
-    "pufaLegs.code": v(data.leg?.code),
-    "pufaLegs.height": "(brak)",
-    "pufaLegs.count": "(brak)",
-    "fotelLegs.code": v(data.leg?.code),
-    "fotelLegs.height": "(brak)",
-    "fotelLegs.count": "(brak)",
-    "pufaSeat.frontBack": v(data.pufaSeat?.front_back),
-    "pufaSeat.sides": v(data.pufaSeat?.sides),
-    "pufaSeat.foam": v(data.pufaSeat?.base_foam),
-    "pufaSeat.box": v(data.pufaSeat?.box_height),
-    "pillow.code": v(data.pillow?.code),
-    "pillow.name": v(data.pillow?.name),
-    "pillow.finish": finishCode,
-    "pillow.finishName": finishName,
-    "legs.code": v(data.legs?.code),
-    "legs.name": v(data.legs?.name),
-    "legs.material": v(data.legs?.material),
-    "legs.color": legColor,
-    "legs.colorName": legColorName,
+    leftZoneWidth: db.left_zone_width,
+    leftZoneFields: db.left_zone_fields,
+    headerTemplate: db.header_template,
+    seriesCodeSize: db.series_code_size,
+    seriesNameSize: db.series_name_size,
+    seriesCollectionSize: db.series_collection_size,
+    contentMaxSize: db.content_max_size,
+    contentMinSize: db.content_min_size,
   };
 }
 
@@ -155,11 +62,13 @@ export default function LabelConfigurator({
   template,
   onFieldsChange,
   onClose,
+  previewSeriesCode,
 }: LabelConfiguratorProps) {
   const lines = useMemo(() => normalizeFields(template.display_fields), [template.display_fields]);
   const { data: labelSettings } = useLabelSettings();
-  const { data: exampleData } = useExampleData();
-  const exampleValues = useMemo(() => buildExampleValues(exampleData), [exampleData]);
+
+  const defaultSku = DEFAULT_EXAMPLE_SKUS[previewSeriesCode || "S1"] || FALLBACK_EXAMPLE_SKU;
+  const { decoded, isLoading: decoderLoading, error: decoderError, skuInput, setSkuInput } = useSkuPreviewDecoder(defaultSku);
 
   const productLabel = template.product_type.toUpperCase();
   const availableFields = COMPONENT_FIELDS[template.component] || [];
@@ -191,13 +100,14 @@ export default function LabelConfigurator({
     updateLine(lineIdx, lines[lineIdx].filter((f) => f !== fieldValue));
   };
 
+  // Build content lines from decoded SKU
   const previewLines = useMemo(() => {
+    if (!decoded) return [];
     const result: string[] = [];
-    for (let i = 0; i < lines.length; i++) {
-      const lineFields = lines[i];
+    for (const lineFields of lines) {
       const parts = lineFields
         .map((f) => {
-          const val = exampleValues[f] || "(brak)";
+          const val = resolveDecodedField(f, decoded);
           if (val === "-") return null;
           return formatFieldWithLabel(f, val);
         })
@@ -207,24 +117,32 @@ export default function LabelConfigurator({
       }
     }
     return result;
-  }, [lines, template.label_name, exampleValues]);
+  }, [lines, decoded]);
 
-  // Left zone fields from settings
-  const LEFT_FIELD_EXAMPLES: Record<string, string> = {
-    "series.code": exampleData?.series?.code || "(brak)",
-    "series.name": exampleData?.series?.name || "(brak)",
-    "series.collection": exampleData?.series?.collection || "(brak)",
-    "product_type": productLabel,
-    "order_number": "12345",
-  };
+  // Build full label lines for PDF preview (matching labels.ts buildLabelLines)
+  const pdfPreviewLines = useMemo(() => {
+    if (!decoded || !labelSettings) return [];
+    const settings = toLabelSettings(labelSettings);
 
-  const leftFields = labelSettings?.left_zone_fields || ["series.code", "series.name", "series.collection"];
-  const leftZoneWidthPx = ((labelSettings?.left_zone_width || 16) / 100) * 400;
+    const seriesParts = settings.leftZoneFields.map((field) => {
+      switch (field) {
+        case "series.code": return decoded.series.code || "";
+        case "series.name": return decoded.series.name || "";
+        case "series.collection": return decoded.series.collection || "";
+        case "product_type": return template.product_type.toUpperCase();
+        case "order_number": return decoded.orderNumber || "12345";
+        default: return "";
+      }
+    });
+    const seriesLine = seriesParts.join("|");
 
-  const headerText = (labelSettings?.header_template || "{TYPE} | {LABEL} | {ORDER}")
-    .replace("{TYPE}", productLabel)
-    .replace("{LABEL}", template.label_name)
-    .replace("{ORDER}", "12345");
+    const header = settings.headerTemplate
+      .replace("{TYPE}", template.product_type.toUpperCase())
+      .replace("{LABEL}", template.label_name)
+      .replace("{ORDER}", decoded.orderNumber || "12345");
+
+    return [seriesLine, header, ...previewLines];
+  }, [decoded, labelSettings, previewLines, template]);
 
   return (
     <Card className="mt-4 border-primary/20">
@@ -237,65 +155,36 @@ export default function LabelConfigurator({
         </Button>
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-4">
-        {/* Preview */}
+        {/* SKU Input + PDF Preview */}
         <div>
           <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
             Podgląd etykiety
           </p>
-          <div
-            className="border rounded bg-background inline-flex overflow-hidden"
-            style={{ width: 400, height: 120 }}
-          >
-            {/* Left zone — series info rotated */}
-            <div
-              className="bg-muted flex items-center justify-center shrink-0 relative"
-              style={{ width: leftZoneWidthPx, height: 120 }}
-            >
-              <div
-                className="absolute flex flex-col items-center gap-0.5"
-                style={{
-                  transform: "rotate(-90deg)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {leftFields.map((field, i) => {
-                  const example = LEFT_FIELD_EXAMPLES[field] || field;
-                  const isCode = field === "series.code";
-                  const isName = field === "series.name";
-                  const fontSize = isCode
-                    ? `${Math.min((labelSettings?.series_code_size || 18) * 0.7, 16)}px`
-                    : isName
-                    ? `${Math.min((labelSettings?.series_name_size || 9) * 0.9, 12)}px`
-                    : `${Math.min((labelSettings?.series_collection_size || 7) * 0.9, 10)}px`;
-                  return (
-                    <span
-                      key={i}
-                      className={isCode || isName ? "font-bold" : "text-muted-foreground"}
-                      style={{ fontSize }}
-                    >
-                      {field === "series.collection" ? `[${example}]` : example}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Main zone */}
-            <div className="flex-1 px-3 py-2 flex flex-col justify-center gap-0.5 min-w-0">
-              <p className="text-xs font-bold truncate">
-                {headerText}
-              </p>
-              {previewLines.map((line, i) => (
-                <p key={i} className="text-[11px] truncate leading-tight">
-                  {line || <span className="text-muted-foreground italic">pusta linia</span>}
-                </p>
-              ))}
-              {previewLines.length === 0 && (
-                <p className="text-[11px] text-muted-foreground italic">
-                  {template.label_name}: (brak pól)
-                </p>
-              )}
-            </div>
+          <div className="flex items-center gap-2 mb-2">
+            <Label className="text-xs text-muted-foreground shrink-0">SKU podglądu:</Label>
+            <Input
+              value={skuInput}
+              onChange={(e) => setSkuInput(e.target.value)}
+              placeholder="Wpisz SKU..."
+              className="h-7 text-xs font-mono flex-1"
+            />
+            {decoderLoading && <span className="text-xs text-muted-foreground animate-pulse">dekodowanie...</span>}
+            {decoderError && <span className="text-xs text-destructive truncate max-w-[200px]" title={decoderError}>⚠ {decoderError}</span>}
           </div>
+          {labelSettings && pdfPreviewLines.length > 0 ? (
+            <LabelPdfPreview
+              lines={pdfPreviewLines}
+              settings={toLabelSettings(labelSettings)}
+              width={500}
+              height={150}
+            />
+          ) : (
+            <div className="border rounded bg-muted/30 flex items-center justify-center" style={{ width: 500, height: 150 }}>
+              <span className="text-xs text-muted-foreground">
+                {decoderLoading ? "Dekodowanie SKU..." : "Wpisz poprawne SKU aby zobaczyć podgląd"}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Line builder */}
@@ -307,7 +196,10 @@ export default function LabelConfigurator({
           <div className="flex items-center gap-2 py-1.5 px-2 rounded bg-muted/50 mb-1">
             <span className="text-xs text-muted-foreground">Nagłówek (auto):</span>
             <span className="text-xs font-medium">
-              „{headerText}"
+              „{(labelSettings?.header_template || "{TYPE} | {LABEL} | {ORDER}")
+                .replace("{TYPE}", productLabel)
+                .replace("{LABEL}", template.label_name)
+                .replace("{ORDER}", "12345")}"
             </span>
           </div>
 
@@ -332,7 +224,6 @@ export default function LabelConfigurator({
                     <X className="h-3 w-3 ml-0.5" />
                   </Badge>
                 ))}
-                {/* Add field popover */}
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-6 px-2 text-xs">

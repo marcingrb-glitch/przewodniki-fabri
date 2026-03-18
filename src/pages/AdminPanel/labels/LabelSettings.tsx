@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ArrowUp, ArrowDown, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
+import LabelPdfPreview from "./LabelPdfPreview";
+import type { LabelSettings as LabelSettingsType } from "@/utils/pdfHelpers";
 
 export interface LabelSettingsData {
   id: string;
@@ -150,16 +152,30 @@ export default function LabelSettings() {
     setLocalSizes((prev) => ({ ...prev, [key]: num }));
   };
 
-  // Preview
-  const previewHeader = localHeader
-    .replace("{TYPE}", "SOFA")
-    .replace("{LABEL}", "Siedzisko")
-    .replace("{ORDER}", "12345");
+  // PDF Preview lines (hardcoded example)
+  const previewPdfLines = useMemo(() => {
+    const seriesParts = localFields.map((f) => {
+      const def = AVAILABLE_LEFT_FIELDS.find((a) => a.value === f);
+      return def?.example || "";
+    });
+    const seriesLine = seriesParts.join("|");
+    const header = localHeader
+      .replace("{TYPE}", "SOFA")
+      .replace("{LABEL}", "Siedzisko")
+      .replace("{ORDER}", "12345");
+    return [seriesLine, header, "Siedzisko: SD02NA | Typ: Wciąg"];
+  }, [localFields, localHeader]);
 
-  const previewLeftItems = localFields.map((f) => {
-    const def = AVAILABLE_LEFT_FIELDS.find((a) => a.value === f);
-    return def?.example || f;
-  });
+  const previewSettings: LabelSettingsType = useMemo(() => ({
+    leftZoneWidth: localSizes.left_zone_width,
+    leftZoneFields: localFields,
+    headerTemplate: localHeader,
+    seriesCodeSize: localSizes.series_code_size,
+    seriesNameSize: localSizes.series_name_size,
+    seriesCollectionSize: localSizes.series_collection_size,
+    contentMaxSize: localSizes.content_max_size,
+    contentMinSize: localSizes.content_min_size,
+  }), [localSizes, localFields, localHeader]);
 
   if (isLoading) return null;
 
@@ -287,53 +303,17 @@ export default function LabelSettings() {
           </div>
         </div>
 
-        {/* Mini preview */}
+        {/* PDF Preview */}
         <div>
           <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">
             Podgląd
           </Label>
-          <div
-            className="border rounded bg-background inline-flex overflow-hidden"
-            style={{ width: 400, height: 120 }}
-          >
-            <div
-              className="bg-muted flex items-center justify-center shrink-0 relative"
-              style={{
-                width: (localSizes.left_zone_width / 100) * 400,
-                height: 120,
-              }}
-            >
-              <div
-                className="absolute flex flex-col items-center gap-0.5"
-                style={{
-                  transform: "rotate(-90deg)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {previewLeftItems.map((item, i) => (
-                  <span
-                    key={i}
-                    className="font-semibold"
-                    style={{
-                      fontSize: i === 0
-                        ? `${Math.min(localSizes.series_code_size * 0.7, 16)}px`
-                        : i === 1
-                        ? `${Math.min(localSizes.series_name_size * 0.9, 12)}px`
-                        : `${Math.min(localSizes.series_collection_size * 0.9, 10)}px`,
-                    }}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="flex-1 px-3 py-2 flex flex-col justify-center gap-0.5 min-w-0">
-              <p className="text-xs font-bold truncate">{previewHeader}</p>
-              <p className="text-[11px] truncate leading-tight text-muted-foreground italic">
-                (treść z szablonu etykiety)
-              </p>
-            </div>
-          </div>
+          <LabelPdfPreview
+            lines={previewPdfLines}
+            settings={previewSettings}
+            width={500}
+            height={150}
+          />
         </div>
       </CollapsibleContent>
     </Collapsible>
