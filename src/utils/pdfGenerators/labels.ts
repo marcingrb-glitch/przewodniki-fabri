@@ -94,6 +94,7 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
     seriesCollectionSize: Number(data.series_collection_size) || 7,
     contentMaxSize: Number(data.content_max_size) || 14,
     contentMinSize: Number(data.content_min_size) || 7,
+    headerFontSize: Number((data as any).header_font_size) || 6,
   };
 }
 

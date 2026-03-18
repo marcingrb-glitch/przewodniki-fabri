@@ -42,6 +42,7 @@ function toLabelSettings(db: LabelSettingsData): LabelSettingsType {
     seriesCollectionSize: db.series_collection_size,
     contentMaxSize: db.content_max_size,
     contentMinSize: db.content_min_size,
+    headerFontSize: db.header_font_size,
   };
 }
 
