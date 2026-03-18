@@ -50,7 +50,8 @@ export function formatLegType(type: string | null, height: number | null): strin
 }
 
 /**
- * For Dzielone seats without foams, find the Gładkie equivalent's foams.
+ * For Dzielone seats without own foams, find the Gładkie equivalent's foams.
+ * seat_type values: 'Gładkie' | 'Wciąg' | 'Dzielone'
  */
 export function getFoamsWithFallback(
   seat: ProductRow,
