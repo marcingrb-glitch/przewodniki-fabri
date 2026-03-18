@@ -33,19 +33,31 @@ function useExampleData() {
     queryKey: ["label-example-data"],
     queryFn: async () => {
       const [seatRes, sideRes, backrestRes, chestRes, automatRes, seriesRes, legRes, pufaSeatRes, pillowRes, finishRes, legsRes] = await Promise.all([
-        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip").limit(1).maybeSingle(),
-        supabase.from("sides").select("code, name, frame").limit(1).maybeSingle(),
-        supabase.from("backrests").select("code, height_cm, frame, top, spring_type").limit(1).maybeSingle(),
-        supabase.from("chests").select("code, name, leg_height_cm, leg_count").limit(1).maybeSingle(),
-        supabase.from("automats").select("code, name, type").limit(1).maybeSingle(),
-        supabase.from("series").select("code, name, collection").limit(1).maybeSingle(),
-        supabase.from("legs").select("code, name, material, colors").limit(1).maybeSingle(),
-        supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").limit(1).maybeSingle(),
-        supabase.from("pillows").select("code, name").limit(1).maybeSingle(),
-        supabase.from("finishes").select("code, name").limit(1).maybeSingle(),
-        supabase.from("legs").select("code, name, material, colors").limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "seat").eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "side").eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "backrest").eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "chest").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "automat").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "series").eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties, colors").eq("category", "leg").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "seat_pufa").eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name").eq("category", "pillow").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name").eq("category", "finish").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties, colors").eq("category", "leg").eq("is_global", true).limit(1).maybeSingle(),
       ]);
-      return { seat: seatRes.data, side: sideRes.data, backrest: backrestRes.data, chest: chestRes.data, automat: automatRes.data, series: seriesRes.data, leg: legRes.data, pufaSeat: pufaSeatRes.data, pillow: pillowRes.data, finish: finishRes.data, legs: legsRes.data };
+      return {
+        seat: seatRes.data ? { ...seatRes.data, ...(seatRes.data as any).properties } : null,
+        side: sideRes.data ? { ...sideRes.data, ...(sideRes.data as any).properties } : null,
+        backrest: backrestRes.data ? { ...backrestRes.data, ...(backrestRes.data as any).properties } : null,
+        chest: chestRes.data ? { ...chestRes.data, ...(chestRes.data as any).properties } : null,
+        automat: automatRes.data ? { ...automatRes.data, ...(automatRes.data as any).properties } : null,
+        series: seriesRes.data ? { ...seriesRes.data, collection: (seriesRes.data as any).properties?.collection } : null,
+        leg: legRes.data ? { ...legRes.data, ...(legRes.data as any).properties } : null,
+        pufaSeat: pufaSeatRes.data ? { ...pufaSeatRes.data, ...(pufaSeatRes.data as any).properties } : null,
+        pillow: pillowRes.data,
+        finish: finishRes.data,
+        legs: legsRes.data ? { ...legsRes.data, ...(legsRes.data as any).properties } : null,
+      };
     },
     staleTime: 5 * 60 * 1000,
   });

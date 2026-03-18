@@ -73,29 +73,36 @@ export default function DecodingTemplates() {
     queryFn: async () => {
       const sid = seriesFilter;
       const [seatRes, sideRes, backrestRes, chestRes, automatRes, legRes, pufaSeatRes, pillowRes, finishRes, jaskiRes, walekRes, fabricRes] = await Promise.all([
-        supabase.from("seats_sofa").select("code, type, frame, front, spring_type, center_strip, frame_modification").eq("series_id", sid!).limit(1).maybeSingle(),
-        supabase.from("sides").select("code, name, frame").eq("series_id", sid!).limit(1).maybeSingle(),
-        supabase.from("backrests").select("code, height_cm, frame, top, spring_type").eq("series_id", sid!).limit(1).maybeSingle(),
-        supabase.from("chests").select("code, name, leg_height_cm, leg_count").limit(1).maybeSingle(),
-        supabase.from("automats").select("code, name, type").limit(1).maybeSingle(),
-        supabase.from("legs").select("code, name, material, colors").limit(1).maybeSingle(),
-        supabase.from("seats_pufa").select("code, front_back, sides, base_foam, box_height").eq("series_id", sid!).limit(1).maybeSingle(),
-        supabase.from("pillows").select("code, name").limit(1).maybeSingle(),
-        supabase.from("finishes").select("code, name").limit(1).maybeSingle(),
-        supabase.from("jaskis").select("code, name").limit(1).maybeSingle(),
-        supabase.from("waleks").select("code, name").limit(1).maybeSingle(),
-        supabase.from("fabrics").select("code, name, price_group, colors").limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "seat").eq("series_id", sid!).eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "side").eq("series_id", sid!).eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "backrest").eq("series_id", sid!).eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "chest").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "automat").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties, colors").eq("category", "leg").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties").eq("category", "seat_pufa").eq("series_id", sid!).eq("active", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name").eq("category", "pillow").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name").eq("category", "finish").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name").eq("category", "jasiek").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name").eq("category", "walek").eq("is_global", true).limit(1).maybeSingle(),
+        supabase.from("products").select("code, name, properties, colors").eq("category", "fabric").eq("is_global", true).limit(1).maybeSingle(),
       ]);
 
       const selectedSeries = seriesList.find(s => s.id === sid);
 
       return {
-        seat: seatRes.data, side: sideRes.data, backrest: backrestRes.data,
-        chest: chestRes.data, automat: automatRes.data,
+        seat: seatRes.data ? { ...seatRes.data, ...(seatRes.data as any).properties } : null,
+        side: sideRes.data ? { ...sideRes.data, ...(sideRes.data as any).properties } : null,
+        backrest: backrestRes.data ? { ...backrestRes.data, ...(backrestRes.data as any).properties } : null,
+        chest: chestRes.data ? { ...chestRes.data, ...(chestRes.data as any).properties } : null,
+        automat: automatRes.data ? { ...automatRes.data, ...(automatRes.data as any).properties } : null,
         series: selectedSeries || { code: "S1", name: "Seria", collection: "Kolekcja" },
-        leg: legRes.data, pufaSeat: pufaSeatRes.data, pillow: pillowRes.data,
-        finish: finishRes.data, jaski: jaskiRes.data, walek: walekRes.data,
-        fabric: fabricRes.data,
+        leg: legRes.data ? { ...legRes.data, ...(legRes.data as any).properties } : null,
+        pufaSeat: pufaSeatRes.data ? { ...pufaSeatRes.data, ...(pufaSeatRes.data as any).properties } : null,
+        pillow: pillowRes.data,
+        finish: finishRes.data,
+        jaski: jaskiRes.data,
+        walek: walekRes.data,
+        fabric: fabricRes.data ? { ...fabricRes.data, ...(fabricRes.data as any).properties } : null,
       };
     },
     enabled: !!seriesFilter,
