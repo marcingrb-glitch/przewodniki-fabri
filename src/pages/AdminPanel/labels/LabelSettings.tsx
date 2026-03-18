@@ -56,7 +56,20 @@ export function useLabelSettings() {
       if (error) throw error;
       return {
         ...data,
-        left_zone_fields: (data.left_zone_fields as string[]) || DEFAULTS.left_zone_fields,
+        left_zone_fields:
+          Array.isArray(data.left_zone_fields) && data.left_zone_fields.length > 0
+            ? (data.left_zone_fields as string[])
+            : DEFAULTS.left_zone_fields,
+        header_template:
+          typeof data.header_template === "string" && data.header_template.trim().length > 0
+            ? data.header_template
+            : DEFAULTS.header_template,
+        left_zone_width: Number(data.left_zone_width) || DEFAULTS.left_zone_width,
+        series_code_size: Number(data.series_code_size) || DEFAULTS.series_code_size,
+        series_name_size: Number(data.series_name_size) || DEFAULTS.series_name_size,
+        series_collection_size: Number(data.series_collection_size) || DEFAULTS.series_collection_size,
+        content_max_size: Number(data.content_max_size) || DEFAULTS.content_max_size,
+        content_min_size: Number(data.content_min_size) || DEFAULTS.content_min_size,
       } as LabelSettingsData;
     },
   });
