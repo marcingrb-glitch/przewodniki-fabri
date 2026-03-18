@@ -314,7 +314,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       .select("properties")
       .eq("series_id", seriesId)
       .eq("relation_type", "automat_config")
-      .eq("target_product_id", automatProduct.id)
+      .eq("source_product_id", automatProduct.id)
       .maybeSingle();
 
     if (acData) {
