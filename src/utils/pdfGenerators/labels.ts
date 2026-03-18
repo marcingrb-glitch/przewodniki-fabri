@@ -171,7 +171,7 @@ export async function generateLabelsPDF(
 
   // Fallback if no templates found
   if (isFirst) {
-    const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType);
+    const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType, "seat");
     const fallbackHeader = settings.headerTemplate
       .replace("{TYPE}", productType.toUpperCase())
       .replace("{LABEL}", "")
