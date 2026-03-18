@@ -23,6 +23,7 @@ export interface LabelSettingsData {
   series_collection_size: number;
   content_max_size: number;
   content_min_size: number;
+  header_font_size: number;
 }
 
 const DEFAULTS: Omit<LabelSettingsData, "id"> = {
@@ -34,6 +35,7 @@ const DEFAULTS: Omit<LabelSettingsData, "id"> = {
   series_collection_size: 7,
   content_max_size: 14,
   content_min_size: 7,
+  header_font_size: 6,
 };
 
 const AVAILABLE_LEFT_FIELDS = [
