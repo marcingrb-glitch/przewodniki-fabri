@@ -81,6 +81,7 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
       seriesCollectionSize: 7,
       contentMaxSize: 14,
       contentMinSize: 7,
+      headerFontSize: 6,
     };
   }
 
