@@ -299,7 +299,7 @@ export function addLabel(
   // --- Content lines below header ---
   if (contentLines.length === 0) return;
 
-  const headerSpace = headerFontSize * 0.55 + 1;
+  const headerSpace = headerFontSize * 0.4;
   const contentAvailableHeight = availableHeight - headerSpace;
 
   doc.setFont("Roboto", "bold");
