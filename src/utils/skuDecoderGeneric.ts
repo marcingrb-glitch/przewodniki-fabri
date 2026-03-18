@@ -509,7 +509,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     pufaLegsDecoded = {
       code: `${legsDecoded.code}${legsDecoded.color || ""}`,
       height: automatSeatLegHeight,
-      count: automatSeatLegCount,
+      count: seriesProps.pufa_leg_count ?? 4,
     };
   }
 
@@ -518,7 +518,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     fotelLegsDecoded = {
       code: `${legsDecoded.code}${legsDecoded.color || ""}`,
       height: automatSeatLegHeight,
-      count: automatSeatLegCount,
+      count: seriesProps.pufa_leg_count ?? 4,
     };
   }
 
