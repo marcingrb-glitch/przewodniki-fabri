@@ -53,7 +53,7 @@ const App = () => (
                   <Route path="extras" element={<ProtectedRoute adminOnly><ProductListPage category="extra" /></ProtectedRoute>} />
                   <Route path="seats-pufa" element={<ProtectedRoute adminOnly><ProductListPage category="seat_pufa" /></ProtectedRoute>} />
                   <Route path="users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
-                  <Route path="parse-rules" element={<ProtectedRoute adminOnly><ParseRules /></ProtectedRoute>} />
+                  <Route path="sku-format" element={<ProtectedRoute adminOnly><SkuFormatReference /></ProtectedRoute>} />
                   <Route path="side-exceptions" element={<ProtectedRoute adminOnly><SideExceptions /></ProtectedRoute>} />
                   <Route path="label-templates" element={<ProtectedRoute adminOnly><LabelTemplates /></ProtectedRoute>} />
                   <Route path="guide-templates" element={<ProtectedRoute adminOnly><GuideTemplates /></ProtectedRoute>} />
