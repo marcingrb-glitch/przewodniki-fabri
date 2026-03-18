@@ -219,7 +219,7 @@ function getLeftFieldFontSize(field: string, settings: LabelSettings): number {
 
 /** Get font style for a left-zone field */
 function getLeftFieldFontStyle(field: string): "bold" | "normal" {
-  if (field === "series.code" || field === "series.name") return "bold";
+  if (field === "series.code" || field === "series.name" || field === "component.model_name") return "bold";
   return "normal";
 }
 

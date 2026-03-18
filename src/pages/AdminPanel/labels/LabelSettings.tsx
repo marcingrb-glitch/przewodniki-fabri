@@ -41,7 +41,8 @@ const DEFAULTS: Omit<LabelSettingsData, "id"> = {
 const AVAILABLE_LEFT_FIELDS = [
   { value: "series.code", label: "Kod serii", example: "S1" },
   { value: "series.name", label: "Nazwa serii", example: "Sofa Mar" },
-  { value: "series.collection", label: "Kolekcja", example: "Vienne" },
+  { value: "series.collection", label: "Kolekcja", example: "Viena" },
+  { value: "component.model_name", label: "Model (dynamiczny)", example: "Porto / Modena" },
   { value: "product_type", label: "Typ produktu", example: "SOFA" },
   { value: "order_number", label: "Numer zamówienia", example: "12345" },
 ];

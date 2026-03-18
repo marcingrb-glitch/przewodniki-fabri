@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatFieldWithLabel } from "@/utils/fieldLabels";
 import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 
-function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string): string {
+function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string, component: string): string {
   return leftZoneFields.map((field) => {
     switch (field) {
       case "series.code": return decoded.series.code || "";
       case "series.name": return decoded.series.name || "";
       case "series.collection": return decoded.series.collection || "";
+      case "component.model_name":
+        if (component === "side") return decoded.side.modelName || "";
+        return decoded.seat.modelName || "";
       case "product_type": return productType.toUpperCase();
       case "order_number": return decoded.orderNumber || "";
       default: return "";
