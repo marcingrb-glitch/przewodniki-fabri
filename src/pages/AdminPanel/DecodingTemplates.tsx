@@ -59,9 +59,9 @@ export default function DecodingTemplates() {
   const { data: seriesList = [] } = useQuery({
     queryKey: ["series-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("series").select("id, code, name, collection").order("code");
+      const { data, error } = await supabase.from("products").select("id, code, name, properties").eq("category", "series").eq("active", true).order("code");
       if (error) throw error;
-      return data;
+      return (data || []).map((s: any) => ({ ...s, collection: s.properties?.collection ?? "" }));
     },
   });
 

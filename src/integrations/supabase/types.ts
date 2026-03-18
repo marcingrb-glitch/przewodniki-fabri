@@ -369,7 +369,7 @@ export type Database = {
             foreignKeyName: "guide_sections_series_id_fkey"
             columns: ["series_id"]
             isOneToOne: false
-            referencedRelation: "series"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -512,7 +512,7 @@ export type Database = {
             foreignKeyName: "label_templates_series_id_fkey"
             columns: ["series_id"]
             isOneToOne: false
-            referencedRelation: "series"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

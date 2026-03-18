@@ -62,7 +62,7 @@ export default function LabelTemplates() {
   const { data: seriesList = [] } = useQuery({
     queryKey: ["series-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("series").select("id, code, name").order("code");
+      const { data, error } = await supabase.from("products").select("id, code, name").eq("category", "series").eq("active", true).order("code");
       if (error) throw error;
       return data as Series[];
     },

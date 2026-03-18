@@ -22,8 +22,9 @@ interface GuideSection {
 
 async function fetchDecodingSections(seriesCode: string): Promise<GuideSection[]> {
   const { data: seriesData } = await supabase
-    .from("series")
+    .from("products")
     .select("id")
+    .eq("category", "series")
     .eq("code", seriesCode)
     .maybeSingle();
 
