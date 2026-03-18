@@ -204,12 +204,6 @@ function resolveLeftField(
   }
 }
 
-/** Get font size for a left-zone field based on its type */
-function getLeftFieldFontSize(field: string, settings: LabelSettings): number {
-  if (field === "series.code") return settings.seriesCodeSize;
-  if (field === "series.name") return settings.seriesNameSize;
-  return settings.seriesCollectionSize;
-}
 
 /** Get font style for a left-zone field */
 function getLeftFieldFontStyle(field: string): "bold" | "normal" {
