@@ -79,7 +79,7 @@ function buildExampleValues(data: ReturnType<typeof useExampleData>["data"]): Re
 
   return {
     "seat.code": v(data.seat?.code),
-    "seat.type": v(data.seat?.type),
+    "seat.type": v(data.seat?.seat_type),
     "seat.frame": v(data.seat?.frame),
     "seat.foamsList": "—",
     "seat.front": v(data.seat?.front),
