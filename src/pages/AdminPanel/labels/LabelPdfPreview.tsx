@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createDoc, addLabel, toBlob, type LabelSettings } from "@/utils/pdfHelpers";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -15,8 +15,7 @@ export default function LabelPdfPreview({
   width = 400,
   height = 120,
 }: LabelPdfPreviewProps) {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const prevUrlRef = useRef<string | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   const debouncedLines = useDebounce(lines, 300);
   const debouncedSettings = useDebounce(settings, 300);
@@ -29,14 +28,10 @@ export default function LabelPdfPreview({
       try {
         const doc = await createDoc("landscape", [100, 30]);
         addLabel(doc, debouncedLines, true, debouncedSettings);
-        const blob = toBlob(doc);
-        const url = URL.createObjectURL(blob);
+        // Use base64 data URL instead of blob URL for sandbox compatibility
+        const base64 = doc.output("datauristring");
         if (!cancelled) {
-          if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);
-          prevUrlRef.current = url;
-          setPdfUrl(url);
-        } else {
-          URL.revokeObjectURL(url);
+          setDataUrl(base64);
         }
       } catch (e) {
         console.error("LabelPdfPreview render error:", e);
@@ -49,13 +44,7 @@ export default function LabelPdfPreview({
     };
   }, [debouncedLines, debouncedSettings]);
 
-  useEffect(() => {
-    return () => {
-      if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);
-    };
-  }, []);
-
-  if (!pdfUrl) {
+  if (!dataUrl) {
     return (
       <div
         className="border rounded bg-muted/30 flex items-center justify-center"
@@ -67,8 +56,9 @@ export default function LabelPdfPreview({
   }
 
   return (
-    <iframe
-      src={pdfUrl}
+    <embed
+      src={dataUrl}
+      type="application/pdf"
       style={{
         width,
         height,
