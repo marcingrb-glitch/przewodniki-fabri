@@ -562,6 +562,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     side: {
       code: parsed.side.code,
       name: sideName,
+      modelName: (prop(sideProduct, "model_name", null) as string | undefined) || undefined,
       frame: sideFrame,
       finish: sideFinish,
       finishName: FINISHES[sideFinish] || sideFinish,

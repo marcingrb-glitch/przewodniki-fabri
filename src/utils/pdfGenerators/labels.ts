@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatFieldWithLabel } from "@/utils/fieldLabels";
 import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 
-function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string): string {
+function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: string, component: string): string {
   return leftZoneFields.map((field) => {
     switch (field) {
       case "series.code": return decoded.series.code || "";
       case "series.name": return decoded.series.name || "";
       case "series.collection": return decoded.series.collection || "";
+      case "component.model_name":
+        if (component === "side") return decoded.side.modelName || "";
+        return decoded.seat.modelName || "";
       case "product_type": return productType.toUpperCase();
       case "order_number": return decoded.orderNumber || "";
       default: return "";
@@ -116,7 +119,7 @@ function buildLabelLines(
   productType: string,
   settings: LabelSettings
 ): string[] {
-  const s = seriesLine(decoded, settings.leftZoneFields, productType);
+  const s = seriesLine(decoded, settings.leftZoneFields, productType, tpl.component);
   const header = settings.headerTemplate
     .replace("{TYPE}", productType.toUpperCase())
     .replace("{LABEL}", tpl.label_name)
@@ -168,7 +171,7 @@ export async function generateLabelsPDF(
 
   // Fallback if no templates found
   if (isFirst) {
-    const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType);
+    const fallbackSeries = seriesLine(decoded, settings.leftZoneFields, productType, "seat");
     const fallbackHeader = settings.headerTemplate
       .replace("{TYPE}", productType.toUpperCase())
       .replace("{LABEL}", "")
