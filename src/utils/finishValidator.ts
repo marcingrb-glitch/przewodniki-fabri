@@ -76,16 +76,16 @@ export async function validateFinishesFromDB(parsed: ParsedSKU): Promise<FinishV
   // Fetch all relevant data in parallel, filtering by series_id where applicable
   const [seatsRes, sidesRes, backrestsRes, pillowsRes] = await Promise.all([
     parsed.seat.rawSegment && seriesId
-      ? supabase.from("seats_sofa").select("code, allowed_finishes, default_finish").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("products").select("code, allowed_finishes, default_finish").eq("category", "seat").eq("code", seatCode).eq("series_id", seriesId).maybeSingle()
       : null,
     parsed.side.code && seriesId
-      ? supabase.from("sides").select("code, allowed_finishes, default_finish").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("products").select("code, allowed_finishes, default_finish").eq("category", "side").eq("code", parsed.side.code).eq("series_id", seriesId).maybeSingle()
       : null,
     parsed.backrest.code && seriesId
-      ? supabase.from("backrests").select("code, allowed_finishes, default_finish").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
+      ? supabase.from("products").select("code, allowed_finishes, default_finish").eq("category", "backrest").eq("code", parsed.backrest.code).eq("series_id", seriesId).maybeSingle()
       : null,
     parsed.pillow
-      ? supabase.from("pillows").select("code, allowed_finishes, default_finish").eq("code", parsed.pillow.code).maybeSingle()
+      ? supabase.from("products").select("code, allowed_finishes, default_finish").eq("category", "pillow").eq("code", parsed.pillow.code).eq("is_global", true).maybeSingle()
       : null,
   ]);
 
