@@ -1,0 +1,1 @@
+ALTER TABLE public.label_settings ADD COLUMN header_font_size numeric DEFAULT 6;
