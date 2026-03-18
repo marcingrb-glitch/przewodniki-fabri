@@ -23,6 +23,7 @@ export interface LabelSettingsData {
   series_collection_size: number;
   content_max_size: number;
   content_min_size: number;
+  header_font_size: number;
 }
 
 const DEFAULTS: Omit<LabelSettingsData, "id"> = {
@@ -34,6 +35,7 @@ const DEFAULTS: Omit<LabelSettingsData, "id"> = {
   series_collection_size: 7,
   content_max_size: 14,
   content_min_size: 7,
+  header_font_size: 6,
 };
 
 const AVAILABLE_LEFT_FIELDS = [
@@ -70,6 +72,7 @@ export function useLabelSettings() {
         series_collection_size: Number(data.series_collection_size) || DEFAULTS.series_collection_size,
         content_max_size: Number(data.content_max_size) || DEFAULTS.content_max_size,
         content_min_size: Number(data.content_min_size) || DEFAULTS.content_min_size,
+        header_font_size: Number((data as any).header_font_size) || DEFAULTS.header_font_size,
       } as LabelSettingsData;
     },
   });
@@ -88,6 +91,7 @@ export default function LabelSettings() {
     series_collection_size: 7,
     content_max_size: 14,
     content_min_size: 7,
+    header_font_size: 6,
   });
 
   useEffect(() => {
@@ -101,6 +105,7 @@ export default function LabelSettings() {
         series_collection_size: settings.series_collection_size,
         content_max_size: settings.content_max_size,
         content_min_size: settings.content_min_size,
+        header_font_size: settings.header_font_size,
       });
     }
   }, [settings]);
@@ -188,6 +193,7 @@ export default function LabelSettings() {
     seriesCollectionSize: localSizes.series_collection_size,
     contentMaxSize: localSizes.content_max_size,
     contentMinSize: localSizes.content_min_size,
+    headerFontSize: localSizes.header_font_size,
   }), [localSizes, localFields, localHeader]);
 
   if (isLoading) return null;
@@ -296,6 +302,7 @@ export default function LabelSettings() {
                 { key: "series_code_size", label: "Czcionka kodu serii (pt)" },
                 { key: "series_name_size", label: "Czcionka nazwy serii (pt)" },
                 { key: "series_collection_size", label: "Czcionka kolekcji (pt)" },
+                { key: "header_font_size", label: "Czcionka nagłówka (pt)" },
                 { key: "content_max_size", label: "Max czcionka treści (pt)" },
                 { key: "content_min_size", label: "Min czcionka treści (pt)" },
               ].map(({ key, label }) => (

@@ -218,6 +218,7 @@ export type Database = {
         Row: {
           content_max_size: number | null
           content_min_size: number | null
+          header_font_size: number | null
           header_template: string | null
           id: string
           left_zone_fields: Json | null
@@ -230,6 +231,7 @@ export type Database = {
         Insert: {
           content_max_size?: number | null
           content_min_size?: number | null
+          header_font_size?: number | null
           header_template?: string | null
           id?: string
           left_zone_fields?: Json | null
@@ -242,6 +244,7 @@ export type Database = {
         Update: {
           content_max_size?: number | null
           content_min_size?: number | null
+          header_font_size?: number | null
           header_template?: string | null
           id?: string
           left_zone_fields?: Json | null

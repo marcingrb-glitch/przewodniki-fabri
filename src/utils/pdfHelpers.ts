@@ -176,6 +176,7 @@ export interface LabelSettings {
   seriesCollectionSize: number;
   contentMaxSize: number;
   contentMinSize: number;
+  headerFontSize: number;
 }
 
 const DEFAULT_LABEL_SETTINGS: LabelSettings = {
@@ -187,6 +188,7 @@ const DEFAULT_LABEL_SETTINGS: LabelSettings = {
   seriesCollectionSize: 7,
   contentMaxSize: 14,
   contentMinSize: 7,
+  headerFontSize: 6,
 };
 
 /** Resolve a left-zone field value from label context */
@@ -287,7 +289,7 @@ export function addLabel(
   // --- Header line (first of mainLines) rendered smaller at top ---
   const headerLine = mainLines[0];
   const contentLines = mainLines.slice(1);
-  const headerFontSize = 6;
+  const headerFontSize = s.headerFontSize;
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(headerFontSize);
