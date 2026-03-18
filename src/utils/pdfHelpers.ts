@@ -176,6 +176,7 @@ export interface LabelSettings {
   seriesCollectionSize: number;
   contentMaxSize: number;
   contentMinSize: number;
+  headerFontSize: number;
 }
 
 const DEFAULT_LABEL_SETTINGS: LabelSettings = {
@@ -187,6 +188,7 @@ const DEFAULT_LABEL_SETTINGS: LabelSettings = {
   seriesCollectionSize: 7,
   contentMaxSize: 14,
   contentMinSize: 7,
+  headerFontSize: 6,
 };
 
 /** Resolve a left-zone field value from label context */
