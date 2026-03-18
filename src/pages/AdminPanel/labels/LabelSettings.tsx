@@ -302,6 +302,7 @@ export default function LabelSettings() {
                 { key: "series_code_size", label: "Czcionka kodu serii (pt)" },
                 { key: "series_name_size", label: "Czcionka nazwy serii (pt)" },
                 { key: "series_collection_size", label: "Czcionka kolekcji (pt)" },
+                { key: "header_font_size", label: "Czcionka nagłówka (pt)" },
                 { key: "content_max_size", label: "Max czcionka treści (pt)" },
                 { key: "content_min_size", label: "Min czcionka treści (pt)" },
               ].map(({ key, label }) => (
