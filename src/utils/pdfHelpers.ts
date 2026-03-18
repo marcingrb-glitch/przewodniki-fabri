@@ -171,24 +171,18 @@ export interface LabelSettings {
   leftZoneWidth: number;
   leftZoneFields: string[];
   headerTemplate: string;
-  seriesCodeSize: number;
-  seriesNameSize: number;
-  seriesCollectionSize: number;
+  leftZoneFontSize: number;
   contentMaxSize: number;
   contentMinSize: number;
-  headerFontSize: number;
 }
 
 const DEFAULT_LABEL_SETTINGS: LabelSettings = {
   leftZoneWidth: 16,
   leftZoneFields: ["series.code", "series.name", "series.collection"],
   headerTemplate: "{TYPE} | Zam: {ORDER}",
-  seriesCodeSize: 18,
-  seriesNameSize: 9,
-  seriesCollectionSize: 7,
+  leftZoneFontSize: 18,
   contentMaxSize: 14,
   contentMinSize: 7,
-  headerFontSize: 6,
 };
 
 /** Resolve a left-zone field value from label context */
