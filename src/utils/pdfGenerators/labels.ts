@@ -119,7 +119,7 @@ function buildLabelLines(
   productType: string,
   settings: LabelSettings
 ): string[] {
-  const s = seriesLine(decoded, settings.leftZoneFields, productType);
+  const s = seriesLine(decoded, settings.leftZoneFields, productType, tpl.component);
   const header = settings.headerTemplate
     .replace("{TYPE}", productType.toUpperCase())
     .replace("{LABEL}", tpl.label_name)
