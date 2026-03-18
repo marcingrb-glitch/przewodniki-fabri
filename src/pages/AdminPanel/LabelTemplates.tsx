@@ -359,11 +359,15 @@ export default function LabelTemplates() {
                 {selectedTemplateId && (() => {
                   const selected = filteredTemplates.find((t) => t.id === selectedTemplateId);
                   if (!selected) return null;
+                  const selectedSeriesCode = selectedSeries !== "all"
+                    ? seriesList.find(s => s.id === selectedSeries)?.code
+                    : undefined;
                   return (
                     <LabelConfigurator
                       template={selected}
                       onFieldsChange={(fields) => handleFieldsChange(selected.id, fields)}
                       onClose={() => setSelectedTemplateId(null)}
+                      previewSeriesCode={selectedSeriesCode}
                     />
                   );
                 })()}
