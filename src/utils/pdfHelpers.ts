@@ -248,7 +248,7 @@ export function addLabel(
 
     const field = s.leftZoneFields[fi];
     const fontStyle = getLeftFieldFontStyle(field);
-    let fontSize = getLeftFieldFontSize(field, s);
+    let fontSize = s.leftZoneFontSize;
 
     doc.setFont("Roboto", fontStyle);
     doc.setFontSize(fontSize);
