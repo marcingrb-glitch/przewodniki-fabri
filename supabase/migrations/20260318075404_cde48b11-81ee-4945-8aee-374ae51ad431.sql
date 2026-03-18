@@ -1,0 +1,1 @@
+UPDATE sku_segments SET is_optional = false WHERE segment_name = 'pillow';
