@@ -130,6 +130,9 @@ export default function LabelConfigurator({
         case "series.code": return decoded.series.code || "";
         case "series.name": return decoded.series.name || "";
         case "series.collection": return decoded.series.collection || "";
+        case "component.model_name":
+          if (template.component === "side") return decoded.side.modelName || "";
+          return decoded.seat.modelName || "";
         case "product_type": return template.product_type.toUpperCase();
         case "order_number": return decoded.orderNumber || "12345";
         default: return "";
