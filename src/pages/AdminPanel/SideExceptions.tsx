@@ -127,7 +127,7 @@ export default function SideExceptions() {
     ? allData
     : filter === "global"
       ? allData.filter((r) => r.is_global)
-      : allData.filter((r) => r.series_id === filter);
+      : allData.filter((r) => r.series_id === filter && !r.is_global);
 
   const [editingItem, setEditingItem] = useState<FlatException | null>(null);
   const [formOpen, setFormOpen] = useState(false);
