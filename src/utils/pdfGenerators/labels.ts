@@ -78,26 +78,20 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
     return {
       leftZoneWidth: 16,
       leftZoneFields: ["series.code", "series.name", "series.collection"],
-      headerTemplate: "{TYPE} | Zam: {ORDER}",
-      seriesCodeSize: 18,
-      seriesNameSize: 9,
-      seriesCollectionSize: 7,
+      headerTemplate: "{TYPE} | {LABEL} | {ORDER}",
+      leftZoneFontSize: 18,
       contentMaxSize: 14,
       contentMinSize: 7,
-      headerFontSize: 6,
     };
   }
 
-    return {
+  return {
     leftZoneWidth: Number(data.left_zone_width) || 16,
     leftZoneFields: (data.left_zone_fields as string[]) || ["series.code", "series.name", "series.collection"],
     headerTemplate: data.header_template || "{TYPE} | {LABEL} | {ORDER}",
-    seriesCodeSize: Number(data.series_code_size) || 18,
-    seriesNameSize: Number(data.series_name_size) || 9,
-    seriesCollectionSize: Number(data.series_collection_size) || 7,
+    leftZoneFontSize: Number(data.left_zone_font_size) || 18,
     contentMaxSize: Number(data.content_max_size) || 14,
     contentMinSize: Number(data.content_min_size) || 7,
-    headerFontSize: Number((data as any).header_font_size) || 6,
   };
 }
 
