@@ -105,6 +105,7 @@ export default function LabelSettings() {
         series_collection_size: settings.series_collection_size,
         content_max_size: settings.content_max_size,
         content_min_size: settings.content_min_size,
+        header_font_size: settings.header_font_size,
       });
     }
   }, [settings]);
