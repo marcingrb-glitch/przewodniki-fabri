@@ -72,6 +72,7 @@ export function useLabelSettings() {
         series_collection_size: Number(data.series_collection_size) || DEFAULTS.series_collection_size,
         content_max_size: Number(data.content_max_size) || DEFAULTS.content_max_size,
         content_min_size: Number(data.content_min_size) || DEFAULTS.content_min_size,
+        header_font_size: Number((data as any).header_font_size) || DEFAULTS.header_font_size,
       } as LabelSettingsData;
     },
   });
