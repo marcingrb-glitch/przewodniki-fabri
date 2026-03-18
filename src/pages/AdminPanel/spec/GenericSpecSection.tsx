@@ -392,11 +392,22 @@ export default function GenericSpecSection({ seriesProductId, category, config }
                   <tbody>
                     {products.map((product: any) => (
                       <tr key={product.id} className="border-b">
-                        <td className="p-3"><InlineEditCell value={product.code} onSave={(v) => updateField(product.id, "code", v)} /></td>
-                        <td className="p-3"><InlineEditCell value={product.name} onSave={(v) => updateField(product.id, "name", v)} /></td>
-                        <td className="p-3"><InlineEditCell value={product.frame} onSave={(v) => updateField(product.id, "frame", v)} /></td>
-                        <td className="p-3">{product.allowed_finishes?.join(", ") ?? "—"}</td>
-                        <td className="p-3">{product.default_finish ?? "—"}</td>
+                        {config.columns.map((col) => {
+                          const raw = col.source === "field"
+                            ? (product as any)[col.key]
+                            : (product as any)[col.key];
+                          const display = col.render ? col.render(raw) : (raw ?? "—");
+                          const editable = !col.render && col.key !== "allowed_finishes" && col.key !== "default_finish";
+                          return (
+                            <td key={col.key} className="p-3">
+                              {editable ? (
+                                <InlineEditCell value={raw} onSave={(v) => updateField(product.id, col.key, v)} />
+                              ) : (
+                                <span>{display}</span>
+                              )}
+                            </td>
+                          );
+                        })}
                         <td className="p-3">
                           <div className="flex gap-1">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditForm(product)}>
