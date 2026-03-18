@@ -20,15 +20,15 @@ interface FinishValidationOutput {
  */
 async function findSeatInDBForValidation(code: string, seriesId: string): Promise<string | null> {
   const { data: exact } = await supabase
-    .from("seats_sofa").select("code")
-    .eq("code", code).eq("series_id", seriesId).maybeSingle();
+    .from("products").select("code")
+    .eq("category", "seat").eq("code", code).eq("series_id", seriesId).maybeSingle();
   if (exact) return exact.code;
 
   const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
   if (withZero !== code) {
     const { data: padded } = await supabase
-      .from("seats_sofa").select("code")
-      .eq("code", withZero).eq("series_id", seriesId).maybeSingle();
+      .from("products").select("code")
+      .eq("category", "seat").eq("code", withZero).eq("series_id", seriesId).maybeSingle();
     if (padded) return padded.code;
   }
   return null;
