@@ -2,12 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createDoc, addLabel, type LabelSettings } from "@/utils/pdfHelpers";
 import { useDebounce } from "@/hooks/useDebounce";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
 // Configure pdf.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.mjs",
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface LabelPdfPreviewProps {
   lines: string[];
