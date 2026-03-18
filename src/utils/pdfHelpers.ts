@@ -171,24 +171,18 @@ export interface LabelSettings {
   leftZoneWidth: number;
   leftZoneFields: string[];
   headerTemplate: string;
-  seriesCodeSize: number;
-  seriesNameSize: number;
-  seriesCollectionSize: number;
+  leftZoneFontSize: number;
   contentMaxSize: number;
   contentMinSize: number;
-  headerFontSize: number;
 }
 
 const DEFAULT_LABEL_SETTINGS: LabelSettings = {
   leftZoneWidth: 16,
   leftZoneFields: ["series.code", "series.name", "series.collection"],
   headerTemplate: "{TYPE} | Zam: {ORDER}",
-  seriesCodeSize: 18,
-  seriesNameSize: 9,
-  seriesCollectionSize: 7,
+  leftZoneFontSize: 18,
   contentMaxSize: 14,
   contentMinSize: 7,
-  headerFontSize: 6,
 };
 
 /** Resolve a left-zone field value from label context */
@@ -210,12 +204,6 @@ function resolveLeftField(
   }
 }
 
-/** Get font size for a left-zone field based on its type */
-function getLeftFieldFontSize(field: string, settings: LabelSettings): number {
-  if (field === "series.code") return settings.seriesCodeSize;
-  if (field === "series.name") return settings.seriesNameSize;
-  return settings.seriesCollectionSize;
-}
 
 /** Get font style for a left-zone field */
 function getLeftFieldFontStyle(field: string): "bold" | "normal" {
@@ -260,7 +248,7 @@ export function addLabel(
 
     const field = s.leftZoneFields[fi];
     const fontStyle = getLeftFieldFontStyle(field);
-    let fontSize = getLeftFieldFontSize(field, s);
+    let fontSize = s.leftZoneFontSize;
 
     doc.setFont("Roboto", fontStyle);
     doc.setFontSize(fontSize);
@@ -289,7 +277,7 @@ export function addLabel(
   // --- Header line (first of mainLines) rendered smaller at top ---
   const headerLine = mainLines[0];
   const contentLines = mainLines.slice(1);
-  const headerFontSize = s.headerFontSize;
+  const headerFontSize = 6;
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(headerFontSize);
