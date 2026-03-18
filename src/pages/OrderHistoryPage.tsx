@@ -83,7 +83,7 @@ const OrderHistoryPage = () => {
   const { data: seriesList = [] } = useQuery({
     queryKey: ["series-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("series").select("code, name").order("code");
+      const { data, error } = await supabase.from("products").select("code, name").eq("category", "series").eq("active", true).order("code");
       if (error) throw error;
       return data || [];
     },

@@ -3,8 +3,9 @@ import { DecodedSKU } from "@/types";
 
 export async function resolveSeriesId(seriesCode: string): Promise<string | null> {
   const { data } = await supabase
-    .from("series")
+    .from("products")
     .select("id")
+    .eq("category", "series")
     .eq("code", seriesCode)
     .maybeSingle();
   return data?.id ?? null;

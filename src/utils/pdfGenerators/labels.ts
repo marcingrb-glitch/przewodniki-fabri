@@ -35,8 +35,9 @@ async function fetchTemplates(
   let seriesId: string | null = null;
   if (seriesCode) {
     const { data: series } = await supabase
-      .from("series")
+      .from("products")
       .select("id")
+      .eq("category", "series")
       .eq("code", seriesCode)
       .maybeSingle();
     seriesId = series?.id ?? null;

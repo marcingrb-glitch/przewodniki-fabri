@@ -26,8 +26,9 @@ interface GuideSection {
 async function fetchSections(productType: string, seriesCode: string): Promise<GuideSection[]> {
   // Get series_id from code
   const { data: seriesData } = await supabase
-    .from("series")
+    .from("products")
     .select("id")
+    .eq("category", "series")
     .eq("code", seriesCode)
     .maybeSingle();
 
