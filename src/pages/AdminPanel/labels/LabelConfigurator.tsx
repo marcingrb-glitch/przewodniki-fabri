@@ -136,7 +136,11 @@ export default function LabelConfigurator({
     });
     const seriesLine = seriesParts.join("|");
 
-    const header = settings.headerTemplate
+    const headerTemplate = settings.headerTemplate?.trim()
+      ? settings.headerTemplate
+      : "{TYPE} | {LABEL} | {ORDER}";
+
+    const header = headerTemplate
       .replace("{TYPE}", template.product_type.toUpperCase())
       .replace("{LABEL}", template.label_name)
       .replace("{ORDER}", decoded.orderNumber || "12345");
