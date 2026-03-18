@@ -273,57 +273,38 @@ function SkuVisualizer({
 
   return (
     <div className="overflow-x-auto">
-      <div className="inline-flex flex-col items-start gap-1 py-2">
-        <div className="flex items-center gap-0">
-          {matched.map((m, i) => (
-            <div key={i} className="flex items-center">
-              {i > 0 && (
-                <span className="text-muted-foreground mx-0.5 font-mono">
-                  -
-                </span>
-              )}
+      <div className="inline-flex items-start gap-1">
+        {matched.map((m, i) => (
+          <div key={i} className="flex items-center">
+            {i > 0 && (
+              <span className="text-muted-foreground font-mono text-lg mx-0.5 self-start mt-1">-</span>
+            )}
+            <div className="flex flex-col items-center">
               <span
-                className={`font-mono text-lg font-bold px-1.5 py-0.5 rounded ${
+                className={`font-mono text-base font-bold px-2 py-1 rounded ${
                   m.segment
                     ? m.segment.is_optional
-                      ? "bg-muted/50 text-muted-foreground"
+                      ? "bg-muted text-muted-foreground"
                       : "bg-primary/10 text-primary"
                     : "bg-destructive/10 text-destructive"
                 }`}
               >
                 {m.part}
               </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-start gap-0">
-          {matched.map((m, i) => (
-            <div key={i} className="flex items-start">
-              {i > 0 && (
-                <span className="mx-0.5 w-[7px]">{/* spacer for dash */}</span>
-              )}
-              <div
-                className="flex flex-col items-center px-1.5"
-                style={{ minWidth: `${m.part.length * 0.6 + 0.8}em` }}
+              <span
+                className={`text-[11px] mt-1.5 whitespace-nowrap ${
+                  m.segment?.is_optional
+                    ? "text-muted-foreground italic"
+                    : "text-muted-foreground font-medium"
+                }`}
               >
-                <span className="text-muted-foreground text-xs">│</span>
-                <span
-                  className={`text-xs whitespace-nowrap ${
-                    m.segment?.is_optional
-                      ? "text-muted-foreground italic"
-                      : "text-foreground font-medium"
-                  }`}
-                >
-                  {m.segment
-                    ? SEGMENT_LABELS[m.segment.segment_name] ??
-                      m.segment.segment_name
-                    : "?"}
-                </span>
-              </div>
+                {m.segment
+                  ? SEGMENT_LABELS[m.segment.segment_name] ?? m.segment.segment_name
+                  : "?"}
+              </span>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
