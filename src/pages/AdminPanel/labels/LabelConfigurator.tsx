@@ -37,12 +37,9 @@ function toLabelSettings(db: LabelSettingsData): LabelSettingsType {
     leftZoneWidth: db.left_zone_width,
     leftZoneFields: db.left_zone_fields,
     headerTemplate: db.header_template,
-    seriesCodeSize: db.series_code_size,
-    seriesNameSize: db.series_name_size,
-    seriesCollectionSize: db.series_collection_size,
+    leftZoneFontSize: db.left_zone_font_size,
     contentMaxSize: db.content_max_size,
     contentMinSize: db.content_min_size,
-    headerFontSize: db.header_font_size,
   };
 }
 

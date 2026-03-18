@@ -277,7 +277,7 @@ export function addLabel(
   // --- Header line (first of mainLines) rendered smaller at top ---
   const headerLine = mainLines[0];
   const contentLines = mainLines.slice(1);
-  const headerFontSize = s.headerFontSize;
+  const headerFontSize = 6;
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(headerFontSize);

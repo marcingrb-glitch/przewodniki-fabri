@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -10,32 +10,24 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ArrowUp, ArrowDown, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
-import LabelPdfPreview from "./LabelPdfPreview";
-import type { LabelSettings as LabelSettingsType } from "@/utils/pdfHelpers";
 
 export interface LabelSettingsData {
   id: string;
   left_zone_fields: string[];
   header_template: string;
   left_zone_width: number;
-  series_code_size: number;
-  series_name_size: number;
-  series_collection_size: number;
+  left_zone_font_size: number;
   content_max_size: number;
   content_min_size: number;
-  header_font_size: number;
 }
 
 const DEFAULTS: Omit<LabelSettingsData, "id"> = {
   left_zone_fields: ["series.code", "series.name", "series.collection"],
   header_template: "{TYPE} | {LABEL} | {ORDER}",
   left_zone_width: 16,
-  series_code_size: 18,
-  series_name_size: 9,
-  series_collection_size: 7,
+  left_zone_font_size: 18,
   content_max_size: 14,
   content_min_size: 7,
-  header_font_size: 6,
 };
 
 const AVAILABLE_LEFT_FIELDS = [
@@ -68,12 +60,9 @@ export function useLabelSettings() {
             ? data.header_template
             : DEFAULTS.header_template,
         left_zone_width: Number(data.left_zone_width) || DEFAULTS.left_zone_width,
-        series_code_size: Number(data.series_code_size) || DEFAULTS.series_code_size,
-        series_name_size: Number(data.series_name_size) || DEFAULTS.series_name_size,
-        series_collection_size: Number(data.series_collection_size) || DEFAULTS.series_collection_size,
+        left_zone_font_size: Number(data.left_zone_font_size) || DEFAULTS.left_zone_font_size,
         content_max_size: Number(data.content_max_size) || DEFAULTS.content_max_size,
         content_min_size: Number(data.content_min_size) || DEFAULTS.content_min_size,
-        header_font_size: Number((data as any).header_font_size) || DEFAULTS.header_font_size,
       } as LabelSettingsData;
     },
   });
@@ -87,12 +76,9 @@ export default function LabelSettings() {
   const [localHeader, setLocalHeader] = useState("");
   const [localSizes, setLocalSizes] = useState({
     left_zone_width: 16,
-    series_code_size: 18,
-    series_name_size: 9,
-    series_collection_size: 7,
+    left_zone_font_size: 18,
     content_max_size: 14,
     content_min_size: 7,
-    header_font_size: 6,
   });
 
   useEffect(() => {
@@ -101,12 +87,9 @@ export default function LabelSettings() {
       setLocalHeader(settings.header_template);
       setLocalSizes({
         left_zone_width: settings.left_zone_width,
-        series_code_size: settings.series_code_size,
-        series_name_size: settings.series_name_size,
-        series_collection_size: settings.series_collection_size,
+        left_zone_font_size: settings.left_zone_font_size,
         content_max_size: settings.content_max_size,
         content_min_size: settings.content_min_size,
-        header_font_size: settings.header_font_size,
       });
     }
   }, [settings]);
@@ -170,32 +153,6 @@ export default function LabelSettings() {
     const num = parseFloat(value) || 0;
     setLocalSizes((prev) => ({ ...prev, [key]: num }));
   };
-
-  // PDF Preview lines (hardcoded example)
-  const previewPdfLines = useMemo(() => {
-    const seriesParts = localFields.map((f) => {
-      const def = AVAILABLE_LEFT_FIELDS.find((a) => a.value === f);
-      return def?.example || "";
-    });
-    const seriesLine = seriesParts.join("|");
-    const header = localHeader
-      .replace("{TYPE}", "SOFA")
-      .replace("{LABEL}", "Siedzisko")
-      .replace("{ORDER}", "12345");
-    return [seriesLine, header, "Siedzisko: SD02NA | Typ: Wciąg"];
-  }, [localFields, localHeader]);
-
-  const previewSettings: LabelSettingsType = useMemo(() => ({
-    leftZoneWidth: localSizes.left_zone_width,
-    leftZoneFields: localFields,
-    headerTemplate: localHeader,
-    seriesCodeSize: localSizes.series_code_size,
-    seriesNameSize: localSizes.series_name_size,
-    seriesCollectionSize: localSizes.series_collection_size,
-    contentMaxSize: localSizes.content_max_size,
-    contentMinSize: localSizes.content_min_size,
-    headerFontSize: localSizes.header_font_size,
-  }), [localSizes, localFields, localHeader]);
 
   if (isLoading) return null;
 
@@ -300,10 +257,7 @@ export default function LabelSettings() {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { key: "left_zone_width", label: "Szer. lewej strefy (mm)" },
-                { key: "series_code_size", label: "Czcionka kodu serii (pt)" },
-                { key: "series_name_size", label: "Czcionka nazwy serii (pt)" },
-                { key: "series_collection_size", label: "Czcionka kolekcji (pt)" },
-                { key: "header_font_size", label: "Czcionka nagłówka (pt)" },
+                { key: "left_zone_font_size", label: "Max czcionka lewej strefy (pt)" },
                 { key: "content_max_size", label: "Max czcionka treści (pt)" },
                 { key: "content_min_size", label: "Min czcionka treści (pt)" },
               ].map(({ key, label }) => (
@@ -322,19 +276,6 @@ export default function LabelSettings() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* PDF Preview */}
-        <div>
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">
-            Podgląd
-          </Label>
-          <LabelPdfPreview
-            lines={previewPdfLines}
-            settings={previewSettings}
-            width={500}
-            height={150}
-          />
         </div>
       </CollapsibleContent>
     </Collapsible>
