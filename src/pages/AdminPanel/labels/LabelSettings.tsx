@@ -193,6 +193,7 @@ export default function LabelSettings() {
     seriesCollectionSize: localSizes.series_collection_size,
     contentMaxSize: localSizes.content_max_size,
     contentMinSize: localSizes.content_min_size,
+    headerFontSize: localSizes.header_font_size,
   }), [localSizes, localFields, localHeader]);
 
   if (isLoading) return null;
