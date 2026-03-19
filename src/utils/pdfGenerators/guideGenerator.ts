@@ -141,7 +141,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       f.name?.toLowerCase().includes("pasek") || f.name?.toLowerCase().includes("strip")
     );
     if (!hasMidStripFoam) {
-      seatFoamRows.push(["Pasek środkowy", "-", "-", "1"]);
+      seatFoamRows.push(["Pasek środkowy", "1.5×19×50", "T-21-25", "1"]);
     }
   }
   if (seatFoamRows.length > 0) {
