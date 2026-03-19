@@ -32,13 +32,11 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
     const legH = Number((c.properties as any)?.leg_height_cm ?? 0);
     const legCount = Number((c.properties as any)?.leg_count ?? 4);
     if (legH > 2.5) {
-      // Nóżki z SKU — kompletujemy
       doRows.push({
         element: "Pod skrzynią", detail: `${c.code} (${c.name})`,
         type: "N z SKU", height: `H${legH}cm`, count: `${legCount}szt`
       });
     } else if (legH > 0) {
-      // Nóżki plastikowe N4 (≤2.5cm) — tapicer montuje
       dontRows.push({
         element: "Pod skrzynią", detail: `${c.code} (${c.name})`,
         type: "N4 plastikowe", height: `${legH}cm`, count: `${legCount}szt`,
@@ -53,21 +51,21 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
     }
   }
 
-  // Automats
+  // Automats — use code label instead of name
   for (const rel of automatConfigs) {
     const props = rel.properties as any;
     const aCode = props?.automat_code ?? "";
-    const aName = automatNameMap[aCode] ?? data.globalProducts.find(p => p.id === rel.target_product_id)?.name ?? "";
+    const label = aCode || "?";
     if (!props?.has_seat_legs) {
-      dontRows.push({ element: "Pod siedziskiem", detail: `${aCode} (${aName})`, type: "BRAK", height: "—", count: "—", reason: "brak nóżek pod siedziskiem" });
+      dontRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "BRAK", height: "—", count: "—", reason: "brak nóżek pod siedziskiem" });
     } else if (seatLegType === "from_sku") {
-      doRows.push({ element: "Pod siedziskiem", detail: `${aCode} (${aName})`, type: "N z SKU", height: `H${props?.seat_leg_height_cm ?? seatLegH ?? "?"}cm`, count: `${props?.seat_leg_count ?? 2}szt` });
+      doRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "N z SKU", height: `H${props?.seat_leg_height_cm ?? seatLegH ?? "?"}cm`, count: `${props?.seat_leg_count ?? 2}szt` });
     } else {
-      dontRows.push({ element: "Pod siedziskiem", detail: `${aCode} (${aName})`, type: "N4 plastikowe", height: "2.5cm", count: `${props?.seat_leg_count ?? 2}szt`, reason: "tapicer ma na stanowisku" });
+      dontRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "N4 plastikowe", height: "2.5cm", count: `${props?.seat_leg_count ?? 2}szt`, reason: "tapicer ma na stanowisku" });
     }
   }
 
-  // Pufa (only if series has PF or PFO extras)
+  // Pufa
   const extras = data.getByCategory("extra");
   const hasPufa = extras.some(e => e.code === "PF" || e.code === "PFO");
   const hasFotel = extras.some(e => e.code === "FT");
@@ -81,17 +79,39 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
     }
   }
 
-  // Fotel (only if series has FT extra)
+  // Fotel
   if (hasFotel) {
     const fotelLegH = config.fotel_leg_height_cm ?? 15;
     const fotelLegCount = config.fotel_leg_count ?? 4;
     doRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: `H${fotelLegH}cm`, count: `${fotelLegCount}szt` });
   }
 
+  // Check if ALL legs are plastic (S2 case)
+  const allPlastic = doRows.length === 0 && dontRows.length > 0 && dontRows.every(r => r.type.includes("plastikowe") || r.type === "BRAK");
+
+  if (allPlastic) {
+    // Find the plastic leg code/height from first plastic row
+    const plasticRow = dontRows.find(r => r.type.includes("plastikowe"));
+    const plasticType = plasticRow?.type ?? "N4 plastikowe";
+    const plasticHeight = plasticRow?.height ?? "2.5cm";
+
+    return (
+      <div className="border-2 border-foreground rounded-lg p-6">
+        <h3 className="text-xl font-bold mb-2">NÓŻKI — NIE KOMPLETOWAĆ</h3>
+        <p className="text-base">
+          Wszystkie nóżki w tej serii to <strong>{plasticType} {plasticHeight}</strong>.
+        </p>
+        <p className="text-base mt-2">
+          Tapicer montuje na stanowisku. <strong>Nie kompletować.</strong>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-bold mb-3 text-green-700 dark:text-green-400">🟢 CO KOMPLETOWAĆ</h3>
+        <h3 className="text-xl font-bold mb-3">🟢 CO KOMPLETOWAĆ</h3>
         {doRows.length === 0 ? (
           <p className="text-muted-foreground py-2">Brak elementów do kompletacji.</p>
         ) : (
@@ -105,17 +125,18 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
         )}
       </div>
 
-      <div className="border-4 border-red-600 rounded-lg p-4 bg-red-50 dark:bg-red-950/30">
-        <h3 className="text-2xl font-black mb-3 text-red-700 dark:text-red-400">🔴 CZEGO NIE KOMPLETOWAĆ!</h3>
-        <div className="space-y-2 text-lg font-bold">
-          <p className="warning underline text-xl">❌ Nóżki plastikowe 2.5cm — NIGDY nie kompletować!</p>
-          {dontRows.map((r, i) => (
-            <p key={i}>
-              ❌ {r.element}{r.detail ? ` ${r.detail}` : ""}: {r.type}{r.height !== "—" ? `, ${r.height}` : ""}{r.count !== "—" ? `, ${r.count}` : ""} — {r.reason}
-            </p>
-          ))}
+      {dontRows.length > 0 && (
+        <div className="border-4 border-foreground rounded-lg p-4">
+          <h3 className="text-2xl font-black mb-3">🔴 CZEGO NIE KOMPLETOWAĆ!</h3>
+          <div className="space-y-2 text-lg font-bold">
+            {dontRows.map((r, i) => (
+              <p key={i}>
+                ❌ {r.element}{r.detail ? ` ${r.detail}` : ""}: {r.type}{r.height !== "—" ? `, ${r.height}` : ""}{r.count !== "—" ? `, ${r.count}` : ""} — {r.reason}
+              </p>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
