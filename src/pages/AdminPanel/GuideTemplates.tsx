@@ -337,10 +337,13 @@ export default function GuideTemplates() {
       <Card className="mt-4">
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            📄 Podgląd przewodnika ({activeTab.toUpperCase()})
+            📄 Podgląd przewodnika (sofa + pufa + fotel)
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            ℹ️ Przewodnik ma stały layout (hardcoded). Powyższe sekcje konfigurują dekodowanie, nie przewodnik.
+          </p>
           <div className="flex gap-2 items-center">
             <Label className="text-xs whitespace-nowrap">SKU:</Label>
             <Input
@@ -356,7 +359,6 @@ export default function GuideTemplates() {
           )}
           <GuidePdfPreview
             decoded={decoded}
-            productType={activeTab as "sofa" | "pufa" | "fotel"}
             width={550}
           />
         </CardContent>
