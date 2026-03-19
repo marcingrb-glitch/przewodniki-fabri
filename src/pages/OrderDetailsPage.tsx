@@ -86,6 +86,7 @@ const OrderDetailsPage = () => {
         .eq("id", order.id);
       if (error) throw error;
       toast.success("✅ Zużycie tkaniny zapisane");
+      setSavedFabricUsage(fabricUsage);
     } catch (err: any) {
       toast.error(`❌ Błąd zapisu: ${err.message}`);
     } finally {
