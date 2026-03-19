@@ -73,16 +73,19 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
   const hasFotel = extras.some(e => e.code === "FT");
 
   if (hasPufa) {
+    const pufaLegCount = config.pufa_leg_count ?? 4;
     if (pufaLegType === "from_sku") {
-      doRows.push({ element: "Pufa", detail: "", type: "N z SKU", height: `H${pufaLegH ?? "?"}cm`, count: "4szt" });
+      doRows.push({ element: "Pufa", detail: "", type: "N z SKU", height: `H${pufaLegH ?? "?"}cm`, count: `${pufaLegCount}szt` });
     } else {
-      dontRows.push({ element: "Pufa", detail: "", type: "N4 plastikowe", height: "2.5cm", count: "4szt", reason: "tapicer ma na stanowisku" });
+      dontRows.push({ element: "Pufa", detail: "", type: "N4 plastikowe", height: "2.5cm", count: `${pufaLegCount}szt`, reason: "tapicer ma na stanowisku" });
     }
   }
 
   // Fotel (only if series has FT extra)
   if (hasFotel) {
-    doRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: `H${seatLegH ?? pufaLegH ?? "?"}cm`, count: "4szt" });
+    const fotelLegH = config.fotel_leg_height_cm ?? 15;
+    const fotelLegCount = config.fotel_leg_count ?? 4;
+    doRows.push({ element: "Fotel", detail: "", type: "N z SKU", height: `H${fotelLegH}cm`, count: `${fotelLegCount}szt` });
   }
 
   return (

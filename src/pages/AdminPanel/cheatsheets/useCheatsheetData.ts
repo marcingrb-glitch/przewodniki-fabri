@@ -60,6 +60,8 @@ export function useCheatsheetData(seriesProductId: string, workstationCode: stri
       pufa_leg_count: props.pufa_leg_count ?? null,
       seat_leg_type: props.seat_leg_type ?? null,
       seat_leg_height_cm: props.seat_leg_height_cm ?? null,
+      fotel_leg_height_cm: props.fotel_leg_height_cm ?? null,
+      fotel_leg_count: props.fotel_leg_count ?? null,
       notes: props.notes ?? null,
     } as SeriesConfig & { product_id?: string };
   })();
