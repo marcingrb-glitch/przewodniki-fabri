@@ -231,6 +231,12 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
           </div>
         </section>
       )}
+
+      {/* 5. Chests table */}
+      <ChestsSection data={data} />
+
+      {/* 6. Automats table */}
+      <AutomatsSection data={data} />
     </div>
   );
 }
