@@ -307,18 +307,28 @@ export async function generateProductionGuidePDF(
   const legColor = decoded.legs?.colorName || "";
   const legLabel = [legName, legColor].filter(Boolean).join(" ");
 
-  const chestLegInfo = decoded.legHeights.sofa_chest
-    ? `${legLabel} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
-    : "BRAK";
-  const seatLegInfo = decoded.legHeights.sofa_seat
-    ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`
-    : "BRAK (AT2)";
+  const chestLegHeader = decoded.legHeights.sofa_chest
+    ? `Pod skrzynię (${decoded.legHeights.sofa_chest.count} szt)`
+    : "Pod skrzynię";
+  const chestLegValue = decoded.legHeights.sofa_chest
+    ? `${legLabel} H ${decoded.legHeights.sofa_chest.height}cm`
+    : "-";
+
+  const seatLegHeader = decoded.legHeights.sofa_seat
+    ? `Pod siedzisko (${decoded.legHeights.sofa_seat.count} szt)`
+    : null;
+  const seatLegValue = decoded.legHeights.sofa_seat
+    ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm`
+    : null;
+
+  const legHeaders = seatLegHeader ? [chestLegHeader, seatLegHeader] : [chestLegHeader];
+  const legRow = seatLegValue ? [chestLegValue, seatLegValue] : [chestLegValue];
 
   yR = renderSectionAt(doc, {
     title: "NÓŻKI",
     code: decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : undefined,
-    headers: ["Pod skrzynię", "Pod siedzisko"],
-    rows: [[chestLegInfo, seatLegInfo]],
+    headers: legHeaders,
+    rows: [legRow],
   }, colRightX, yR, colW, fs, rh, sp);
 
   // ── Full-width sections ──
