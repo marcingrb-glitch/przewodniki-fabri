@@ -493,6 +493,7 @@ const OrderHistoryPage = () => {
                       <TableHead>Data</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead>Seria</TableHead>
+                      <TableHead className="w-[120px]">Tkanina (mb)</TableHead>
                       {isAdmin && <TableHead className="text-center">Widoczność</TableHead>}
                       <TableHead className="text-right">Akcje</TableHead>
                     </TableRow>
