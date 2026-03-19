@@ -113,6 +113,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">Poz.</TableHead>
+              <TableHead className="w-[90px]">Rola</TableHead>
               <TableHead>Nazwa</TableHead>
               <TableHead className="w-[70px]">Wys.</TableHead>
               <TableHead className="w-[70px]">Szer.</TableHead>
