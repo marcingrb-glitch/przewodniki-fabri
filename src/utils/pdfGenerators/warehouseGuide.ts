@@ -173,8 +173,8 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
   sections.push({
     title: "BOCZEK",
     tables: [{
-      headers: ["Kod", "Stelaż"],
-      rows: [[decoded.side.code, decoded.side.frame || "-"]],
+      headers: ["Kod", "Stelaż", "Piankowanie"],
+      rows: [[decoded.side.code, decoded.side.frame || "-", decoded.side.name || "-"]],
     }],
   });
 

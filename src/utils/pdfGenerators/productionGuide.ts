@@ -266,7 +266,7 @@ export async function generateProductionGuidePDF(
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
     headers: ["Nazwa", "Kolor"],
-    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+    rows: [[decoded.fabric.name, decoded.fabric.colorName || decoded.fabric.color]],
   }, colLeftX, yL, colW, fs, rh, sp);
   yL += sectionGap;
 
@@ -282,7 +282,7 @@ export async function generateProductionGuidePDF(
     title: "OPARCIE",
     code: `${decoded.backrest.code}${decoded.backrest.finish}`,
     headers: ["Wykończenie", "Wariant szycia"],
-    rows: [[decoded.backrest.finishName, decoded.backrest.springType || "-"]],
+    rows: [[decoded.backrest.finishName, decoded.backrest.top || "-"]],
   }, colLeftX, yL, colW, fs, rh, sp);
 
   // RIGHT COLUMN
@@ -303,11 +303,15 @@ export async function generateProductionGuidePDF(
   }, colRightX, yR, colW, fs, rh, sp);
   yR += sectionGap;
 
+  const legName = decoded.legs?.name || "";
+  const legColor = decoded.legs?.colorName || "";
+  const legLabel = [legName, legColor].filter(Boolean).join(" ");
+
   const chestLegInfo = decoded.legHeights.sofa_chest
-    ? `${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
+    ? `${legLabel} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
     : "BRAK";
   const seatLegInfo = decoded.legHeights.sofa_seat
-    ? `${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`
+    ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`
     : "BRAK (AT2)";
 
   yR = renderSectionAt(doc, {
@@ -381,7 +385,7 @@ export async function generatePufaProductionGuidePDF(decoded: DecodedSKU): Promi
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
     headers: ["Nazwa", "Kolor"],
-    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+    rows: [[decoded.fabric.name, decoded.fabric.colorName || decoded.fabric.color]],
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
@@ -399,7 +403,7 @@ export async function generatePufaProductionGuidePDF(decoded: DecodedSKU): Promi
       code: decoded.pufaLegs.code,
       headers: ["Nazwa", "Wysokość", "Ilość"],
       rows: [[
-        decoded.legs?.name || decoded.pufaLegs.code,
+        [decoded.legs?.name || decoded.pufaLegs.code, decoded.legs?.colorName || ""].filter(Boolean).join(" "),
         `${decoded.pufaLegs.height}cm`,
         `${decoded.pufaLegs.count} szt`,
       ]],
@@ -431,7 +435,7 @@ export async function generateFotelProductionGuidePDF(decoded: DecodedSKU): Prom
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
     headers: ["Nazwa", "Kolor"],
-    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+    rows: [[decoded.fabric.name, decoded.fabric.colorName || decoded.fabric.color]],
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
@@ -467,7 +471,7 @@ export async function generateFotelProductionGuidePDF(decoded: DecodedSKU): Prom
       code: decoded.fotelLegs.code,
       headers: ["Nazwa", "Wysokość", "Ilość"],
       rows: [[
-        decoded.legs?.name || decoded.fotelLegs.code,
+        [decoded.legs?.name || decoded.fotelLegs.code, decoded.legs?.colorName || ""].filter(Boolean).join(" "),
         `${decoded.fotelLegs.height}cm`,
         `${decoded.fotelLegs.count} szt`,
       ]],
