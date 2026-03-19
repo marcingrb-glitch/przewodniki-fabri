@@ -61,7 +61,7 @@ function computeShowPiankiCol(
     if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
       displayBase = displayBase.slice(1);
     }
-    return displayBase.length > 0 || isDzielone;
+    return displayBase.length > 0;
   });
 }
 
