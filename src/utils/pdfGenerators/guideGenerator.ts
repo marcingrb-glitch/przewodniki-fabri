@@ -253,7 +253,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     }
     // Sub-table label spacing (for foam tables within a section)
     if (section.tables.length > 1) {
-      totalContentHeight += 3 * (section.tables.length - 1); // small gap between sub-tables
+      totalContentHeight += 6 * (section.tables.length - 1); // small gap between sub-tables
     }
   }
 
