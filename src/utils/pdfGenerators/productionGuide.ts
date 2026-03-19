@@ -201,7 +201,7 @@ async function drawVariantImage(
 
 // ─── Section header renderer ────────────────────────────────────────
 function drawSectionHeader(doc: any, x: number, y: number, title: string, code?: string): number {
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("Roboto", "bold");
   doc.setTextColor(0, 0, 0);
   let text = title.toUpperCase();
