@@ -92,62 +92,51 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
   // Check if ALL legs are plastic (S2 case)
   const allPlastic = doRows.length === 0 && dontRows.length > 0 && dontRows.every(r => r.type.includes("plastikowe") || r.type === "BRAK");
 
-  if (allPlastic) {
-    // Find the plastic leg code/height from first plastic row
-    const plasticRow = dontRows.find(r => r.type.includes("plastikowe"));
-    const plasticType = plasticRow?.type ?? "N4 plastikowe";
-    const plasticHeight = plasticRow?.height ?? "2.5cm";
-
-    return (
-      <div className="border-2 border-foreground rounded-lg p-6">
-        <h3 className="text-xl font-bold mb-2">NÓŻKI — NIE KOMPLETOWAĆ</h3>
-        <p className="text-base">
-          Wszystkie nóżki w tej serii to <strong>{plasticType} {plasticHeight}</strong>.
-        </p>
-        <p className="text-base mt-2">
-          Tapicer montuje na stanowisku. <strong>Nie kompletować.</strong>
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-xl font-bold mb-3">🟢 CO KOMPLETOWAĆ</h3>
-        {doRows.length === 0 ? (
-          <p className="text-muted-foreground py-2">Brak elementów do kompletacji.</p>
-        ) : (
-          <div className="space-y-2 text-sm">
-            {doRows.map((r, i) => (
-              <div key={i} className="border border-border p-2 rounded">
-                <strong>{r.element}{r.detail ? ` ${r.detail}` : ""}:</strong> {r.type}, {r.height}, {r.count}{r.reason ? ` — ${r.reason}` : ""}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {dontRows.length > 0 && (
-        <div className="border-4 border-foreground rounded-lg p-4">
-          <h3 className="text-2xl font-black mb-3">🔴 CZEGO NIE KOMPLETOWAĆ!</h3>
-          <div className="space-y-2 text-lg font-bold">
-            {dontRows.map((r, i) => (
-              <p key={i}>
-                ❌ {r.element}{r.detail ? ` ${r.detail}` : ""}: {r.type}{r.height !== "—" ? `, ${r.height}` : ""}{r.count !== "—" ? `, ${r.count}` : ""} — {r.reason}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
   const legs = data.getByCategory("leg").filter(p => p.is_global);
 
   return (
     <div className="space-y-6">
-      {mainContent}
+      {allPlastic ? (
+        <div className="border-2 border-foreground rounded-lg p-6">
+          <h3 className="text-xl font-bold mb-2">NÓŻKI — NIE KOMPLETOWAĆ</h3>
+          <p className="text-base">
+            Wszystkie nóżki w tej serii to <strong>{dontRows.find(r => r.type.includes("plastikowe"))?.type ?? "N4 plastikowe"} {dontRows.find(r => r.type.includes("plastikowe"))?.height ?? "2.5cm"}</strong>.
+          </p>
+          <p className="text-base mt-2">
+            Tapicer montuje na stanowisku. <strong>Nie kompletować.</strong>
+          </p>
+        </div>
+      ) : (
+        <>
+          <div>
+            <h3 className="text-xl font-bold mb-3">🟢 CO KOMPLETOWAĆ</h3>
+            {doRows.length === 0 ? (
+              <p className="text-muted-foreground py-2">Brak elementów do kompletacji.</p>
+            ) : (
+              <div className="space-y-2 text-sm">
+                {doRows.map((r, i) => (
+                  <div key={i} className="border border-border p-2 rounded">
+                    <strong>{r.element}{r.detail ? ` ${r.detail}` : ""}:</strong> {r.type}, {r.height}, {r.count}{r.reason ? ` — ${r.reason}` : ""}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {dontRows.length > 0 && (
+            <div className="border-4 border-foreground rounded-lg p-4">
+              <h3 className="text-2xl font-black mb-3">🔴 CZEGO NIE KOMPLETOWAĆ!</h3>
+              <div className="space-y-2 text-lg font-bold">
+                {dontRows.map((r, i) => (
+                  <p key={i}>
+                    ❌ {r.element}{r.detail ? ` ${r.detail}` : ""}: {r.type}{r.height !== "—" ? `, ${r.height}` : ""}{r.count !== "—" ? `, ${r.count}` : ""} — {r.reason}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {!allPlastic && legs.length > 0 && (
         <>
