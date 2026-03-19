@@ -67,8 +67,8 @@ export default function AdminLayout() {
         { to: "/admin/sku-format", label: "Format SKU" },
         { to: "/admin/side-exceptions", label: "Aliasy SKU" },
         { to: "/admin/label-templates", label: "🏷️ Etykiety" },
-        { to: "/admin/guide-templates", label: "📄 Przewodniki" },
-        { to: "/admin/decoding-templates", label: "🔍 Dekodowanie" },
+        { to: "/admin/guide-templates", label: "Przewodnik Grzegorz" },
+        { to: "/admin/decoding-templates", label: "Przewodnik Dominik" },
       ]
     : [];
 
