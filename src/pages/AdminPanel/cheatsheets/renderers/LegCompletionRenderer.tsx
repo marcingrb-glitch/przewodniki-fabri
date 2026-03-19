@@ -1,5 +1,6 @@
 import type { SectionRendererProps } from "../types";
 import { NoData } from "../shared/NoData";
+import { formatColors } from "../shared/helpers";
 
 interface CheatRow {
   element: string;
