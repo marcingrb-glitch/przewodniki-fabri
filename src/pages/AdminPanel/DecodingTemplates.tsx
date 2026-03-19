@@ -386,7 +386,10 @@ export default function DecodingTemplates() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">🔍 Szablony dekodowania PDF</h1>
+      <h1 className="text-2xl font-bold">Przewodnik Dominik — Dekodowanie PDF</h1>
+      <div className="rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
+        ⚠️ Dekodowanie ma teraz stały layout (hardcoded). Poniższe sekcje nie są aktualnie używane przez generator PDF, ale dane pozostają w bazie na przyszłość.
+      </div>
       <p className="text-muted-foreground text-sm">
         Konfiguracja sekcji wyświetlanych w dokumencie dekodowania SKU.
         Sekcje globalne obowiązują dla wszystkich serii. Można nadpisać per seria.
