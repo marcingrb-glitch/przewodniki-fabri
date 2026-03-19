@@ -401,6 +401,33 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const backrestHeight = prop(backrestProduct, "height_cm", "?");
   const backrestSpringType = prop(backrestProduct, "spring_type", undefined);
 
+  // ---- SEWING VARIANT ----
+  let sewingVariantDescription = backrestTop; // fallback
+
+  if (sewingVariantsRes.data && (sewingVariantsRes.data as any[]).length > 0) {
+    const backrestFinish = parsed.backrest.finish;
+    const seatModelTokens = seatModelName
+      ? seatModelName.toLowerCase().split(/[\s,\/]+/).filter(Boolean)
+      : [];
+
+    const matchingVariant = (sewingVariantsRes.data as any[]).find(r => {
+      const props = r.properties || {};
+      if (props.finish && props.finish !== backrestFinish) return false;
+      if (props.models && Array.isArray(props.models) && props.models.length > 0) {
+        const variantModelTokens = props.models
+          .flatMap((m: string) => m.toLowerCase().split(/[\s,\/]+/))
+          .filter(Boolean);
+        const hasModelMatch = seatModelTokens.some((t: string) => variantModelTokens.includes(t));
+        if (!hasModelMatch) return false;
+      }
+      return true;
+    });
+
+    if (matchingVariant?.properties?.description) {
+      sewingVariantDescription = matchingVariant.properties.description;
+    }
+  }
+
   // ---- CHEST ----
   const chestName = chestProduct?.name ?? "?";
   const chestLegHeight = prop(chestProduct, "leg_height_cm", 0) as number;
