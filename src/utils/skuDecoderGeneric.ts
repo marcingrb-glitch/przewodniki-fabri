@@ -217,11 +217,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     ? await resolveBackrestProduct(parsed.backrest.code, seriesId, seatModelName)
     : null;
 
-  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat ----
+  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat, sewingVariants ----
   const [
     fabricRes, sideRes, chestRes, automatRes, legRes,
     pillowRes, jaskiRes, walekRes, finishesRes,
     extrasRes, pufaSeatRes, automatConfigRes,
+    sewingVariantsRes,
   ] = await Promise.all([
     // fabric (global)
     supabase.from("products").select(PRODUCT_SELECT)
@@ -290,6 +291,15 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? (async () => {
           return { data: null };
         })()
+      : Promise.resolve({ data: null }),
+    // sewing variants for backrest
+    seriesId && backrestProduct?.id
+      ? supabase.from("product_relations")
+          .select("properties")
+          .eq("relation_type", "sewing_variant")
+          .eq("target_product_id", backrestProduct.id)
+          .eq("series_id", seriesId)
+          .eq("active", true)
       : Promise.resolve({ data: null }),
   ]);
 
@@ -390,6 +400,33 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const backrestTop = prop(backrestProduct, "top", "?");
   const backrestHeight = prop(backrestProduct, "height_cm", "?");
   const backrestSpringType = prop(backrestProduct, "spring_type", undefined);
+
+  // ---- SEWING VARIANT ----
+  let sewingVariantDescription = backrestTop; // fallback
+
+  if (sewingVariantsRes.data && (sewingVariantsRes.data as any[]).length > 0) {
+    const backrestFinish = parsed.backrest.finish;
+    const seatModelTokens = seatModelName
+      ? seatModelName.toLowerCase().split(/[\s,\/]+/).filter(Boolean)
+      : [];
+
+    const matchingVariant = (sewingVariantsRes.data as any[]).find(r => {
+      const props = r.properties || {};
+      if (props.finish && props.finish !== backrestFinish) return false;
+      if (props.models && Array.isArray(props.models) && props.models.length > 0) {
+        const variantModelTokens = props.models
+          .flatMap((m: string) => m.toLowerCase().split(/[\s,\/]+/))
+          .filter(Boolean);
+        const hasModelMatch = seatModelTokens.some((t: string) => variantModelTokens.includes(t));
+        if (!hasModelMatch) return false;
+      }
+      return true;
+    });
+
+    if (matchingVariant?.properties?.description) {
+      sewingVariantDescription = matchingVariant.properties.description;
+    }
+  }
 
   // ---- CHEST ----
   const chestName = chestProduct?.name ?? "?";
@@ -572,7 +609,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       height: backrestHeight,
       frame: backrestFrame,
       foam: formatFoamsSummary(backrestFoams),
-      top: backrestTop,
+      top: sewingVariantDescription || backrestTop,
       finish: parsed.backrest.finish,
       finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish,
       springType: backrestSpringType || undefined,
