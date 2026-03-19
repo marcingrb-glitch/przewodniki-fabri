@@ -361,25 +361,28 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
                   <th className="border border-border px-2 py-1 text-left">Nazwa</th>
-                  <th className="border border-border px-2 py-1 text-left">Typ</th>
                   <th className="border border-border px-2 py-1 text-left">Nóżki siedziska</th>
+                  <th className="border border-border px-2 py-1 text-left">Śruby zamkowe</th>
                 </tr>
               </thead>
               <tbody>
                 {automatConfigs.map((rel: any) => {
                   const props = rel.properties as any;
-                  const target = allProducts.find(p => p.id === rel.target_product_id);
-                  const code = props?.automat_code ?? target?.code ?? "?";
-                  const name = target?.name ?? "?";
-                  const type = (target?.properties as any)?.type ?? "—";
+                  const automat = data.globalProducts.find(p => p.id === rel.target_product_id);
+                  const code = automat?.code ?? "?";
+                  const name = automat?.name ?? "?";
+                  const seriesCode = data.seriesProduct?.code ?? "";
+                  const sruby = code === "AT1" ? "Poz. 1 i 2"
+                    : code === "AT2" && seriesCode === "S1" ? "Poz. 1 i 3"
+                    : code === "AT2" ? "Poz. 1 i 2" : "—";
                   return (
                     <tr key={rel.id}>
                       <td className="border border-border px-2 py-1 font-mono font-bold">{code}</td>
                       <td className="border border-border px-2 py-1">{name}</td>
-                      <td className="border border-border px-2 py-1">{type}</td>
                       <td className="border border-border px-2 py-1">
                         {props?.has_seat_legs ? `Tak, ${props?.seat_leg_count ?? "?"}szt, H${props?.seat_leg_height_cm ?? "?"}cm` : "Nie"}
                       </td>
+                      <td className="border border-border px-2 py-1">{sruby}</td>
                     </tr>
                   );
                 })}
