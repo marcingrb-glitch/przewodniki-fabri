@@ -176,7 +176,20 @@ function prop(product: ProductRow | null, key: string, fallback: any = ""): any 
 }
 
 function productColors(product: ProductRow | null): Record<string, string> {
-  if (!product?.colors || typeof product.colors !== "object" || Array.isArray(product.colors)) return {};
+  if (!product?.colors || typeof product.colors !== "object") return {};
+  
+  // Handle array format: [{code: "A", name: "Sand"}, ...]
+  if (Array.isArray(product.colors)) {
+    const map: Record<string, string> = {};
+    for (const item of product.colors) {
+      if (item && typeof item === "object" && "code" in item && "name" in item) {
+        map[String(item.code)] = String(item.name);
+      }
+    }
+    return map;
+  }
+  
+  // Handle plain object format: {"A": "Sand", ...}
   return product.colors as Record<string, string>;
 }
 
