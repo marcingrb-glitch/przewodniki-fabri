@@ -29,6 +29,7 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
     propertyKeys: [
       "seat_type", "frame", "front", "center_strip",
       "model_name", "frame_modification", "spring_type",
+      "foam_set",
     ],
     columns: [
       { key: "code", label: "Kod" },
