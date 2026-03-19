@@ -192,12 +192,14 @@ function resolveLeftField(
   seriesName: string,
   seriesCollection: string,
   productType: string,
-  orderNumber: string
+  orderNumber: string,
+  modelName?: string
 ): string {
   switch (field) {
     case "series.code": return seriesCode;
     case "series.name": return seriesName;
     case "series.collection": return seriesCollection ? `[${seriesCollection}]` : "";
+    case "component.model_name": return modelName || "";
     case "product_type": return productType.toUpperCase();
     case "order_number": return orderNumber;
     default: return "";
