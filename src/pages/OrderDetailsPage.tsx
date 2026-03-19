@@ -63,6 +63,34 @@ const OrderDetailsPage = () => {
     }
   }, [variantImagePath, variantImageUrlFromOrder]);
 
+  // Init fabric usage from order
+  useEffect(() => {
+    if (order) {
+      setFabricUsage((order as any).fabric_usage_mb ?? null);
+    }
+  }, [order]);
+
+  const handleSaveFabricUsage = useCallback(async () => {
+    if (!order) return;
+    setSavingFabric(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          fabric_usage_mb: fabricUsage,
+          fabric_usage_updated_at: new Date().toISOString(),
+          fabric_usage_updated_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+        } as any)
+        .eq("id", order.id);
+      if (error) throw error;
+      toast.success("✅ Zużycie tkaniny zapisane");
+    } catch (err: any) {
+      toast.error(`❌ Błąd zapisu: ${err.message}`);
+    } finally {
+      setSavingFabric(false);
+    }
+  }, [order, fabricUsage]);
+
   const withLoading = async (key: string, fn: () => Promise<void>) => {
     setLoading(key);
     try { await fn(); } catch (err: unknown) {
