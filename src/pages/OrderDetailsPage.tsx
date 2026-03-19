@@ -361,15 +361,15 @@ const OrderDetailsPage = () => {
 
       {variantImageUrl && (
         <Dialog open={imagePopupOpen} onOpenChange={setImagePopupOpen}>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-[90vw] max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Zdjęcie wariantu - {orderNumber}</DialogTitle>
             </DialogHeader>
-            <div className="mt-4">
+            <div className="mt-4 flex items-center justify-center">
               <img
                 src={variantImageUrl}
                 alt="Wariant sofy"
-                className="w-full h-auto rounded"
+                className="max-w-[90vw] max-h-[80vh] object-contain rounded"
               />
             </div>
           </DialogContent>
