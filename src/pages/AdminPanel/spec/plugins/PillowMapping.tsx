@@ -131,7 +131,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Poduszka</TableHead>
+                <TableHead className="w-[280px]">Poduszka</TableHead>
                 <TableHead>Reguły wykończenia</TableHead>
                 <TableHead className="w-[140px]">Wyjątek (boczek)</TableHead>
                 <TableHead className="w-[40px]"></TableHead>
@@ -145,7 +145,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
                       value={m.target_product_id ?? ""}
                       onValueChange={(val) => updateTarget(m.id, val)}
                     >
-                      <SelectTrigger className="h-8 text-xs w-[180px]">
+                      <SelectTrigger className="h-8 text-xs w-[260px]">
                         <SelectValue placeholder="wybierz" />
                       </SelectTrigger>
                       <SelectContent>
