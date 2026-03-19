@@ -471,7 +471,7 @@ export async function generateFotelProductionGuidePDF(decoded: DecodedSKU): Prom
       code: decoded.fotelLegs.code,
       headers: ["Nazwa", "Wysokość", "Ilość"],
       rows: [[
-        decoded.legs?.name || decoded.fotelLegs.code,
+        [decoded.legs?.name || decoded.fotelLegs.code, decoded.legs?.colorName || ""].filter(Boolean).join(" "),
         `${decoded.fotelLegs.height}cm`,
         `${decoded.fotelLegs.count} szt`,
       ]],
