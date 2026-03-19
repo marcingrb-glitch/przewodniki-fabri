@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -103,15 +102,16 @@ export default function LegCompletionTable() {
         const automatName = automat?.name ?? "?";
 
         if (saProps.has_seat_legs) {
-          const seatType = seriesProps?.seat_leg_type ?? "from_sku";
-          const isPlastic = seatType === "plastic_2_5";
+          const seatH = saProps.seat_leg_height_cm ?? 0;
+          const seatCount = saProps.seat_leg_count ?? 2;
+          const isPlastic = seatH <= 2.5;
           mountRows.push({
             series: seriesCode, seriesId: series.id,
             element: "Pod siedziskiem",
             detail: `${automatCode} (${automatName})`,
             type: isPlastic ? "N4 plastikowe" : "N z SKU",
-            height: isPlastic ? "2.5 cm" : `${saProps.seat_leg_height_cm ?? seriesProps?.seat_leg_height_cm ?? "?"} cm`,
-            count: `${saProps.seat_leg_count ?? 2} szt`,
+            height: `${seatH} cm`,
+            count: `${seatCount} szt`,
             who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek",
           });
         } else {
@@ -127,16 +127,16 @@ export default function LegCompletionTable() {
       // Pufa
       const hasPufa = allExtras.some(e => e.series_id === series.id && (e.code === "PF" || e.code === "PFO"));
       if (hasPufa) {
-        const pufaType = seriesProps?.pufa_leg_type ?? "from_sku";
-        const isPlastic = pufaType === "plastic_2_5";
+        const pufaHeight = seriesProps?.pufa_leg_height_cm;
+        const pufaCount = seriesProps?.pufa_leg_count ?? 4;
         mountRows.push({
           series: seriesCode, seriesId: series.id,
           element: "Pufa",
           detail: "",
-          type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—",
-          height: seriesProps?.pufa_leg_height_cm != null ? `${seriesProps.pufa_leg_height_cm} cm` : "—",
-          count: `${seriesProps?.pufa_leg_count ?? 4} szt`,
-          who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek",
+          type: "N z SKU",
+          height: pufaHeight != null ? `${pufaHeight} cm` : "—",
+          count: `${pufaCount} szt`,
+          who: "Dziewczyny od nóżek",
           editable: "pufa",
           seriesProps,
         });
@@ -204,24 +204,7 @@ export default function LegCompletionTable() {
                   <TableCell>{row.detail || "—"}</TableCell>
 
                   {/* Typ nóżek */}
-                  <TableCell>
-                    {row.editable === "pufa" ? (
-                      <Select
-                        value={row.seriesProps?.pufa_leg_type ?? "from_sku"}
-                        onValueChange={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_type", v)}
-                      >
-                        <SelectTrigger className="h-7 w-[140px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="from_sku">N z SKU</SelectItem>
-                          <SelectItem value="plastic_2_5">N4 plastikowe</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      row.type
-                    )}
-                  </TableCell>
+                  <TableCell>{row.type}</TableCell>
 
                   {/* Wysokość */}
                   <TableCell>
