@@ -78,6 +78,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
       spec_type: "foam",
       position_number: maxPos + 1,
       quantity: 1,
+      foam_role: "base",
     });
     if (error) toast.error("Błąd dodawania pianki");
     else { toast.success("Dodano piankę"); queryClient.invalidateQueries({ queryKey }); }
@@ -112,6 +113,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">Poz.</TableHead>
+              <TableHead className="w-[90px]">Rola</TableHead>
               <TableHead>Nazwa</TableHead>
               <TableHead className="w-[70px]">Wys.</TableHead>
               <TableHead className="w-[70px]">Szer.</TableHead>
@@ -130,6 +132,20 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
                     <span className="text-sm">{foam.position_number ?? "—"}</span>
                   ) : (
                     <InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} />
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
+                    <span className="text-sm">{foam.foam_role ?? "base"}</span>
+                  ) : (
+                    <select
+                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                      value={foam.foam_role ?? "base"}
+                      onChange={(e) => updateFoam(foam.id, "foam_role", e.target.value)}
+                    >
+                      <option value="base">base</option>
+                      <option value="front">front</option>
+                    </select>
                   )}
                 </TableCell>
                 <TableCell>
