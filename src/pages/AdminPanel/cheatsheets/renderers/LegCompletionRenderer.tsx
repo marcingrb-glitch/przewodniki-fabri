@@ -51,17 +51,19 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
     }
   }
 
-  // Automats — resolve code from product, not from properties
+  // Automats — descriptive format
   for (const rel of automatConfigs) {
     const props = rel.properties as any;
     const automatProduct = [...data.seriesComponents, ...data.globalProducts].find(p => p.id === rel.source_product_id);
-    const label = automatProduct?.code ?? props?.automat_code ?? "?";
+    const aCode = automatProduct?.code ?? props?.automat_code ?? "?";
+    const aName = automatProduct?.name ?? "";
+    const suffix = aName ? `${aCode} (${aName})` : aCode;
     if (!props?.has_seat_legs) {
-      dontRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "BRAK", height: "—", count: "—", reason: "brak nóżek pod siedziskiem" });
+      dontRows.push({ element: "Pod siedziskiem", detail: "", type: "BRAK", height: "—", count: "—", reason: `gdy automat ${suffix}` });
     } else if (seatLegType === "from_sku") {
-      doRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "N z SKU", height: `H${props?.seat_leg_height_cm ?? seatLegH ?? "?"}cm`, count: `${props?.seat_leg_count ?? 2}szt` });
+      doRows.push({ element: "Pod siedziskiem", detail: "", type: "N z SKU", height: `H${props?.seat_leg_height_cm ?? seatLegH ?? "?"}cm`, count: `${props?.seat_leg_count ?? 2}szt`, reason: `tylko gdy automat ${aCode}` });
     } else {
-      dontRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "N4 plastikowe", height: "2.5cm", count: `${props?.seat_leg_count ?? 2}szt`, reason: "tapicer ma na stanowisku" });
+      dontRows.push({ element: "Pod siedziskiem", detail: "", type: "N4 plastikowe", height: "2.5cm", count: `${props?.seat_leg_count ?? 2}szt`, reason: "tapicer ma na stanowisku" });
     }
   }
 
