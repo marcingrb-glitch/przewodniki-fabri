@@ -262,6 +262,8 @@ const OrderDetailsPage = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="fotel-labels-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
+              <ActionBtn icon={Eye} label="Podgląd dekodowania fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelDecodingPDF(decoded), "Dekodowanie fotela", `dekodowanie_fotel_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz dekodowanie fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelDecodingPDF(decoded), `dekodowanie_fotel_${orderNumber}.pdf`, "decoding_fotel")} />
             </div>
           </CardContent>
         </Card>
