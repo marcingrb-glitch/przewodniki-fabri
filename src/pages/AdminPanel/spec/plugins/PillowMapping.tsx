@@ -232,6 +232,7 @@ function FinishRulesEditor({ rules, onChange }: { rules: FinishRule[]; onChange:
     <div className="flex flex-wrap items-center gap-1">
       {localRules.map((rule, idx) => (
         <div key={idx} className="flex items-center gap-0.5">
+          <span className="text-xs text-muted-foreground mr-1">siedz.</span>
           <Input
             className="h-6 w-10 text-xs text-center px-1"
             value={rule.seat_finish}
@@ -240,6 +241,7 @@ function FinishRulesEditor({ rules, onChange }: { rules: FinishRule[]; onChange:
             maxLength={2}
           />
           <span className="text-xs text-muted-foreground">→</span>
+          <span className="text-xs text-muted-foreground mr-1">poduszka</span>
           <Input
             className="h-6 w-10 text-xs text-center px-1"
             value={rule.pillow_finish}
