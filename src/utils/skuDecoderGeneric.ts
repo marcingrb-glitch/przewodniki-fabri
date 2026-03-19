@@ -609,7 +609,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       height: backrestHeight,
       frame: backrestFrame,
       foam: formatFoamsSummary(backrestFoams),
-      top: backrestTop,
+      top: sewingVariantDescription || backrestTop,
       finish: parsed.backrest.finish,
       finishName: FINISHES[parsed.backrest.finish] || parsed.backrest.finish,
       springType: backrestSpringType || undefined,
