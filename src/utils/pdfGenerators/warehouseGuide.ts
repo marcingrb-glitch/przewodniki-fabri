@@ -221,12 +221,11 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
 
   // FOTEL — conditional
   if (hasFotel) {
-    const fotelSideLabel = decoded.side.code + (decoded.side.frame ? ` [${decoded.side.frame}]` : "");
     sections.push({
       title: "FOTEL",
       tables: [{
-        headers: ["Front siedziska", "Boczek"],
-        rows: [[decoded.seat.front || "-", fotelSideLabel]],
+        headers: ["Front siedziska", "Boczek", "Stelaż boczka", "Piankowanie"],
+        rows: [[decoded.seat.front || "-", decoded.side.code, decoded.side.frame || "-", decoded.side.name || "-"]],
       }],
     });
   }
