@@ -282,16 +282,10 @@ const OrderDetailsPage = () => {
           <CardTitle className="text-lg">📦 Akcje zbiorcze</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          <ActionBtn icon={FileText} label="Pobierz wszystkie przewodniki" loadKey="all-guides" onClick={async () => {
-            const blobs: { name: string; blob: Blob }[] = [];
-            blobs.push({ name: "sofa_przewodnik.pdf", blob: await generateGuidePDF(decoded, "sofa") });
-            if (hasPufa) blobs.push({ name: "pufa_przewodnik.pdf", blob: await generateGuidePDF(decoded, "pufa") });
-            if (hasFotel) blobs.push({ name: "fotel_przewodnik.pdf", blob: await generateGuidePDF(decoded, "fotel") });
-            const zip = new JSZip();
-            blobs.forEach(b => zip.file(b.name, b.blob));
-            const zipBlob = await zip.generateAsync({ type: "blob" });
-            downloadBlob(zipBlob, `przewodniki_${orderNumber}.zip`);
-            toast.success("✅ Pobrano wszystkie przewodniki");
+          <ActionBtn icon={FileText} label="Pobierz przewodnik" loadKey="all-guides" onClick={async () => {
+            const guideBlob = await generateGuidePDF(decoded);
+            downloadBlob(guideBlob, `przewodnik_${orderNumber}.pdf`);
+            toast.success("✅ Pobrano przewodnik");
           }} />
           <ActionBtn icon={Tag} label="Pobierz wszystkie etykiety" loadKey="all-labels" onClick={async () => {
             const blobs: { name: string; blob: Blob }[] = [];
