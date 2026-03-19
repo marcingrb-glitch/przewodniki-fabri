@@ -131,7 +131,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Poduszka</TableHead>
+                <TableHead className="w-[280px]">Poduszka</TableHead>
                 <TableHead>Reguły wykończenia</TableHead>
                 <TableHead className="w-[140px]">Wyjątek (boczek)</TableHead>
                 <TableHead className="w-[40px]"></TableHead>
