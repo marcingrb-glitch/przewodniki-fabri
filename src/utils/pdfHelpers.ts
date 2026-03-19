@@ -233,7 +233,6 @@ export function addLabel(
   if (lines.length === 0) return;
 
   const seriesText = lines[0];
-  const mainLines = lines.slice(1);
 
   // --- Left rotated zone ---
   const leftZoneWidth = s.leftZoneWidth;

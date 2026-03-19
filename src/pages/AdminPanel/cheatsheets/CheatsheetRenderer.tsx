@@ -1,17 +1,15 @@
-import { useCheatsheetData } from "./useCheatsheetData";
 import { rendererRegistry, sectionIcons } from "./renderers";
 import { Loader2 } from "lucide-react";
+import type { CheatsheetData } from "./types";
 
 interface Props {
-  seriesProductId: string;
+  data: CheatsheetData;
   workstationCode: string;
   seriesCode: string;
   seriesName: string;
 }
 
-export default function CheatsheetRenderer({ seriesProductId, workstationCode, seriesCode, seriesName }: Props) {
-  const data = useCheatsheetData(seriesProductId, workstationCode);
-
+export default function CheatsheetRenderer({ data, workstationCode, seriesCode, seriesName }: Props) {
   if (data.isLoading) {
     return (
       <div className="flex items-center justify-center py-16">

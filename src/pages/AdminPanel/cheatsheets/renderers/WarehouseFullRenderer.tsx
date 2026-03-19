@@ -25,6 +25,37 @@ function foamsByRole(specs: ProductSpec[], role: string): ProductSpec[] {
     .sort((a, b) => (a.position_number ?? 0) - (b.position_number ?? 0));
 }
 
+/** Check if Pianki column has any non-empty data */
+function computeShowPiankiCol(
+  seats: ProductRow[],
+  data: SectionRendererProps["data"],
+  commonBaseFoam: ProductSpec | null
+): boolean {
+  return seats.some(seat => {
+    const props = seat.properties as any;
+    const specs = data.getSpecsForProduct(seat.id);
+    const isSet = props?.foam_set === true;
+    if (isSet) return true;
+
+    const isDzielone = props?.seat_type === "Dzielone";
+    let effectiveSpecs = specs;
+    if (isDzielone && specs.filter(s => s.spec_type === "foam").length === 0) {
+      const baseCode = seat.code.replace(/D$/, "");
+      const baseSeat = data.getByCategory("seat").find(
+        s => s.code === baseCode && s.series_id === seat.series_id
+      );
+      if (baseSeat) effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
+    }
+
+    const baseFoams = foamsByRole(effectiveSpecs, "base");
+    let displayBase = baseFoams;
+    if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
+      displayBase = displayBase.slice(1);
+    }
+    return displayBase.length > 0 || isDzielone;
+  });
+}
+
 // ─── main component ────────────────────────────────────────────────
 
 export function WarehouseFullRenderer({ data }: SectionRendererProps) {
@@ -64,6 +95,9 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
   // Has spring column?
   const showSpringCol = uniqueSprings.length > 1;
 
+  // Show Pianki column?
+  const showPiankiCol = computeShowPiankiCol(seats, data, commonBaseFoam);
+
   // Group by frame for S2-style
   const frameGroups = groupByFrame(seats);
   const multipleFrameGroups = frameGroups.length > 1;
@@ -84,7 +118,12 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
       {/* 2. Seats table */}
       {seats.length > 0 && (
         <section>
-          <h3 className="text-base font-semibold mb-2">Siedziska</h3>
+          <h3 className="text-base font-semibold mb-1">Siedziska</h3>
+          {!showPiankiCol && (
+            <p className="text-sm text-muted-foreground mb-2">
+              Pianka bazowa identyczna — różni się tylko front.
+            </p>
+          )}
           {multipleFrameGroups ? (
             <div className="space-y-4">
               {frameGroups.map(group => {
@@ -99,6 +138,7 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
                       data={data}
                       showModel={showModelCol}
                       showSpring={showSpringCol}
+                      showPianki={showPiankiCol}
                       commonBaseFoam={commonBaseFoam}
                     />
                   </div>
@@ -111,6 +151,7 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
               data={data}
               showModel={showModelCol}
               showSpring={showSpringCol}
+              showPianki={showPiankiCol}
               commonBaseFoam={commonBaseFoam}
             />
           )}
@@ -228,12 +269,14 @@ function SeatsTable({
   data,
   showModel,
   showSpring,
+  showPianki,
   commonBaseFoam,
 }: {
   seats: ProductRow[];
   data: SectionRendererProps["data"];
   showModel: boolean;
   showSpring: boolean;
+  showPianki: boolean;
   commonBaseFoam: ProductSpec | null;
 }) {
   const defaultSpring = ((data.seriesConfig as any)?.default_spring ?? "") as string;
@@ -247,11 +290,11 @@ function SeatsTable({
             {showModel && <th className="border border-border px-2 py-1 text-left">Model</th>}
             <th className="border border-border px-2 py-1 text-left">Typ</th>
             {showSpring && <th className="border border-border px-2 py-1 text-left">Sprężyna</th>}
-            <th className="border border-border px-2 py-1 text-left">Front</th>
-            <th className="border border-border px-2 py-1 text-left">Pianki</th>
+            <th className="border border-border px-2 py-1 text-left">Pianka frontu</th>
+            {showPianki && <th className="border border-border px-2 py-1 text-left">Pianki</th>}
             <th className="border border-border px-2 py-1 text-left">
-              <div>Pasek śr.</div>
-              <div className="text-xs font-normal text-muted-foreground">dokleić</div>
+              <div>Pasek śr. dokleić</div>
+              <div className="text-xs font-normal text-muted-foreground">1.5 × 19 × 50 T-21-25</div>
             </th>
           </tr>
         </thead>
@@ -325,7 +368,7 @@ function SeatsTable({
                   </td>
                 )}
                 <td className="border border-border px-2 py-1 whitespace-pre-line">{frontText}</td>
-                <td className="border border-border px-2 py-1 whitespace-pre-line">{piankiText}</td>
+                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line">{piankiText}</td>}
                 <td className="border border-border px-2 py-1 text-center">
                   {props?.center_strip ? <strong>TAK</strong> : "—"}
                 </td>
