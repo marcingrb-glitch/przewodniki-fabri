@@ -120,14 +120,22 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
   };
 
   const lockBolts = getLockBoltPositions(decoded.series.code, decoded.automat.code);
+  const seatHeaders = ["Kod", "Stelaż", "Sprężyna", "Śruby zamkowe"];
+  const seatRow = [
+    decoded.seat.code,
+    decoded.seat.frame || "-",
+    decoded.seat.springType || "-",
+    lockBolts,
+  ];
+
+  if (decoded.seat.frameModification) {
+    seatHeaders.push("Modyfikacja");
+    seatRow.push(decoded.seat.frameModification);
+  }
+
   seatSection.tables.push({
-    headers: ["Kod", "Stelaż", "Sprężyna", "Śruby zamkowe"],
-    rows: [[
-      decoded.seat.code,
-      decoded.seat.frame || "-",
-      decoded.seat.springType || "-",
-      lockBolts,
-    ]],
+    headers: seatHeaders,
+    rows: [seatRow],
   });
 
   const seatFoamRows = foamsToRows(decoded.seat.foams);
