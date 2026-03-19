@@ -343,8 +343,8 @@ export async function generateProductionGuidePDF(
       rows: [[
         decoded.pillow.name,
         decoded.pillow.finishName,
-        decoded.pillow.constructionType || "-",
-        decoded.pillow.insertType || "-",
+        capitalize(decoded.pillow.constructionType || "-"),
+        capitalize(decoded.pillow.insertType || "-"),
       ]],
     }, colLeftX, y, fullW, fs, rh, sp);
     y += sectionGap;
