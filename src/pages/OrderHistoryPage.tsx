@@ -194,12 +194,13 @@ const OrderHistoryPage = () => {
   // Export CSV
   const exportToCSV = () => {
     if (!orders.length) return;
-    const headers = ["Numer zamówienia", "Data", "SKU", "Seria"];
+    const headers = ["Numer zamówienia", "Data", "SKU", "Seria", "Tkanina (mb)"];
     const rows = orders.map((o: any) => [
       o.order_number,
       format(new Date(o.order_date), "dd.MM.yyyy"),
       `"${o.sku}"`,
       o.series_code || "",
+      o.fabric_usage_mb != null ? String(o.fabric_usage_mb) : "",
     ]);
     const csv = [headers.join(","), ...rows.map((r: string[]) => r.join(","))].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
