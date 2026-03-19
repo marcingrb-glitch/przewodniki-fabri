@@ -3,12 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import CheatsheetRenderer from "./cheatsheets/CheatsheetRenderer";
+import { useCheatsheetData } from "./cheatsheets/useCheatsheetData";
+import { buildCheatsheetPdfData } from "./cheatsheets/shared/warehouseHelpers";
+import { generateCheatsheetPDF } from "@/utils/pdfGenerators/cheatsheetPdf";
 
 export default function Cheatsheets() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("");
   const [selectedStation, setSelectedStation] = useState<string>("");
+  const [downloading, setDownloading] = useState(false);
 
   // Load series from products table (category='series')
   const { data: seriesList = [] } = useQuery({
@@ -29,7 +33,6 @@ export default function Cheatsheets() {
   const { data: stations = [] } = useQuery({
     queryKey: ["cheatsheet-workstations"],
     queryFn: async () => {
-      // Get distinct workstation IDs from active sections
       const { data: sections } = await supabase
         .from("cheatsheet_sections")
         .select("workstation_id")
@@ -54,6 +57,27 @@ export default function Cheatsheets() {
   };
 
   const selectedSeries = seriesList.find(s => s.id === selectedSeriesId);
+
+  // Hook data lifted to parent for PDF access
+  const cheatsheetData = useCheatsheetData(selectedSeriesId, selectedStation);
+
+  async function handleDownloadPdf() {
+    if (!cheatsheetData || downloading) return;
+    setDownloading(true);
+    try {
+      const pdfData = buildCheatsheetPdfData(cheatsheetData);
+      if (!pdfData) return;
+      const blob = await generateCheatsheetPDF(pdfData);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sciagawka-magazyn-${selectedSeries?.code ?? "X"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -89,9 +113,16 @@ export default function Cheatsheets() {
         </div>
 
         {selectedSeriesId && selectedStation && (
-          <Button onClick={() => window.print()} className="ml-auto" size="sm">
-            <Printer className="mr-1 h-4 w-4" /> Drukuj
-          </Button>
+          <div className="flex gap-2 ml-auto">
+            {selectedStation === "magazyn" && (
+              <Button onClick={handleDownloadPdf} size="sm" variant="outline" disabled={downloading}>
+                <Download className="mr-1 h-4 w-4" /> {downloading ? "Generuję..." : "Pobierz PDF"}
+              </Button>
+            )}
+            <Button onClick={() => window.print()} size="sm">
+              <Printer className="mr-1 h-4 w-4" /> Drukuj
+            </Button>
+          </div>
         )}
       </div>
 
@@ -102,7 +133,7 @@ export default function Cheatsheets() {
       ) : (
         <div className="print-area">
           <CheatsheetRenderer
-            seriesProductId={selectedSeriesId}
+            data={cheatsheetData}
             workstationCode={selectedStation}
             seriesCode={selectedSeries?.code ?? ""}
             seriesName={selectedSeries?.name ?? ""}

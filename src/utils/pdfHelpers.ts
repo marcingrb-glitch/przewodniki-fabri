@@ -233,7 +233,6 @@ export function addLabel(
   if (lines.length === 0) return;
 
   const seriesText = lines[0];
-  const mainLines = lines.slice(1);
 
   // --- Left rotated zone ---
   const leftZoneWidth = s.leftZoneWidth;
@@ -268,7 +267,9 @@ export function addLabel(
   }
 
   // --- Main content (shifted right) ---
-  if (mainLines.length === 0) return;
+  const headerLine = lines.length > 1 ? lines[1] : null;
+  const contentLines = lines.slice(2);
+  if (!headerLine && contentLines.length === 0) return;
 
   const contentLeft = leftZoneWidth;
   const contentRight = pageW - 3;
@@ -276,22 +277,46 @@ export function addLabel(
   const contentCenterX = contentLeft + contentWidth / 2;
   const availableHeight = pageH - 2 * marginY;
 
-  doc.setFont("Roboto", "bold");
-  let mainFontSize = Math.min(s.contentMaxSize, availableHeight / mainLines.length * 2);
-  let fits = false;
-  while (!fits && mainFontSize > s.contentMinSize) {
-    doc.setFontSize(mainFontSize);
-    fits = mainLines.every(line => doc.getTextWidth(line) <= contentWidth);
-    if (!fits) mainFontSize -= 0.5;
+  // --- Header auto-fit (separate) ---
+  let headerFontSize = s.contentMaxSize;
+  if (headerLine) {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(headerFontSize);
+    while (doc.getTextWidth(headerLine) > contentWidth && headerFontSize > s.contentMinSize) {
+      headerFontSize -= 0.5;
+      doc.setFontSize(headerFontSize);
+    }
   }
 
-  doc.setFontSize(mainFontSize);
-  const lineHeight = mainFontSize * 0.55;
-  const totalTextHeight = mainLines.length * lineHeight;
-  const startY = marginY + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
+  // --- Content auto-fit (separate) ---
+  doc.setFont("Roboto", "bold");
+  let contentFontSize = s.contentMaxSize;
+  if (contentLines.length > 0) {
+    let fits = false;
+    while (!fits && contentFontSize > s.contentMinSize) {
+      doc.setFontSize(contentFontSize);
+      fits = contentLines.every(line => doc.getTextWidth(line) <= contentWidth);
+      if (!fits) contentFontSize -= 0.5;
+    }
+  }
 
-  mainLines.forEach((line, i) => {
-    doc.text(line, contentCenterX, startY + i * lineHeight, { align: "center" });
+  // --- Layout: header and content with independent sizes ---
+  const headerH = headerLine ? headerFontSize * 0.55 : 0;
+  const contentLineH = contentFontSize * 0.55;
+  const totalH = headerH + contentLines.length * contentLineH + (headerLine ? 1 : 0);
+  const startY = marginY + (availableHeight - totalH) / 2;
+
+  let curY = startY + headerH * 0.7;
+
+  if (headerLine) {
+    doc.setFontSize(headerFontSize);
+    doc.text(headerLine, contentCenterX, curY, { align: "center" });
+    curY += headerH + 1;
+  }
+
+  doc.setFontSize(contentFontSize);
+  contentLines.forEach((line, i) => {
+    doc.text(line, contentCenterX, curY + i * contentLineH, { align: "center" });
   });
 }
 
