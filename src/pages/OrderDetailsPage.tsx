@@ -68,6 +68,7 @@ const OrderDetailsPage = () => {
   useEffect(() => {
     if (order) {
       setFabricUsage((order as any).fabric_usage_mb ?? null);
+      setSavedFabricUsage((order as any).fabric_usage_mb ?? null);
     }
   }, [order]);
 
