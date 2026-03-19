@@ -176,8 +176,13 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
     }
   }
 
-  // ── Sides ──
-  const sideRows: CheatsheetSideRow[] = sides.map(s => ({
+  // ── Sides (natural sort) ──
+  const sortedSides = [...sides].sort((a, b) => {
+    const codeA = a.code.replace(/^[A-Z]+/, "");
+    const codeB = b.code.replace(/^[A-Z]+/, "");
+    return codeA.localeCompare(codeB, undefined, { numeric: true });
+  });
+  const sideRows: CheatsheetSideRow[] = sortedSides.map(s => ({
     code: s.code,
     name: s.name,
     frame: (s.properties as any)?.frame ?? "—",

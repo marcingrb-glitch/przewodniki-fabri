@@ -53,23 +53,31 @@ export interface CheatsheetSideRow {
 // ─── Generator ──────────────────────────────────────────────────────
 
 export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Blob> {
-  const doc = await createDoc("landscape", "a4");
-  const pageW = doc.internal.pageSize.getWidth(); // 297
-  const pageH = doc.internal.pageSize.getHeight(); // 210
+  const doc = await createDoc("portrait", "a4");
+  const pageW = doc.internal.pageSize.getWidth(); // 210
+  const pageH = doc.internal.pageSize.getHeight(); // 297
   const mL = 15, mR = 15, mT = 12;
   const contentW = pageW - mL - mR;
 
   // ── Title ──
   doc.setFontSize(14);
   doc.setFont("Roboto", "bold");
-  doc.text("Ściągawka: Magazyn stolarki i pianek", pageW / 2, mT + 5, { align: "center" });
-
-  doc.setFontSize(12);
-  doc.text(`${data.seriesCode} — ${data.seriesName}`, pageW / 2, mT + 12, { align: "center" });
+  const title = `SPECYFIKACJA TECHNICZNA | SOFA ${data.seriesCode} ${data.collection}`.toUpperCase();
+  doc.text(title, pageW / 2, mT + 5, { align: "center" });
 
   // ── Info-box ──
-  let y = mT + 20;
-  const boxH = 50;
+  let y = mT + 14;
+  const infoLines: { label: string; value: string }[] = [];
+  infoLines.push({ label: "Kolekcja: ", value: data.collection || "—" });
+  if (data.seatFrame) infoLines.push({ label: "Stelaż siedziska: ", value: data.seatFrame });
+  if (data.seatSpring) infoLines.push({ label: "Sprężyna siedziska: ", value: data.seatSpring });
+  if (data.commonBaseFoam) infoLines.push({ label: "Pianka bazowa (wszystkie): ", value: data.commonBaseFoam });
+  if (data.fixedBackrest) infoLines.push({ label: "Oparcie: ", value: data.fixedBackrest });
+  if (data.fixedChest) infoLines.push({ label: "Skrzynia: ", value: data.fixedChest });
+  if (data.fixedAutomat) infoLines.push({ label: "Automat: ", value: data.fixedAutomat });
+
+  const rows2Col = Math.ceil(infoLines.length / 2);
+  const boxH = rows2Col * 8 + 16;
   doc.setFillColor(245, 245, 245);
   doc.rect(mL, y, contentW, boxH, "F");
 
@@ -77,13 +85,13 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
   const colW = (contentW - 2 * pad) / 2;
   const lx = mL + pad;
   const rx = mL + pad + colW + 10;
-  let ly = y + pad + 4;
-  let ry = y + pad + 4;
-  const lh = 7;
+  let ly = y + pad + 5;
+  let ry = y + pad + 5;
+  const lh = 8;
 
   function infoLine(x: number, yRef: number, label: string, value: string): number {
     doc.setFont("Roboto", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.text(label, x, yRef);
     const labelW = doc.getTextWidth(label);
     doc.setFont("Roboto", "bold");
@@ -91,18 +99,23 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     return yRef + lh;
   }
 
-  // Left column
-  ly = infoLine(lx, ly, "Kolekcja: ", data.collection || "—");
-  if (data.seatSpring) ly = infoLine(lx, ly, "Sprężyna siedziska: ", data.seatSpring);
-  if (data.fixedChest) ly = infoLine(lx, ly, "Skrzynia: ", data.fixedChest);
-
-  // Right column
-  if (data.seatFrame) ry = infoLine(rx, ry, "Stelaż siedziska: ", data.seatFrame);
-  if (data.commonBaseFoam) ry = infoLine(rx, ry, "Pianka bazowa (wszystkie): ", data.commonBaseFoam);
-  if (data.fixedBackrest) ry = infoLine(rx, ry, "Oparcie: ", data.fixedBackrest);
-  if (data.fixedAutomat) ry = infoLine(rx, ry, "Automat: ", data.fixedAutomat);
+  infoLines.forEach((item, i) => {
+    if (i % 2 === 0) {
+      ly = infoLine(lx, ly, item.label, item.value);
+    } else {
+      ry = infoLine(rx, ry, item.label, item.value);
+    }
+  });
 
   y += boxH + 8;
+
+  // ── Helper: check if spring is exception and format with asterisk ──
+  const hasAnySpringException = data.seats.some(s => s.isSpringException) || data.backrests.some(b => b.isSpringException);
+
+  function springDisplay(value: string | undefined, isException: boolean | undefined): string {
+    if (!value) return "—";
+    return isException ? `${value} *` : value;
+  }
 
   // ── Seats section ──
   if (data.seats.length > 0) {
@@ -124,9 +137,8 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
         const hasException = groupSeats.some(s => s.isSpringException);
         doc.setFontSize(9);
         doc.setFont("Roboto", "bold");
-        if (hasException) doc.setTextColor(200, 0, 0);
-        doc.text(`Stelaż: ${group.frame}`, mL, y + 3);
-        doc.setTextColor(0, 0, 0);
+        const groupLabel = hasException ? `Stelaż: ${group.frame} *` : `Stelaż: ${group.frame}`;
+        doc.text(groupLabel, mL, y + 3);
         y += 5;
         y = renderSeatsTable(doc, y, groupSeats, data, mL, contentW);
       }
@@ -172,6 +184,16 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
+  // ── Spring exception note ──
+  if (hasAnySpringException) {
+    if (y > pageH - 15) { doc.addPage(); y = mT; }
+    doc.setFontSize(8);
+    doc.setFont("Roboto", "normal");
+    doc.setTextColor(0, 0, 0);
+    doc.text("* Sprężyna inna niż domyślna", mL, y + 3);
+    y += 8;
+  }
+
   // ── Footer on each page ──
   const totalPages = doc.getNumberOfPages();
   const now = new Date().toLocaleDateString("pl-PL");
@@ -204,23 +226,20 @@ function renderSeatsTable(
   if (data.showModelCol) { headers.push("Model"); colStyles[colIdx] = { cellWidth: 30 }; colIdx++; }
   headers.push("Typ"); colStyles[colIdx] = { cellWidth: 22 }; colIdx++;
   if (data.showSpringCol) { headers.push("Sprężyna"); colStyles[colIdx] = { cellWidth: 20 }; colIdx++; }
-  headers.push("Pianka frontu"); colStyles[colIdx] = { cellWidth: 55 }; colIdx++;
-  if (data.showPiankiCol) { headers.push("Pianki"); colStyles[colIdx] = { cellWidth: 55 }; colIdx++; }
-  headers.push("Pasek śr. dokleić\n1.5 × 19 × 50 T-21-25"); colStyles[colIdx] = { cellWidth: 45 };
+  headers.push("Pianka frontu"); colStyles[colIdx] = { cellWidth: 45 }; colIdx++;
+  if (data.showPiankiCol) { headers.push("Pianki"); colStyles[colIdx] = { cellWidth: 45 }; colIdx++; }
+  headers.push("Pasek śr. dokleić\n1.5 × 19 × 50 T-21-25"); colStyles[colIdx] = { cellWidth: 35 };
 
   const rows = seats.map(s => {
     const row: string[] = [s.code];
     if (data.showModelCol) row.push(s.model || "—");
     row.push(s.type);
-    if (data.showSpringCol) row.push(s.spring || "—");
+    if (data.showSpringCol) row.push(s.isSpringException ? `${s.spring} *` : (s.spring || "—"));
     row.push(s.frontFoams);
     if (data.showPiankiCol) row.push(s.pianki);
     row.push(s.centerStrip ? "TAK" : "—");
     return row;
   });
-
-  // Build row-level styles for exceptions
-  const springColIndex = data.showModelCol ? 3 : 2;
 
   autoTable(doc, {
     startY: y,
@@ -237,10 +256,10 @@ function renderSeatsTable(
       if (hookData.section === "body") {
         const seatIdx = hookData.row.index;
         const seat = seats[seatIdx];
-        if (seat?.isSpringException) {
-          hookData.cell.styles.fillColor = [255, 235, 235];
-          if (data.showSpringCol && hookData.column.index === (data.showModelCol ? 3 : 2)) {
-            hookData.cell.styles.textColor = [200, 0, 0];
+        // Bold spring exception cell
+        if (seat?.isSpringException && data.showSpringCol) {
+          const springColIdx = data.showModelCol ? 3 : 2;
+          if (hookData.column.index === springColIdx) {
             hookData.cell.styles.fontStyle = "bold";
           }
         }
@@ -267,10 +286,10 @@ function renderBackrestsTable(
   const colStyles: Record<number, any> = { 0: { cellWidth: 20, fontStyle: "bold", font: "Roboto" } };
   let colIdx = 1;
 
-  if (data.showModelCol) { headers.push("Modele"); colStyles[colIdx] = { cellWidth: 50 }; colIdx++; }
-  headers.push("Stelaż"); colStyles[colIdx] = { cellWidth: 50 }; colIdx++;
-  headers.push("Wysokość"); colStyles[colIdx] = { cellWidth: 25 }; colIdx++;
-  headers.push("Sprężyna"); colStyles[colIdx] = { cellWidth: 25 }; colIdx++;
+  if (data.showModelCol) { headers.push("Modele"); colStyles[colIdx] = { cellWidth: 40 }; colIdx++; }
+  headers.push("Stelaż"); colStyles[colIdx] = { cellWidth: 40 }; colIdx++;
+  headers.push("Wysokość"); colStyles[colIdx] = { cellWidth: 20 }; colIdx++;
+  headers.push("Sprężyna"); colStyles[colIdx] = { cellWidth: 20 }; colIdx++;
   headers.push("Pianki");
 
   const rows = data.backrests.map(b => {
@@ -278,7 +297,7 @@ function renderBackrestsTable(
     if (data.showModelCol) row.push(b.models || "—");
     row.push(b.frame);
     row.push(b.height);
-    row.push(b.springType || "—");
+    row.push(b.isSpringException ? `${b.springType} *` : (b.springType || "—"));
     row.push(b.foams);
     return row;
   });
@@ -299,12 +318,8 @@ function renderBackrestsTable(
     didParseCell: (hookData) => {
       if (hookData.section === "body") {
         const b = data.backrests[hookData.row.index];
-        if (b?.isSpringException) {
-          hookData.cell.styles.fillColor = [255, 235, 235];
-          if (hookData.column.index === springIdx) {
-            hookData.cell.styles.textColor = [200, 0, 0];
-            hookData.cell.styles.fontStyle = "bold";
-          }
+        if (b?.isSpringException && hookData.column.index === springIdx) {
+          hookData.cell.styles.fontStyle = "bold";
         }
       }
     },
