@@ -195,6 +195,8 @@ const OrderDetailsPage = () => {
             <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="guide-dl" onClick={async () => downloadAndSave(await generateGuidePDF(decoded), `przewodnik_${orderNumber}.pdf`, "guide")} />
             <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="sofa-labels-preview" onClick={async () => preview(await generateSofaLabelsPDF(decoded), "Etykiety Sofy", `sofa_etykiety_${orderNumber}.pdf`)} />
             <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
+            <ActionBtn icon={Eye} label="Podgląd dekodowania" loadKey="sofa-decode-preview" onClick={async () => preview(await generateDecodingPDF(decoded, variantImageUrl || undefined), "Dekodowanie sofy", `dekodowanie_sofa_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="sofa-decode-dl" onClick={async () => downloadAndSave(await generateDecodingPDF(decoded, variantImageUrl || undefined), `dekodowanie_sofa_${orderNumber}.pdf`, "decoding_sofa")} />
           </div>
         </CardContent>
       </Card>
