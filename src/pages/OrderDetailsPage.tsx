@@ -173,6 +173,22 @@ const OrderDetailsPage = () => {
                   SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
                 </p>
                 <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-muted-foreground">Tkanina:</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="—"
+                    value={fabricUsage ?? ""}
+                    onChange={(e) => setFabricUsage(e.target.value ? Number(e.target.value) : null)}
+                    className="w-[80px] h-7 rounded-md border border-input bg-background px-2 text-sm font-mono"
+                  />
+                  <span className="text-sm text-muted-foreground">mb</span>
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSaveFabricUsage} disabled={savingFabric}>
+                    {savingFabric ? "..." : "✓"}
+                  </Button>
+                </div>
                 {decoded.fabricOverride && (
                   <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600">
                     Zmiana tkaniny: {decoded.fabricOverride.name} {decoded.fabricOverride.color}
@@ -346,6 +362,7 @@ const OrderDetailsPage = () => {
           </Button>
         </CardContent>
       </Card>
+
 
       {/* Fabric usage */}
       <Card className="shadow-md">
