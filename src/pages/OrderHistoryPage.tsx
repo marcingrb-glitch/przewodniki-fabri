@@ -371,6 +371,20 @@ const OrderHistoryPage = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="no-fabric"
+                checked={fabricFilter === "missing"}
+                onCheckedChange={(checked) => {
+                  setFabricFilter(checked ? "missing" : "all");
+                  resetPage();
+                }}
+              />
+              <label htmlFor="no-fabric" className="text-sm font-medium cursor-pointer">
+                Bez metrażu
+              </label>
+            </div>
           </div>
 
           {/* Loading */}
