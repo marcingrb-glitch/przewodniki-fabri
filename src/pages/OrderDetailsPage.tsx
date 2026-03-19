@@ -269,19 +269,6 @@ const OrderDetailsPage = () => {
         </Card>
       )}
 
-      {/* Decoding PDF */}
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg">📊 Dekodowanie SKU</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <ActionBtn icon={Eye} label="Podgląd dekodowania" loadKey="decode-preview" onClick={async () => preview(await generateDecodingPDF(decoded, variantImageUrl || undefined), "Dekodowanie SKU", `dekodowanie_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="decode-dl" onClick={async () => downloadAndSave(await generateDecodingPDF(decoded, variantImageUrl || undefined), `dekodowanie_${orderNumber}.pdf`, "decoding")} />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Bulk actions */}
       <Card className="shadow-md">
         <CardHeader>
@@ -308,13 +295,15 @@ const OrderDetailsPage = () => {
             const zip = new JSZip();
             zip.file("przewodnik.pdf", await generateGuidePDF(decoded));
             zip.file("sofa_etykiety.pdf", await generateSofaLabelsPDF(decoded));
+            zip.file("dekodowanie_sofa.pdf", await generateDecodingPDF(decoded, variantImageUrl || undefined));
             if (hasPufa) {
               zip.file("pufa_etykiety.pdf", await generatePufaLabelsPDF(decoded));
+              zip.file("dekodowanie_pufa.pdf", await generatePufaDecodingPDF(decoded));
             }
             if (hasFotel) {
               zip.file("fotel_etykiety.pdf", await generateFotelLabelsPDF(decoded));
+              zip.file("dekodowanie_fotel.pdf", await generateFotelDecodingPDF(decoded));
             }
-            zip.file("dekodowanie.pdf", await generateDecodingPDF(decoded, variantImageUrl || undefined));
             const zipBlob = await zip.generateAsync({ type: "blob" });
             downloadBlob(zipBlob, `zamowienie_${orderNumber}.zip`);
             toast.success("✅ Pobrano kompletny pakiet");
