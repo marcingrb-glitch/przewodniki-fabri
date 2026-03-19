@@ -312,7 +312,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
         }
       }
 
-      y = addTable(doc, y, table.headers, table.rows, undefined, ti < section.tables.length - 1 ? 2 : 0, gs.font_size_table, gs.table_row_height);
+      y = addTable(doc, y, table.headers, table.rows, undefined, 0, gs.font_size_table, gs.table_row_height);
     }
   }
 
