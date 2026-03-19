@@ -142,4 +142,40 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
       )}
     </div>
   );
+
+  const legs = data.getByCategory("leg").filter(p => p.is_global);
+
+  return (
+    <div className="space-y-6">
+      {mainContent}
+
+      {!allPlastic && legs.length > 0 && (
+        <>
+          <h3 className="text-base font-semibold mt-6 mb-2">📋 Typy nóżek</h3>
+          <div className="rounded-md border border-border overflow-hidden">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border border-border px-2 py-1 text-left">Kod</th>
+                  <th className="border border-border px-2 py-1 text-left">Nazwa</th>
+                  <th className="border border-border px-2 py-1 text-left">Materiał</th>
+                  <th className="border border-border px-2 py-1 text-left">Kolory</th>
+                </tr>
+              </thead>
+              <tbody>
+                {legs.map(leg => (
+                  <tr key={leg.id}>
+                    <td className="border border-border px-2 py-1 font-mono font-bold">{leg.code}</td>
+                    <td className="border border-border px-2 py-1">{leg.name}</td>
+                    <td className="border border-border px-2 py-1">{(leg.properties as any)?.material ?? "—"}</td>
+                    <td className="border border-border px-2 py-1">{formatColors(leg.colors)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
