@@ -502,13 +502,12 @@ function AutomatsSection({ data }: { data: SectionRendererProps["data"] }) {
   const automatConfigs = data.getRelationsByType("automat_config");
   if (automatConfigs.length === 0) return null;
 
-  const allProducts = [...data.seriesComponents, ...data.globalProducts];
   const seriesCode = data.seriesProduct?.code ?? "";
 
   function getSrubyZamkowe(automatCode: string): string {
-    if (seriesCode === "S1" && automatCode === "AT1") return "Poz. 1 i 2";
-    if (seriesCode === "S1" && automatCode === "AT2") return "Poz. 1 i 3";
-    if (seriesCode === "S2" && automatCode === "AT1") return "Poz. 1 i 2";
+    if (automatCode === "AT1") return "Poz. 1 i 2";
+    if (automatCode === "AT2" && seriesCode === "S1") return "Poz. 1 i 3";
+    if (automatCode === "AT2") return "Poz. 1 i 2";
     return "—";
   }
 
@@ -521,7 +520,6 @@ function AutomatsSection({ data }: { data: SectionRendererProps["data"] }) {
             <tr className="bg-muted">
               <th className="border border-border px-2 py-1 text-left">Kod</th>
               <th className="border border-border px-2 py-1 text-left">Nazwa</th>
-              <th className="border border-border px-2 py-1 text-left">Typ</th>
               <th className="border border-border px-2 py-1 text-left">Nóżki siedziska</th>
               <th className="border border-border px-2 py-1 text-left">Śruby zamkowe</th>
             </tr>
@@ -529,15 +527,13 @@ function AutomatsSection({ data }: { data: SectionRendererProps["data"] }) {
           <tbody>
             {automatConfigs.map((rel: any) => {
               const props = rel.properties as any;
-              const target = allProducts.find(p => p.id === rel.target_product_id);
-              const code = props?.automat_code ?? target?.code ?? "?";
-              const name = target?.name ?? "?";
-              const type = (target?.properties as any)?.type ?? "—";
+              const automat = data.globalProducts.find(p => p.id === rel.target_product_id);
+              const code = automat?.code ?? "?";
+              const name = automat?.name ?? "?";
               return (
                 <tr key={rel.id}>
                   <td className="border border-border px-2 py-1 font-mono font-bold">{code}</td>
                   <td className="border border-border px-2 py-1">{name}</td>
-                  <td className="border border-border px-2 py-1">{type}</td>
                   <td className="border border-border px-2 py-1">
                     {props?.has_seat_legs ? `Tak, ${props?.seat_leg_count ?? "?"}szt, H${props?.seat_leg_height_cm ?? "?"}cm` : "Nie"}
                   </td>
