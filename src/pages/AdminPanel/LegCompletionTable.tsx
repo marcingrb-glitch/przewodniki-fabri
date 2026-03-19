@@ -103,15 +103,16 @@ export default function LegCompletionTable() {
         const automatName = automat?.name ?? "?";
 
         if (saProps.has_seat_legs) {
-          const seatType = seriesProps?.seat_leg_type ?? "from_sku";
-          const isPlastic = seatType === "plastic_2_5";
+          const seatH = saProps.seat_leg_height_cm ?? 0;
+          const seatCount = saProps.seat_leg_count ?? 2;
+          const isPlastic = seatH <= 2.5;
           mountRows.push({
             series: seriesCode, seriesId: series.id,
             element: "Pod siedziskiem",
             detail: `${automatCode} (${automatName})`,
             type: isPlastic ? "N4 plastikowe" : "N z SKU",
-            height: isPlastic ? "2.5 cm" : `${saProps.seat_leg_height_cm ?? seriesProps?.seat_leg_height_cm ?? "?"} cm`,
-            count: `${saProps.seat_leg_count ?? 2} szt`,
+            height: `${seatH} cm`,
+            count: `${seatCount} szt`,
             who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek",
           });
         } else {
