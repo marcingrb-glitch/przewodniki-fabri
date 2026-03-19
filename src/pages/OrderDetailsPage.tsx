@@ -219,7 +219,7 @@ const OrderDetailsPage = () => {
               <AccordionTrigger className="text-base font-semibold">Dekodowanie SKU</AccordionTrigger>
               <AccordionContent>
                 <div className="flex gap-6">
-                  <div className="flex-1 space-y-2 text-sm">
+                  <div className="flex-shrink-0 space-y-2 text-sm">
                     <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`} />
                     <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, kolor ${decoded.fabric.colorName}`} />
                     <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.modelName ? `${decoded.seat.modelName}${decoded.seat.type ? ` ${decoded.seat.type}` : ''}` : decoded.seat.type || '?'}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
@@ -243,13 +243,13 @@ const OrderDetailsPage = () => {
                   </div>
                   {variantImageUrl && (
                     <div
-                      className="flex-shrink-0 cursor-pointer"
+                      className="flex-1 flex items-center justify-end cursor-pointer pl-6"
                       onClick={() => setImagePopupOpen(true)}
                     >
                       <img
                         src={variantImageUrl}
                         alt="Wariant"
-                        className="w-[200px] h-auto rounded-lg border shadow-sm hover:shadow-md transition"
+                        className="max-w-full max-h-[300px] object-contain rounded-lg"
                       />
                     </div>
                   )}
