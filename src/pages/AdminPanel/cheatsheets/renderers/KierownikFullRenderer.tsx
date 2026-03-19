@@ -392,7 +392,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
                       <td className="border border-border px-2 py-1 font-mono font-bold">{code}</td>
                       <td className="border border-border px-2 py-1">{name}</td>
                       <td className="border border-border px-2 py-1">
-                        {props?.has_seat_legs ? `Tak, ${props?.seat_leg_count ?? "?"}szt, H${props?.seat_leg_height_cm ?? "?"}cm` : "Nie"}
+                        {props?.has_seat_legs ? `Tak, ${props?.seat_leg_count ?? "?"}szt, H = ${props?.seat_leg_height_cm ?? "?"}cm` : "Nie"}
                       </td>
                       <td className="border border-border px-2 py-1">{sruby}</td>
                     </tr>
