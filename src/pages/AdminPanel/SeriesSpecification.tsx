@@ -113,7 +113,7 @@ export default function SeriesSpecification() {
         )}
         {hasFotel && (
           <TabsContent value="fotel">
-            <SeriesFotel />
+            <SeriesFotel seriesProductId={seriesProduct.id} seriesProperties={seriesProps} />
           </TabsContent>
         )}
       </Tabs>

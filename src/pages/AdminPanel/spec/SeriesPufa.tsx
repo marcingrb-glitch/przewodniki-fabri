@@ -131,24 +131,32 @@ export default function SeriesPufa({ seriesProductId, seriesProperties }: Props)
 
   if (loading) return <div className="text-muted-foreground py-8 text-center">Ładowanie...</div>;
 
-  const legType = seriesProperties?.pufa_leg_type;
-  const legHeight = seriesProperties?.pufa_leg_height_cm;
-
   return (
     <div className="space-y-4">
-      {legType && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex gap-4 text-sm flex-wrap">
-              <Badge variant="outline">Nóżki: {LEG_TYPE_LABELS[legType] ?? legType}</Badge>
-              {legHeight != null && <Badge variant="outline">Wysokość: {legHeight} cm</Badge>}
-              <Badge variant="secondary">
-                Kompletacja: {legType === "plastic_2_5" ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek (kompletacja do worka)"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Nóżki pufy</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <div className="flex gap-3 flex-wrap">
+            <Badge variant="outline">
+              {seriesProperties?.pufa_leg_type === "plastic_2_5" ? "N4 plastikowe" : "Zawsze z segmentu N w SKU"}
+            </Badge>
+            {seriesProperties?.pufa_leg_height_cm != null && (
+              <Badge variant="outline">Wysokość: {seriesProperties.pufa_leg_height_cm} cm</Badge>
+            )}
+            <Badge variant="outline">Ilość: {seriesProperties?.pufa_leg_count ?? 4} szt</Badge>
+            <Badge variant="outline">
+              Kompletacja: {seriesProperties?.pufa_leg_type === "plastic_2_5"
+                ? "Tapicer (na stanowisku)"
+                : "Dziewczyny od nóżek (kompletacja do worka)"}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Edycja danych nóżek: Wspólne → Nóżki → tabela "Kto co kompletuje"
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
