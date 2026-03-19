@@ -538,7 +538,7 @@ const OrderHistoryPage = () => {
                         <TableCell>
                           {order.series_code && <Badge variant="outline">{order.series_code}</Badge>}
                         </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell className={order.fabric_usage_mb == null ? "bg-red-50" : ""} onClick={(e) => e.stopPropagation()}>
                           <InlineFabricInput
                             orderId={order.id}
                             value={order.fabric_usage_mb}
