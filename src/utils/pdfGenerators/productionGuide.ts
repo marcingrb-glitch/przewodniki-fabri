@@ -403,7 +403,7 @@ export async function generatePufaProductionGuidePDF(decoded: DecodedSKU): Promi
       code: decoded.pufaLegs.code,
       headers: ["Nazwa", "Wysokość", "Ilość"],
       rows: [[
-        decoded.legs?.name || decoded.pufaLegs.code,
+        [decoded.legs?.name || decoded.pufaLegs.code, decoded.legs?.colorName || ""].filter(Boolean).join(" "),
         `${decoded.pufaLegs.height}cm`,
         `${decoded.pufaLegs.count} szt`,
       ]],
