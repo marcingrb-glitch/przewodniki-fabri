@@ -10,9 +10,9 @@ function foamDims(f: ProductSpec): string {
 
 function foamLine(f: ProductSpec): string {
   const dims = foamDims(f);
-  const mat = f.material ? ` ${f.material}` : "";
   const qty = (f.quantity ?? 1) > 1 ? `${f.quantity}× ` : "";
-  return `${qty}${dims}${mat}`.trim();
+  const label = f.name ? `${f.name} ` : "";
+  return `${label}${qty}${dims}`.trim();
 }
 
 function specsAreEqual(a: ProductSpec, b: ProductSpec): boolean {
