@@ -53,4 +53,5 @@ export const sectionIcons: Record<string, string> = {
   generic_table: "📋",
   series_config_summary: "⚙️",
   automats_table: "🔧",
+  warehouse_full: "🏭",
 };
