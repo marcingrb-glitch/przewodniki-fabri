@@ -92,13 +92,14 @@ const OrderHistoryPage = () => {
 
   // Fetch orders
   const { data: ordersResult, isLoading, refetch } = useQuery({
-    queryKey: ["orders-history", debouncedSearch, dateRange?.from, dateRange?.to, seriesFilter, page],
+    queryKey: ["orders-history", debouncedSearch, dateRange?.from, dateRange?.to, seriesFilter, fabricFilter, page],
     queryFn: () =>
       getOrders({
         searchQuery: debouncedSearch,
         dateFrom: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null,
         dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : null,
         seriesCode: seriesFilter,
+        fabricFilter,
         page,
         limit: LIMIT,
       }),
