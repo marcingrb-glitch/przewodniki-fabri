@@ -230,6 +230,8 @@ const OrderDetailsPage = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="pufa-labels-preview" onClick={async () => preview(await generatePufaLabelsPDF(decoded), "Etykiety Pufy", `pufa_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(await generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
+              <ActionBtn icon={Eye} label="Podgląd dekodowania pufy" loadKey="pufa-decode-preview" onClick={async () => preview(await generatePufaDecodingPDF(decoded), "Dekodowanie pufy", `dekodowanie_pufa_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz dekodowanie pufy" loadKey="pufa-decode-dl" onClick={async () => downloadAndSave(await generatePufaDecodingPDF(decoded), `dekodowanie_pufa_${orderNumber}.pdf`, "decoding_pufa")} />
             </div>
           </CardContent>
         </Card>
