@@ -558,7 +558,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   if (hasPufa && legsDecoded) {
     pufaLegsDecoded = {
       code: `${legsDecoded.code}${legsDecoded.color || ""}`,
-      height: automatSeatLegHeight,
+      height: seriesProps.pufa_leg_height_cm ?? 0,
       count: seriesProps.pufa_leg_count ?? 4,
     };
   }
@@ -567,8 +567,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   if (hasFotel && legsDecoded) {
     fotelLegsDecoded = {
       code: `${legsDecoded.code}${legsDecoded.color || ""}`,
-      height: automatSeatLegHeight,
-      count: seriesProps.pufa_leg_count ?? 4,
+      height: seriesProps.fotel_leg_height_cm ?? 15,
+      count: seriesProps.fotel_leg_count ?? 4,
     };
   }
 
