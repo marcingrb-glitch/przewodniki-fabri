@@ -278,12 +278,13 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
     // Dashed separator before extras
     if (hasSeparator && si === coreCount && si > 0) {
+      y += 4;
       doc.setDrawColor(150, 150, 150);
       doc.setLineDashPattern([2, 2], 0);
       doc.setLineWidth(0.3);
       doc.line(marginLeft, y, pageWidth - marginLeft, y);
       doc.setLineDashPattern([], 0);
-      y += 4;
+      y += 6;
     } else if (si > 0) {
       y += sectionSpacing;
     }
