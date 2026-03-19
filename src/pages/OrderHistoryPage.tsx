@@ -62,6 +62,7 @@ const OrderHistoryPage = () => {
   const debouncedSearch = useDebounce(search, 300);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [seriesFilter, setSeriesFilter] = useState("all");
+  const [fabricFilter, setFabricFilter] = useState<"all" | "missing">("all");
   const [page, setPage] = useState(1);
 
   // Action states
