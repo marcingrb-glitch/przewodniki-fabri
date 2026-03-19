@@ -226,8 +226,6 @@ const OrderDetailsPage = () => {
               </AccordionItem>
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
-              <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="pufa-preview" onClick={async () => preview(await generateGuidePDF(decoded, "pufa"), "Przewodnik Pufy", `pufa_przewodnik_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="pufa-dl" onClick={async () => downloadAndSave(await generateGuidePDF(decoded, "pufa"), `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide")} />
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="pufa-labels-preview" onClick={async () => preview(await generatePufaLabelsPDF(decoded), "Etykiety Pufy", `pufa_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(await generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
             </div>
