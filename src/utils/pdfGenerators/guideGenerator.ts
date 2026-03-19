@@ -82,7 +82,7 @@ async function fetchGuideSettings() {
 }
 
 /**
- * Universal PDF guide generator — replaces sofaGuide, pufaGuide, fotelGuide.
+ * Universal PDF guide generator — data-driven, reads sections from guide_sections table.
  */
 export async function generateGuidePDF(
   decoded: DecodedSKU,

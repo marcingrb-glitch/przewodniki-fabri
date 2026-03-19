@@ -1,9 +1,12 @@
-import { useState } from "react";
-import GuidePreview from "./GuidePreview";
+import { useState, useMemo } from "react";
+import GuidePdfPreview from "./guides/GuidePdfPreview";
+import { useSkuPreviewDecoder } from "@/hooks/useSkuPreviewDecoder";
+import { DEFAULT_EXAMPLE_SKUS, FALLBACK_EXAMPLE_SKU } from "./labels/defaultExampleSkus";
 import GuideSettings from "./guides/GuideSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { GuideSection, GuideColumn, FIELD_GROUPS, AVAILABLE_FIELDS, CONDITION_FIELDS } from "./fieldResolver";
 
 const emptySection = (productType: string): Omit<GuideSection, "id"> => ({
@@ -58,6 +61,19 @@ export default function GuideTemplates() {
       return data as { id: string; code: string; name: string }[];
     },
   });
+
+  // Resolve series code from selectedSeriesId
+  const selectedSeriesCode = useMemo(() => {
+    if (selectedSeriesId === "__global__") return undefined;
+    return seriesList.find(s => s.id === selectedSeriesId)?.code;
+  }, [selectedSeriesId, seriesList]);
+
+  const defaultSku = useMemo(() => {
+    if (selectedSeriesCode) return DEFAULT_EXAMPLE_SKUS[selectedSeriesCode] || FALLBACK_EXAMPLE_SKU;
+    return FALLBACK_EXAMPLE_SKU;
+  }, [selectedSeriesCode]);
+
+  const { decoded, isLoading: isDecoding, error: decodeError, skuInput, setSkuInput } = useSkuPreviewDecoder(defaultSku);
 
   const saveMutation = useMutation({
     mutationFn: async (section: Omit<GuideSection, "id"> & { id?: string }) => {
@@ -318,7 +334,33 @@ export default function GuideTemplates() {
         ))}
       </Tabs>
 
-      <GuidePreview sections={filtered} productType={activeTab} seriesId={selectedSeriesId === "__global__" ? null : selectedSeriesId} />
+      <Card className="mt-4">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            📄 Podgląd przewodnika ({activeTab.toUpperCase()})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 space-y-3">
+          <div className="flex gap-2 items-center">
+            <Label className="text-xs whitespace-nowrap">SKU:</Label>
+            <Input
+              value={skuInput}
+              onChange={(e) => setSkuInput(e.target.value)}
+              className="h-8 text-xs font-mono"
+              placeholder="Wpisz SKU do podglądu..."
+            />
+            {isDecoding && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          </div>
+          {decodeError && (
+            <p className="text-xs text-destructive">{decodeError}</p>
+          )}
+          <GuidePdfPreview
+            decoded={decoded}
+            productType={activeTab as "sofa" | "pufa" | "fotel"}
+            width={550}
+          />
+        </CardContent>
+      </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

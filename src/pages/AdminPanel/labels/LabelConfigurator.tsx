@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatFieldWithLabel } from "@/utils/fieldLabels";
 import { resolveDecodedField } from "@/utils/pdfGenerators/decodingFieldResolver";
-import { useSkuPreviewDecoder } from "./useSkuPreviewDecoder";
+import { useSkuPreviewDecoder } from "@/hooks/useSkuPreviewDecoder";
 import { DEFAULT_EXAMPLE_SKUS, FALLBACK_EXAMPLE_SKU } from "./defaultExampleSkus";
 import LabelPdfPreview from "./LabelPdfPreview";
 import type { LabelSettings as LabelSettingsType } from "@/utils/pdfHelpers";
