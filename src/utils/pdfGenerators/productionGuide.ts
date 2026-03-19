@@ -83,7 +83,7 @@ function drawPlaceholder(doc: any, x: number, y: number, w: number, h: number) {
 }
 
 // ─── Shared header ───────────────────────────────────────────────────
-function drawDecodingHeader(
+function drawProductionHeader(
   doc: any,
   decoded: DecodedSKU,
   prefix?: string,
@@ -96,7 +96,6 @@ function drawDecodingHeader(
 
   let y = 15;
 
-  // Line 1: order number + date
   doc.setFontSize(16);
   doc.setFont("Roboto", "bold");
   const titleText = prefix
@@ -112,19 +111,16 @@ function drawDecodingHeader(
   doc.text(decoded.orderDate || "", right - 40 + dateW, y);
   y += 7;
 
-  // Line 2: series
   doc.setFontSize(14);
   doc.setFont("Roboto", "bold");
   doc.text(`${decoded.series.code} — ${decoded.series.collection || decoded.series.name}`, marginLeft, y);
   y += 6;
 
-  // Line 3: SKU
   doc.setFontSize(9);
   doc.setFont("Roboto", "normal");
   doc.text(`SKU: ${decoded.rawSKU || ""}`, marginLeft, y);
   y += 5;
 
-  // Separator
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(marginLeft, y, right, y);
@@ -149,7 +145,6 @@ async function drawVariantImage(
       try {
         base64 = await trimWhiteBackground(variantImageUrl);
       } catch {
-        // Fallback: load without trimming
         const response = await fetch(variantImageUrl);
         const blob = await response.blob();
         base64 = await new Promise<string>((resolve) => {
@@ -241,9 +236,9 @@ function renderSectionAt(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// SOFA DECODING
+// SOFA PRODUCTION GUIDE
 // ═══════════════════════════════════════════════════════════════════════
-export async function generateDecodingPDF(
+export async function generateProductionGuidePDF(
   decoded: DecodedSKU,
   variantImageUrl?: string
 ): Promise<Blob> {
@@ -254,12 +249,11 @@ export async function generateDecodingPDF(
 
   const fs = settings.font_size_table;
   const rh = settings.table_row_height;
-  const sp = 3; // post-table spacing
+  const sp = 3;
 
-  let y = drawDecodingHeader(doc, decoded, undefined, settings);
+  let y = drawProductionHeader(doc, decoded, undefined, settings);
   y = await drawVariantImage(doc, y, variantImageUrl);
 
-  // ── Two-column layout ──
   const colLeftX = 15;
   const colRightX = 108;
   const colW = 87;
@@ -268,7 +262,6 @@ export async function generateDecodingPDF(
   // LEFT COLUMN
   let yL = y;
 
-  // 1. TKANINA
   yL = renderSectionAt(doc, {
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
@@ -277,7 +270,6 @@ export async function generateDecodingPDF(
   }, colLeftX, yL, colW, fs, rh, sp);
   yL += sectionGap;
 
-  // 2. SIEDZISKO
   yL = renderSectionAt(doc, {
     title: "SIEDZISKO",
     code: `${decoded.seat.code}${decoded.seat.finish}`,
@@ -286,7 +278,6 @@ export async function generateDecodingPDF(
   }, colLeftX, yL, colW, fs, rh, sp);
   yL += sectionGap;
 
-  // 3. OPARCIE
   yL = renderSectionAt(doc, {
     title: "OPARCIE",
     code: `${decoded.backrest.code}${decoded.backrest.finish}`,
@@ -297,7 +288,6 @@ export async function generateDecodingPDF(
   // RIGHT COLUMN
   let yR = y;
 
-  // 1. BOCZEK
   yR = renderSectionAt(doc, {
     title: "BOCZEK",
     code: `${decoded.side.code}${decoded.side.finish}`,
@@ -306,7 +296,6 @@ export async function generateDecodingPDF(
   }, colRightX, yR, colW, fs, rh, sp);
   yR += sectionGap;
 
-  // 2. SKRZYNIA + AUTOMAT
   yR = renderSectionAt(doc, {
     title: "SKRZYNIA + AUTOMAT",
     headers: ["Skrzynia", "Automat"],
@@ -314,7 +303,6 @@ export async function generateDecodingPDF(
   }, colRightX, yR, colW, fs, rh, sp);
   yR += sectionGap;
 
-  // 3. NÓŻKI
   const chestLegInfo = decoded.legHeights.sofa_chest
     ? `${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
     : "BRAK";
@@ -333,7 +321,6 @@ export async function generateDecodingPDF(
   y = Math.max(yL, yR) + sectionGap;
   const fullW = 180;
 
-  // PODUSZKA (conditional)
   if (decoded.pillow) {
     y = renderSectionAt(doc, {
       title: "PODUSZKA",
@@ -349,7 +336,6 @@ export async function generateDecodingPDF(
     y += sectionGap;
   }
 
-  // JAŚKI / WAŁEK (conditional)
   const hasJaski = !!decoded.jaski;
   const hasWalek = !!decoded.walek;
   if (hasJaski || hasWalek) {
@@ -374,9 +360,9 @@ export async function generateDecodingPDF(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// PUFA DECODING
+// PUFA PRODUCTION GUIDE
 // ═══════════════════════════════════════════════════════════════════════
-export async function generatePufaDecodingPDF(decoded: DecodedSKU): Promise<Blob> {
+export async function generatePufaProductionGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const [doc, settings] = await Promise.all([
     createDoc("portrait", "a4"),
     fetchGuideSettings(),
@@ -389,9 +375,8 @@ export async function generatePufaDecodingPDF(decoded: DecodedSKU): Promise<Blob
   const x = 15;
   const sectionGap = 10;
 
-  let y = drawDecodingHeader(doc, decoded, "PUFA", settings);
+  let y = drawProductionHeader(doc, decoded, "PUFA", settings);
 
-  // TKANINA
   y = renderSectionAt(doc, {
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
@@ -400,8 +385,6 @@ export async function generatePufaDecodingPDF(decoded: DecodedSKU): Promise<Blob
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
-  // SIEDZISKO PUFY
-  const pufaSeat = decoded.pufaSeat;
   y = renderSectionAt(doc, {
     title: "SIEDZISKO PUFY",
     code: decoded.seat.code + decoded.seat.finish,
@@ -410,7 +393,6 @@ export async function generatePufaDecodingPDF(decoded: DecodedSKU): Promise<Blob
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
-  // NÓŻKI
   if (decoded.pufaLegs) {
     y = renderSectionAt(doc, {
       title: "NÓŻKI",
@@ -428,9 +410,9 @@ export async function generatePufaDecodingPDF(decoded: DecodedSKU): Promise<Blob
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// FOTEL DECODING
+// FOTEL PRODUCTION GUIDE
 // ═══════════════════════════════════════════════════════════════════════
-export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blob> {
+export async function generateFotelProductionGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const [doc, settings] = await Promise.all([
     createDoc("portrait", "a4"),
     fetchGuideSettings(),
@@ -443,9 +425,8 @@ export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blo
   const x = 15;
   const sectionGap = 10;
 
-  let y = drawDecodingHeader(doc, decoded, "FOTEL", settings);
+  let y = drawProductionHeader(doc, decoded, "FOTEL", settings);
 
-  // TKANINA
   y = renderSectionAt(doc, {
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
@@ -454,7 +435,6 @@ export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blo
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
-  // SIEDZISKO FOTELA
   y = renderSectionAt(doc, {
     title: "SIEDZISKO FOTELA",
     code: decoded.seat.code + decoded.seat.finish,
@@ -463,7 +443,6 @@ export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blo
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
-  // BOCZEK
   y = renderSectionAt(doc, {
     title: "BOCZEK",
     code: `${decoded.side.code}${decoded.side.finish}`,
@@ -472,7 +451,6 @@ export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blo
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
-  // JAŚKI (conditional)
   if (decoded.jaski) {
     y = renderSectionAt(doc, {
       title: "JAŚKI",
@@ -483,7 +461,6 @@ export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blo
     y += sectionGap;
   }
 
-  // NÓŻKI
   if (decoded.fotelLegs) {
     y = renderSectionAt(doc, {
       title: "NÓŻKI",

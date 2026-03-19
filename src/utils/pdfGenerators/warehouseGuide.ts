@@ -2,6 +2,7 @@ import { DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createDoc, addTable, toBlob } from "@/utils/pdfHelpers";
 
+// ─── Settings ────────────────────────────────────────────────────────
 /**
  * Fetch guide settings from DB (singleton).
  */
@@ -11,11 +12,13 @@ async function fetchGuideSettings() {
     .select("*")
     .limit(1)
     .single();
-  return data ? {
-    font_size_header: Number(data.font_size_header) || 11,
-    font_size_table: Number(data.font_size_table) || 9,
-    table_row_height: Number(data.table_row_height) || 8,
-  } : { font_size_header: 11, font_size_table: 9, table_row_height: 8 };
+  return data
+    ? {
+        font_size_header: Number(data.font_size_header) || 11,
+        font_size_table: Number(data.font_size_table) || 9,
+        table_row_height: Number(data.table_row_height) || 8,
+      }
+    : { font_size_header: 11, font_size_table: 9, table_row_height: 8 };
 }
 
 /**
@@ -48,9 +51,9 @@ interface SectionBlock {
 }
 
 /**
- * Hardcoded guide PDF generator — single PDF with sofa + conditional pufa + conditional fotel.
+ * Hardcoded warehouse guide PDF generator — single PDF with sofa + conditional pufa + conditional fotel.
  */
-export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
+export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   const [doc, gs] = await Promise.all([
     createDoc("portrait", "a4"),
     fetchGuideSettings(),
@@ -68,7 +71,6 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   // ──── HEADER ────
   let y = marginTop;
 
-  // Line 1: ZAMÓWIENIE: {nr}                    Data: {date}
   const orderNumber = decoded.orderNumber || "";
   const orderDate = decoded.orderDate || "";
 
@@ -77,7 +79,6 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   doc.setTextColor(0, 0, 0);
   doc.text(`ZAMÓWIENIE: ${orderNumber}`, marginLeft, y);
 
-  // Date on the right
   const dateLabel = "Data: ";
   const dateValue = orderDate;
   doc.setFont("Roboto", "normal");
@@ -92,19 +93,16 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
   y += 7;
 
-  // Line 2: {series.code} — {series.collection}
   doc.setFont("Roboto", "bold");
   doc.setFontSize(14);
   doc.text(`${decoded.series.code} — ${decoded.series.collection}`, marginLeft, y);
   y += 6;
 
-  // Line 3: SKU: {rawSKU}
   doc.setFont("Roboto", "normal");
   doc.setFontSize(9);
   doc.text(`SKU: ${decoded.rawSKU || ""}`, marginLeft, y);
   y += 4;
 
-  // Separator line
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(marginLeft, y, pageWidth - marginLeft, y);
@@ -121,7 +119,6 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     tables: [],
   };
 
-  // Stolarka table
   const lockBolts = getLockBoltPositions(decoded.series.code, decoded.automat.code);
   seatSection.tables.push({
     headers: ["Kod", "Stelaż", "Sprężyna", "Śruby zamkowe"],
@@ -133,10 +130,8 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     ]],
   });
 
-  // Pianki siedziska
   const seatFoamRows = foamsToRows(decoded.seat.foams);
   if (decoded.seat.midStrip) {
-    // Check if mid-strip foam is already in foams
     const hasMidStripFoam = decoded.seat.foams?.some(f =>
       f.name?.toLowerCase().includes("pasek") || f.name?.toLowerCase().includes("strip")
     );
@@ -195,12 +190,10 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
   // PUFA — conditional
   if (hasPufa && decoded.pufaSeat) {
-    // Pufa Czapa (foams)
     const pufaFoamRows: string[][] = [];
     if (decoded.pufaSeat.foams && decoded.pufaSeat.foams.length > 0) {
       pufaFoamRows.push(...foamsToRows(decoded.pufaSeat.foams));
     } else {
-      // Fallback: use text properties
       if (decoded.pufaSeat.foam) pufaFoamRows.push(["Pianka bazy", decoded.pufaSeat.foam, "-", "1"]);
       if (decoded.pufaSeat.frontBack) pufaFoamRows.push(["Przód/tył", decoded.pufaSeat.frontBack, "-", "1"]);
       if (decoded.pufaSeat.sides) pufaFoamRows.push(["Boki", decoded.pufaSeat.sides, "-", "1"]);
@@ -215,7 +208,6 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       });
     }
 
-    // Pufa Skrzynka
     if (decoded.pufaSeat.box) {
       sections.push({
         title: "PUFA — SKRZYNKA",
@@ -240,8 +232,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   }
 
   // ──── CALCULATE DYNAMIC SPACING ────
-  // Estimate total required height for all sections (without spacing)
-  const TITLE_HEIGHT = gs.font_size_header * 0.4 + 3; // title + gap to table
+  const TITLE_HEIGHT = gs.font_size_header * 0.4 + 3;
   const TABLE_HEADER_HEIGHT = gs.table_row_height + 2;
   const TABLE_ROW_HEIGHT = gs.table_row_height;
 
@@ -251,13 +242,11 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     for (const table of section.tables) {
       totalContentHeight += TABLE_HEADER_HEIGHT + table.rows.length * TABLE_ROW_HEIGHT;
     }
-    // Sub-table label spacing (for foam tables within a section)
     if (section.tables.length > 1) {
       totalContentHeight += 8 * (section.tables.length - 1);
     }
   }
 
-  // Add dashed separator if pufa or fotel
   const hasSeparator = hasPufa || hasFotel;
   if (hasSeparator) totalContentHeight += 10;
 
@@ -276,7 +265,6 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   for (let si = 0; si < sections.length; si++) {
     const section = sections[si];
 
-    // Dashed separator before extras
     if (hasSeparator && si === coreCount && si > 0) {
       y += 4;
       doc.setDrawColor(150, 150, 150);
@@ -289,18 +277,15 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
       y += sectionSpacing;
     }
 
-    // Section title
     doc.setFont("Roboto", "bold");
     doc.setFontSize(gs.font_size_header);
     doc.setTextColor(0, 0, 0);
     doc.text(section.title, marginLeft, y);
-    y += 3; // Fixed gap: title to table
+    y += 3;
 
-    // Render tables
     for (let ti = 0; ti < section.tables.length; ti++) {
       const table = section.tables[ti];
 
-      // Sub-table label for foam tables (2nd table in section)
       if (ti === 1) {
         const foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
                           section.title === "OPARCIE" ? "Pianki oparcia:" : "";

@@ -14,9 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getOrders, deleteOrder } from "@/utils/supabaseQueries";
 import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
-import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
+import { generateWarehouseGuidePDF } from "@/utils/pdfGenerators/warehouseGuide";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
-import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
+import { generateProductionGuidePDF } from "@/utils/pdfGenerators/productionGuide";
 import { uploadAndSaveOrderFile } from "@/utils/storage";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DecodedSKU } from "@/types";
@@ -130,7 +130,7 @@ const OrderHistoryPage = () => {
       const uploads: Promise<void>[] = [];
 
       // Guide (single PDF with sofa + pufa + fotel)
-      uploads.push(generateGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_${orderNumber}.pdf`, "guide")));
+      uploads.push(generateWarehouseGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_magazyn_${orderNumber}.pdf`, "guide")));
 
       // Labels
       uploads.push(generateSofaLabelsPDF(decoded).then((b) => uploadAndSave(b, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")));
@@ -141,8 +141,8 @@ const OrderHistoryPage = () => {
         uploads.push(generateFotelLabelsPDF(decoded).then((b) => uploadAndSave(b, `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")));
       }
 
-      // Decoding
-      uploads.push(generateDecodingPDF(decoded).then((b) => uploadAndSave(b, `dekodowanie_${orderNumber}.pdf`, "decoding")));
+      // Production guide
+      uploads.push(generateProductionGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_produkcja_${orderNumber}.pdf`, "production")));
 
       await Promise.all(uploads);
 

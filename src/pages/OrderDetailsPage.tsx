@@ -19,9 +19,9 @@ import { getOrderById } from "@/utils/supabaseQueries";
 import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
 
 import { downloadBlob } from "@/utils/pdfHelpers";
-import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
+import { generateWarehouseGuidePDF } from "@/utils/pdfGenerators/warehouseGuide";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
-import { generateDecodingPDF, generatePufaDecodingPDF, generateFotelDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
+import { generateProductionGuidePDF, generatePufaProductionGuidePDF, generateFotelProductionGuidePDF } from "@/utils/pdfGenerators/productionGuide";
 import { uploadAndSaveOrderFile } from "@/utils/storage";
 import PDFPreview from "@/components/PDFPreview";
 
@@ -50,7 +50,6 @@ const OrderDetailsPage = () => {
   const orderId = id || "";
   const orderNumber = decoded?.orderNumber || order?.order_number || "";
 
-  // Load variant image: manual upload (signed URL) takes priority, then Shopify CDN URL
   useEffect(() => {
     if (variantImagePath) {
       getVariantImageSignedUrl(variantImagePath).then(url => setVariantImageUrl(url));
@@ -191,12 +190,12 @@ const OrderDetailsPage = () => {
             </AccordionItem>
           </Accordion>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="guide-preview" onClick={async () => preview(await generateGuidePDF(decoded), "Przewodnik produkcyjny", `przewodnik_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="guide-dl" onClick={async () => downloadAndSave(await generateGuidePDF(decoded), `przewodnik_${orderNumber}.pdf`, "guide")} />
+            <ActionBtn icon={Eye} label="Przewodnik Magazyn" loadKey="guide-preview" onClick={async () => preview(await generateWarehouseGuidePDF(decoded), "Przewodnik Magazyn", `przewodnik_magazyn_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz Przew. Magazyn" loadKey="guide-dl" onClick={async () => downloadAndSave(await generateWarehouseGuidePDF(decoded), `przewodnik_magazyn_${orderNumber}.pdf`, "guide")} />
             <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="sofa-labels-preview" onClick={async () => preview(await generateSofaLabelsPDF(decoded), "Etykiety Sofy", `sofa_etykiety_${orderNumber}.pdf`)} />
             <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
-            <ActionBtn icon={Eye} label="Podgląd dekodowania" loadKey="sofa-decode-preview" onClick={async () => preview(await generateDecodingPDF(decoded, variantImageUrl || undefined), "Dekodowanie sofy", `dekodowanie_sofa_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz dekodowanie" loadKey="sofa-decode-dl" onClick={async () => downloadAndSave(await generateDecodingPDF(decoded, variantImageUrl || undefined), `dekodowanie_sofa_${orderNumber}.pdf`, "decoding_sofa")} />
+            <ActionBtn icon={Eye} label="Przewodnik Produkcja" loadKey="sofa-decode-preview" onClick={async () => preview(await generateProductionGuidePDF(decoded, variantImageUrl || undefined), "Przewodnik Produkcja", `przewodnik_produkcja_sofa_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz Przew. Produkcja" loadKey="sofa-decode-dl" onClick={async () => downloadAndSave(await generateProductionGuidePDF(decoded, variantImageUrl || undefined), `przewodnik_produkcja_sofa_${orderNumber}.pdf`, "production_sofa")} />
           </div>
         </CardContent>
       </Card>
@@ -230,8 +229,8 @@ const OrderDetailsPage = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="pufa-labels-preview" onClick={async () => preview(await generatePufaLabelsPDF(decoded), "Etykiety Pufy", `pufa_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(await generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
-              <ActionBtn icon={Eye} label="Podgląd dekodowania pufy" loadKey="pufa-decode-preview" onClick={async () => preview(await generatePufaDecodingPDF(decoded), "Dekodowanie pufy", `dekodowanie_pufa_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz dekodowanie pufy" loadKey="pufa-decode-dl" onClick={async () => downloadAndSave(await generatePufaDecodingPDF(decoded), `dekodowanie_pufa_${orderNumber}.pdf`, "decoding_pufa")} />
+              <ActionBtn icon={Eye} label="Przewodnik Produkcja pufy" loadKey="pufa-decode-preview" onClick={async () => preview(await generatePufaProductionGuidePDF(decoded), "Przewodnik Produkcja pufy", `przewodnik_produkcja_pufa_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz Przew. Produkcja pufy" loadKey="pufa-decode-dl" onClick={async () => downloadAndSave(await generatePufaProductionGuidePDF(decoded), `przewodnik_produkcja_pufa_${orderNumber}.pdf`, "production_pufa")} />
             </div>
           </CardContent>
         </Card>
@@ -262,8 +261,8 @@ const OrderDetailsPage = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="fotel-labels-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
-              <ActionBtn icon={Eye} label="Podgląd dekodowania fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelDecodingPDF(decoded), "Dekodowanie fotela", `dekodowanie_fotel_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz dekodowanie fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelDecodingPDF(decoded), `dekodowanie_fotel_${orderNumber}.pdf`, "decoding_fotel")} />
+              <ActionBtn icon={Eye} label="Przewodnik Produkcja fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelProductionGuidePDF(decoded), "Przewodnik Produkcja fotela", `przewodnik_produkcja_fotel_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelProductionGuidePDF(decoded), `przewodnik_produkcja_fotel_${orderNumber}.pdf`, "production_fotel")} />
             </div>
           </CardContent>
         </Card>
@@ -275,10 +274,10 @@ const OrderDetailsPage = () => {
           <CardTitle className="text-lg">📦 Akcje zbiorcze</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          <ActionBtn icon={FileText} label="Pobierz przewodnik" loadKey="all-guides" onClick={async () => {
-            const guideBlob = await generateGuidePDF(decoded);
-            downloadBlob(guideBlob, `przewodnik_${orderNumber}.pdf`);
-            toast.success("✅ Pobrano przewodnik");
+          <ActionBtn icon={FileText} label="Pobierz Przew. Magazyn" loadKey="all-guides" onClick={async () => {
+            const guideBlob = await generateWarehouseGuidePDF(decoded);
+            downloadBlob(guideBlob, `przewodnik_magazyn_${orderNumber}.pdf`);
+            toast.success("✅ Pobrano przewodnik magazyn");
           }} />
           <ActionBtn icon={Tag} label="Pobierz wszystkie etykiety" loadKey="all-labels" onClick={async () => {
             const blobs: { name: string; blob: Blob }[] = [];
@@ -293,16 +292,16 @@ const OrderDetailsPage = () => {
           }} />
           <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
             const zip = new JSZip();
-            zip.file("przewodnik.pdf", await generateGuidePDF(decoded));
+            zip.file("przewodnik_magazyn.pdf", await generateWarehouseGuidePDF(decoded));
             zip.file("sofa_etykiety.pdf", await generateSofaLabelsPDF(decoded));
-            zip.file("dekodowanie_sofa.pdf", await generateDecodingPDF(decoded, variantImageUrl || undefined));
+            zip.file("przewodnik_produkcja_sofa.pdf", await generateProductionGuidePDF(decoded, variantImageUrl || undefined));
             if (hasPufa) {
               zip.file("pufa_etykiety.pdf", await generatePufaLabelsPDF(decoded));
-              zip.file("dekodowanie_pufa.pdf", await generatePufaDecodingPDF(decoded));
+              zip.file("przewodnik_produkcja_pufa.pdf", await generatePufaProductionGuidePDF(decoded));
             }
             if (hasFotel) {
               zip.file("fotel_etykiety.pdf", await generateFotelLabelsPDF(decoded));
-              zip.file("dekodowanie_fotel.pdf", await generateFotelDecodingPDF(decoded));
+              zip.file("przewodnik_produkcja_fotel.pdf", await generateFotelProductionGuidePDF(decoded));
             }
             const zipBlob = await zip.generateAsync({ type: "blob" });
             downloadBlob(zipBlob, `zamowienie_${orderNumber}.zip`);

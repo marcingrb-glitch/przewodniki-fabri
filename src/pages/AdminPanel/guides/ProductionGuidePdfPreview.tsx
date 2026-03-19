@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
+import { generateProductionGuidePDF, generatePufaProductionGuidePDF, generateFotelProductionGuidePDF } from "@/utils/pdfGenerators/productionGuide";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { DecodedSKU } from "@/types";
 import * as pdfjsLib from "pdfjs-dist";
@@ -7,15 +7,17 @@ import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-interface GuidePdfPreviewProps {
+interface ProductionGuidePdfPreviewProps {
   decoded: DecodedSKU | null;
+  productType: "sofa" | "pufa" | "fotel";
   width?: number;
 }
 
-export default function GuidePdfPreview({
+export default function ProductionGuidePdfPreview({
   decoded,
+  productType,
   width = 500,
-}: GuidePdfPreviewProps) {
+}: ProductionGuidePdfPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +32,20 @@ export default function GuidePdfPreview({
       setRendering(true);
       setError(null);
       try {
-        const blob = await generateGuidePDF(debouncedDecoded);
-        const arrayBuffer = await blob.arrayBuffer();
+        let blob: Blob;
+        switch (productType) {
+          case "pufa":
+            blob = await generatePufaProductionGuidePDF(debouncedDecoded);
+            break;
+          case "fotel":
+            blob = await generateFotelProductionGuidePDF(debouncedDecoded);
+            break;
+          default:
+            blob = await generateProductionGuidePDF(debouncedDecoded);
+            break;
+        }
 
+        const arrayBuffer = await blob.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const page = await pdf.getPage(1);
 
@@ -55,7 +68,7 @@ export default function GuidePdfPreview({
           setError(null);
         }
       } catch (e: any) {
-        console.error("GuidePdfPreview render error:", e);
+        console.error("ProductionGuidePdfPreview render error:", e);
         if (!cancelled) {
           setRendering(false);
           setError(e?.message || "Błąd renderowania podglądu");
@@ -65,7 +78,7 @@ export default function GuidePdfPreview({
 
     render();
     return () => { cancelled = true; };
-  }, [debouncedDecoded, width]);
+  }, [debouncedDecoded, productType, width]);
 
   if (!decoded) {
     return (
