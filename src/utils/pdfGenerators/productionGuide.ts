@@ -381,7 +381,7 @@ export async function generatePufaProductionGuidePDF(decoded: DecodedSKU): Promi
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
     headers: ["Nazwa", "Kolor"],
-    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+    rows: [[decoded.fabric.name, decoded.fabric.colorName || decoded.fabric.color]],
   }, x, y, fullW, fs, rh, sp);
   y += sectionGap;
 
