@@ -11,28 +11,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-
-const SEGMENT_LABELS: Record<string, string> = {
-  series: "Seria",
-  fabric: "Tkanina",
-  seat: "Siedzisko",
-  side: "Boczek",
-  backrest: "Oparcie",
-  chest: "Skrzynia",
-  automat: "Automat",
-  leg: "Nóżka",
-  pillow: "Poduszka",
-  jasiek: "Jasiek",
-  walek: "Wałek",
-  extra: "Extra",
-  width: "Szerokość",
-  orientation: "Orientacja",
-};
-
-const EXAMPLE_SKUS: Record<string, string> = {
-  sofa: "S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF",
-  narożnik: "N2-130P-T13C-SD4B-B5B-OP68A-SK23-AT1-P1B",
-};
+import { SkuVisualizer, SEGMENT_LABELS, EXAMPLE_SKUS } from "./cheatsheets/shared/SkuVisualizer";
 
 const SEGMENT_EXAMPLES: Record<string, Record<string, string>> = {
   sofa: {
