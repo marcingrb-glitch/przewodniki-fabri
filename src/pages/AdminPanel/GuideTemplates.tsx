@@ -1,5 +1,7 @@
-import { useState } from "react";
-import GuidePreview from "./GuidePreview";
+import { useState, useMemo } from "react";
+import GuidePdfPreview from "./guides/GuidePdfPreview";
+import { useSkuPreviewDecoder } from "@/hooks/useSkuPreviewDecoder";
+import { DEFAULT_EXAMPLE_SKUS, FALLBACK_EXAMPLE_SKU } from "./labels/defaultExampleSkus";
 import GuideSettings from "./guides/GuideSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
