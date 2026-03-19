@@ -9,13 +9,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface GuidePdfPreviewProps {
   decoded: DecodedSKU | null;
-  productType: "sofa" | "pufa" | "fotel";
   width?: number;
 }
 
 export default function GuidePdfPreview({
   decoded,
-  productType,
   width = 500,
 }: GuidePdfPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,7 +21,6 @@ export default function GuidePdfPreview({
   const [error, setError] = useState<string | null>(null);
 
   const debouncedDecoded = useDebounce(decoded, 300);
-  const debouncedType = useDebounce(productType, 300);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +30,7 @@ export default function GuidePdfPreview({
       setRendering(true);
       setError(null);
       try {
-        const blob = await generateGuidePDF(debouncedDecoded, debouncedType);
+        const blob = await generateGuidePDF(debouncedDecoded);
         const arrayBuffer = await blob.arrayBuffer();
 
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -68,7 +65,7 @@ export default function GuidePdfPreview({
 
     render();
     return () => { cancelled = true; };
-  }, [debouncedDecoded, debouncedType, width]);
+  }, [debouncedDecoded, width]);
 
   if (!decoded) {
     return (
