@@ -527,7 +527,7 @@ function AutomatsSection({ data }: { data: SectionRendererProps["data"] }) {
           <tbody>
             {automatConfigs.map((rel: any) => {
               const props = rel.properties as any;
-              const automat = data.globalProducts.find(p => p.id === rel.target_product_id);
+              const automat = data.globalProducts.find(p => p.id === rel.source_product_id);
               const code = automat?.code ?? "?";
               const name = automat?.name ?? "?";
               return (
