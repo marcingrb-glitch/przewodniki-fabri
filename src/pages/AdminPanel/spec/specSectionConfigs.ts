@@ -48,6 +48,7 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
       { name: "spring_type", label: "Sprężyna", type: "text" },
       { name: "frame_modification", label: "Modyfikacja stelaża", type: "text" },
       { name: "center_strip", label: "Środkowy pas", type: "boolean" },
+      { name: "foam_set", label: "Set pianek (Barga)", type: "boolean" },
       { name: "allowed_finishes", label: "Wykończenia", type: "multi-select", options: [
         { value: "A", label: "A" }, { value: "B", label: "B" },
         { value: "C", label: "C" }, { value: "D", label: "D" },

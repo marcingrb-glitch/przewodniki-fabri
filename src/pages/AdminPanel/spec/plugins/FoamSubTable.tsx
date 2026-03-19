@@ -136,6 +136,20 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
                 </TableCell>
                 <TableCell>
                   {isFallback ? (
+                    <span className="text-sm">{foam.foam_role ?? "base"}</span>
+                  ) : (
+                    <select
+                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                      value={foam.foam_role ?? "base"}
+                      onChange={(e) => updateFoam(foam.id, "foam_role", e.target.value)}
+                    >
+                      <option value="base">base</option>
+                      <option value="front">front</option>
+                    </select>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {isFallback ? (
                     <span className="text-sm">{foam.name ?? "—"}</span>
                   ) : (
                     <InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} />
