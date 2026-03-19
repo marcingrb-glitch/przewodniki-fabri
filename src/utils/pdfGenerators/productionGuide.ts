@@ -266,7 +266,7 @@ export async function generateProductionGuidePDF(
     title: "TKANINA",
     code: `${decoded.fabric.code}${decoded.fabric.color}`,
     headers: ["Nazwa", "Kolor"],
-    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+    rows: [[decoded.fabric.name, decoded.fabric.colorName || decoded.fabric.color]],
   }, colLeftX, yL, colW, fs, rh, sp);
   yL += sectionGap;
 
