@@ -39,6 +39,7 @@ const OrderDetailsPage = () => {
   const [imagePopupOpen, setImagePopupOpen] = useState(false);
   const [variantImageUrl, setVariantImageUrl] = useState<string | null>(null);
   const [fabricUsage, setFabricUsage] = useState<number | null>(null);
+  const [savedFabricUsage, setSavedFabricUsage] = useState<number | null>(null);
   const [savingFabric, setSavingFabric] = useState(false);
 
   const stateDecoded = (location.state as { decoded?: DecodedSKU })?.decoded;
