@@ -205,24 +205,7 @@ export default function LegCompletionTable() {
                   <TableCell>{row.detail || "—"}</TableCell>
 
                   {/* Typ nóżek */}
-                  <TableCell>
-                    {row.editable === "pufa" ? (
-                      <Select
-                        value={row.seriesProps?.pufa_leg_type ?? "from_sku"}
-                        onValueChange={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_type", v)}
-                      >
-                        <SelectTrigger className="h-7 w-[140px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="from_sku">N z SKU</SelectItem>
-                          <SelectItem value="plastic_2_5">N4 plastikowe</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      row.type
-                    )}
-                  </TableCell>
+                  <TableCell>{row.type}</TableCell>
 
                   {/* Wysokość */}
                   <TableCell>
