@@ -191,8 +191,8 @@ const OrderDetailsPage = () => {
             </AccordionItem>
           </Accordion>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="sofa-preview" onClick={async () => preview(await generateGuidePDF(decoded, "sofa"), "Przewodnik Sofy", `sofa_przewodnik_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="sofa-dl" onClick={async () => downloadAndSave(await generateGuidePDF(decoded, "sofa"), `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide")} />
+            <ActionBtn icon={Eye} label="Podgląd przewodnika" loadKey="guide-preview" onClick={async () => preview(await generateGuidePDF(decoded), "Przewodnik produkcyjny", `przewodnik_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz przewodnik" loadKey="guide-dl" onClick={async () => downloadAndSave(await generateGuidePDF(decoded), `przewodnik_${orderNumber}.pdf`, "guide")} />
             <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="sofa-labels-preview" onClick={async () => preview(await generateSofaLabelsPDF(decoded), "Etykiety Sofy", `sofa_etykiety_${orderNumber}.pdf`)} />
             <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
           </div>
