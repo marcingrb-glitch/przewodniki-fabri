@@ -198,7 +198,7 @@ const OrderDetailsPage = () => {
                     placeholder="—"
                     value={fabricUsage ?? ""}
                     onChange={(e) => setFabricUsage(e.target.value ? Number(e.target.value) : null)}
-                    className="w-[80px] h-10 rounded-md border-2 border-orange-300 bg-white px-3 text-lg font-mono font-bold text-right"
+                    className="w-[120px] h-10 rounded-md border-2 border-orange-300 bg-white px-3 text-lg font-mono font-bold text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="text-lg font-bold text-orange-700">mb</span>
                   <Button size="sm" className="h-10 bg-orange-600 hover:bg-orange-700" onClick={handleSaveFabricUsage} disabled={savingFabric}>
