@@ -259,7 +259,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
   // Add dashed separator if pufa or fotel
   const hasSeparator = hasPufa || hasFotel;
-  if (hasSeparator) totalContentHeight += 4;
+  if (hasSeparator) totalContentHeight += 10;
 
   const availableHeight = pageHeight - marginTop - marginBottom - headerHeight;
   const numGaps = sections.length - 1;
