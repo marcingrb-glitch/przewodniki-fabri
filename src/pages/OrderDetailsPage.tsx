@@ -169,7 +169,7 @@ const OrderDetailsPage = () => {
                 </Badge>
               )}
             </div>
-            {(order as any)?.fabric_usage_mb != null ? (
+            {savedFabricUsage != null ? (
               <div className="self-start rounded-lg border-2 border-green-300 bg-green-50 p-4 min-w-[200px]">
                 <p className="text-sm font-semibold text-green-700 mb-2">✓ Zużycie tkaniny</p>
                 <div className="flex items-center gap-2">
