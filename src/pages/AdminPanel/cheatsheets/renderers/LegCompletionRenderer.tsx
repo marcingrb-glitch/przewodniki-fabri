@@ -120,7 +120,7 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
           <div className="space-y-2 text-sm">
             {doRows.map((r, i) => (
               <div key={i} className="border border-border p-2 rounded">
-                <strong>{r.element}{r.detail ? ` ${r.detail}` : ""}:</strong> {r.type}, {r.height}, {r.count}
+                <strong>{r.element}{r.detail ? ` ${r.detail}` : ""}:</strong> {r.type}, {r.height}, {r.count}{r.reason ? ` — ${r.reason}` : ""}
               </div>
             ))}
           </div>

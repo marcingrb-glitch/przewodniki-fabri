@@ -25,6 +25,11 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
   const collection = (data.seriesProduct?.properties as any)?.collection ?? "";
   const title = `SPECYFIKACJA TECHNICZNA | SOFA ${seriesCode} ${collection}`.toUpperCase();
 
+  // Detect allPlastic for nozki station — hide generic_table when no legs to pick
+  const isNozki = workstationCode === "nozki";
+  const seriesProps = (data.seriesProduct?.properties ?? {}) as Record<string, any>;
+  const allPlasticLegs = isNozki && (seriesProps.seat_leg_type ?? "from_sku") !== "from_sku" && (seriesProps.pufa_leg_type ?? "from_sku") !== "from_sku";
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">{title}</h1>
@@ -32,6 +37,9 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
       {data.sections.map(section => {
         const Renderer = rendererRegistry[section.renderer_type];
         if (!Renderer) return null;
+
+        // Hide generic_table (e.g. "Typy nóżek") on nozki when all legs are plastic
+        if (allPlasticLegs && section.renderer_type === "generic_table") return null;
 
         const icon = sectionIcons[section.renderer_type] ?? "📋";
 
