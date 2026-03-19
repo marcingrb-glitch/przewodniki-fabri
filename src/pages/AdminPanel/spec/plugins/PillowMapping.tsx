@@ -145,7 +145,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
                       value={m.target_product_id ?? ""}
                       onValueChange={(val) => updateTarget(m.id, val)}
                     >
-                      <SelectTrigger className="h-8 text-xs w-[180px]">
+                      <SelectTrigger className="h-8 text-xs w-[260px]">
                         <SelectValue placeholder="wybierz" />
                       </SelectTrigger>
                       <SelectContent>
