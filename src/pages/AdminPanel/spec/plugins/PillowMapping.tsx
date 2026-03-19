@@ -120,6 +120,10 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
         </Button>
       </div>
 
+      <p className="text-xs text-muted-foreground">
+        Reguły wykończenia: wykończenie siedziska → wykończenie poduszki (np. A → C = gdy siedzisko ma wykończenie A, poduszka dostaje C)
+      </p>
+
       {mappings.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">Brak mapowań poduszek</p>
       ) : (
@@ -127,7 +131,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[120px]">Poduszka</TableHead>
+                <TableHead className="w-[200px]">Poduszka</TableHead>
                 <TableHead>Reguły wykończenia</TableHead>
                 <TableHead className="w-[140px]">Wyjątek (boczek)</TableHead>
                 <TableHead className="w-[40px]"></TableHead>
