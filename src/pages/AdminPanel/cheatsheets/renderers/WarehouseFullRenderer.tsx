@@ -459,3 +459,95 @@ function buildBackrestRows(
 
   return rows;
 }
+
+// ─── Chests section ─────────────────────────────────────────────────
+
+function ChestsSection({ data }: { data: SectionRendererProps["data"] }) {
+  const allowedChestCodes = data.getAllowedChestCodes();
+  const chests = data.getByCategory("chest").filter(c => allowedChestCodes.includes(c.code));
+  if (chests.length === 0) return null;
+
+  return (
+    <section>
+      <h3 className="text-base font-semibold mb-2">Skrzynie</h3>
+      <div className="rounded-md border border-border overflow-hidden">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-muted">
+              <th className="border border-border px-2 py-1 text-left">Kod</th>
+              <th className="border border-border px-2 py-1 text-left">Nazwa</th>
+              <th className="border border-border px-2 py-1 text-left">Wys. nóżek</th>
+            </tr>
+          </thead>
+          <tbody>
+            {chests.map(c => (
+              <tr key={c.id}>
+                <td className="border border-border px-2 py-1 font-mono font-bold">{c.code}</td>
+                <td className="border border-border px-2 py-1">{c.name}</td>
+                <td className="border border-border px-2 py-1">
+                  {(c.properties as any)?.leg_height_cm != null ? `${(c.properties as any).leg_height_cm}cm` : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// ─── Automats section ───────────────────────────────────────────────
+
+function AutomatsSection({ data }: { data: SectionRendererProps["data"] }) {
+  const automatConfigs = data.getRelationsByType("automat_config");
+  if (automatConfigs.length === 0) return null;
+
+  const allProducts = [...data.seriesComponents, ...data.globalProducts];
+  const seriesCode = data.seriesProduct?.code ?? "";
+
+  function getSrubyZamkowe(automatCode: string): string {
+    if (seriesCode === "S1" && automatCode === "AT1") return "Poz. 1 i 2";
+    if (seriesCode === "S1" && automatCode === "AT2") return "Poz. 1 i 3";
+    if (seriesCode === "S2" && automatCode === "AT1") return "Poz. 1 i 2";
+    return "—";
+  }
+
+  return (
+    <section>
+      <h3 className="text-base font-semibold mb-2">Automaty</h3>
+      <div className="rounded-md border border-border overflow-hidden">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-muted">
+              <th className="border border-border px-2 py-1 text-left">Kod</th>
+              <th className="border border-border px-2 py-1 text-left">Nazwa</th>
+              <th className="border border-border px-2 py-1 text-left">Typ</th>
+              <th className="border border-border px-2 py-1 text-left">Nóżki siedziska</th>
+              <th className="border border-border px-2 py-1 text-left">Śruby zamkowe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {automatConfigs.map((rel: any) => {
+              const props = rel.properties as any;
+              const target = allProducts.find(p => p.id === rel.target_product_id);
+              const code = props?.automat_code ?? target?.code ?? "?";
+              const name = target?.name ?? "?";
+              const type = (target?.properties as any)?.type ?? "—";
+              return (
+                <tr key={rel.id}>
+                  <td className="border border-border px-2 py-1 font-mono font-bold">{code}</td>
+                  <td className="border border-border px-2 py-1">{name}</td>
+                  <td className="border border-border px-2 py-1">{type}</td>
+                  <td className="border border-border px-2 py-1">
+                    {props?.has_seat_legs ? `Tak, ${props?.seat_leg_count ?? "?"}szt, H${props?.seat_leg_height_cm ?? "?"}cm` : "Nie"}
+                  </td>
+                  <td className="border border-border px-2 py-1">{getSrubyZamkowe(code)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
