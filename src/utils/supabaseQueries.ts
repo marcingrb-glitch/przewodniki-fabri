@@ -112,6 +112,9 @@ export async function getOrders({
   if (seriesCode && seriesCode !== "all") {
     query = query.eq("series_code", seriesCode);
   }
+  if (fabricFilter === "missing") {
+    query = query.is("fabric_usage_mb", null);
+  }
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
