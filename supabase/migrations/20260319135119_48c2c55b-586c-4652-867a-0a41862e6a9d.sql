@@ -1,0 +1,1 @@
+ALTER TABLE product_specs ADD COLUMN IF NOT EXISTS foam_role TEXT DEFAULT 'base';
