@@ -68,7 +68,10 @@ export default function GenericSpecSection({ seriesProductId, category, config }
         .eq("active", true)
         .order("code");
       if (error) throw error;
-      return (data ?? []).map((p: any) => flattenProduct(p, config.propertyKeys));
+      const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+      return (data ?? [])
+        .map((p: any) => flattenProduct(p, config.propertyKeys))
+        .sort((a: any, b: any) => collator.compare(a.code ?? "", b.code ?? ""));
     },
   });
 
