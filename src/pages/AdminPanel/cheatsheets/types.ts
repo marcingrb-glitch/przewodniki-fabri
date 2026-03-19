@@ -53,6 +53,8 @@ export interface SeriesConfig {
   pufa_leg_count: number | null;
   seat_leg_type: string | null;
   seat_leg_height_cm: number | null;
+  fotel_leg_height_cm: number | null;
+  fotel_leg_count: number | null;
   notes: string | null;
 }
 
