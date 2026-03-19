@@ -1,231 +1,163 @@
 import { DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { createDoc, addHeader, addTableAt, toBlob } from "@/utils/pdfHelpers";
-import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
+import { createDoc, addTableAt, toBlob } from "@/utils/pdfHelpers";
 
-interface GuideColumn {
-  header: string;
-  field: string;
-}
-
-interface GuideSection {
-  id: string;
-  product_type: string;
-  series_id: string | null;
-  section_name: string;
-  sort_order: number;
-  is_conditional: boolean;
-  condition_field: string | null;
-  columns: GuideColumn[];
-  enabled: boolean;
-}
-
-async function fetchDecodingSections(seriesCode: string): Promise<GuideSection[]> {
-  const { data: seriesData } = await supabase
-    .from("products")
-    .select("id")
-    .eq("category", "series")
-    .eq("code", seriesCode)
-    .maybeSingle();
-
-  const seriesId = seriesData?.id;
-
-  const { data, error } = await supabase
-    .from("guide_sections")
+// ─── Settings ────────────────────────────────────────────────────────
+async function fetchGuideSettings() {
+  const { data } = await supabase
+    .from("guide_settings")
     .select("*")
-    .eq("product_type", "decoding")
-    .eq("enabled", true)
-    .order("sort_order");
-
-  if (error || !data) return [];
-
-  const sections = data as unknown as GuideSection[];
-
-  const byName = new Map<string, GuideSection[]>();
-  for (const s of sections) {
-    if (!byName.has(s.section_name)) byName.set(s.section_name, []);
-    byName.get(s.section_name)!.push(s);
-  }
-
-  const result: GuideSection[] = [];
-  for (const [, group] of byName) {
-    const seriesSpecific = seriesId ? group.find(s => s.series_id === seriesId) : null;
-    const global = group.find(s => s.series_id === null);
-    result.push(seriesSpecific || global || group[0]);
-  }
-
-  result.sort((a, b) => a.sort_order - b.sort_order);
-  return result;
+    .limit(1)
+    .single();
+  return data
+    ? {
+        font_size_header: Number(data.font_size_header) || 11,
+        font_size_table: Number(data.font_size_table) || 9,
+        table_row_height: Number(data.table_row_height) || 8,
+      }
+    : { font_size_header: 11, font_size_table: 9, table_row_height: 8 };
 }
 
-/** A render item ready for column placement */
-interface RenderItem {
-  title: string;
-  headers: string[];
-  rows: string[][];
-  fontSize: number;
-  columnStyles?: { [key: string]: { cellWidth: number } };
-  fullWidth?: boolean;
-}
+// ─── White-trim image ────────────────────────────────────────────────
+async function trimWhiteBackground(imageUrl: string): Promise<string> {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
 
-/** Estimate the height of a column of render items in mm */
-function estimateColumnHeight(items: RenderItem[], rh: number, sp: number): number {
-  let h = 0;
-  for (const item of items) {
-    if (item.title) h += 3;
-    const rowCount = 1 + item.rows.length;
-    h += rowCount * (rh + item.fontSize * 0.15) + 2 * 2.5;
-    h += sp;
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data, width, height } = imageData;
+  const WHITE_THRESHOLD = 245;
+
+  let top = height, bottom = 0, left = width, right = 0;
+  for (let py = 0; py < height; py++) {
+    for (let px = 0; px < width; px++) {
+      const i = (py * width + px) * 4;
+      if (data[i] < WHITE_THRESHOLD || data[i + 1] < WHITE_THRESHOLD || data[i + 2] < WHITE_THRESHOLD) {
+        if (py < top) top = py;
+        if (py > bottom) bottom = py;
+        if (px < left) left = px;
+        if (px > right) right = px;
+      }
+    }
   }
-  return h;
+
+  const pad = 2;
+  top = Math.max(0, top - pad);
+  bottom = Math.min(height - 1, bottom + pad);
+  left = Math.max(0, left - pad);
+  right = Math.min(width - 1, right + pad);
+
+  const cropW = right - left + 1;
+  const cropH = bottom - top + 1;
+  const cropCanvas = document.createElement("canvas");
+  cropCanvas.width = cropW;
+  cropCanvas.height = cropH;
+  const cropCtx = cropCanvas.getContext("2d")!;
+  cropCtx.drawImage(canvas, left, top, cropW, cropH, 0, 0, cropW, cropH);
+
+  return cropCanvas.toDataURL("image/jpeg", 0.9);
 }
 
-export async function generateDecodingPDF(
+// ─── Placeholder ─────────────────────────────────────────────────────
+function drawPlaceholder(doc: any, x: number, y: number, w: number, h: number) {
+  doc.setFillColor(245, 245, 245);
+  doc.rect(x, y, w, h, "F");
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, w, h);
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.setFont("Roboto", "normal");
+  doc.text("Brak zdjęcia", x + w / 2, y + h / 2, { align: "center" });
+  doc.setTextColor(0, 0, 0);
+}
+
+// ─── Shared header ───────────────────────────────────────────────────
+function drawDecodingHeader(
+  doc: any,
   decoded: DecodedSKU,
-  variantImageUrl?: string
-): Promise<Blob> {
-  const [doc, sections] = await Promise.all([
-    createDoc("portrait", "a4"),
-    fetchDecodingSections(decoded.series.code),
-  ]);
+  prefix?: string,
+  settings?: { font_size_header: number }
+): number {
+  const marginLeft = 15;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const right = pageWidth - marginLeft;
+  const fsH = settings?.font_size_header || 11;
 
-  const seriesInfo = `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`;
-  const orderNumber = decoded.orderNumber || "";
-  const date = decoded.orderDate || "";
+  let y = 15;
 
-  let y = addHeader(doc, orderNumber, seriesInfo, date);
-
-  // SKU
-  doc.setFontSize(13);
+  // Line 1: order number + date
+  doc.setFontSize(16);
   doc.setFont("Roboto", "bold");
-  doc.text(`SKU: ${decoded.rawSKU || ""}`, 105, y, { align: "center" });
-  y += 8;
+  const titleText = prefix
+    ? `${prefix} — ZAM: ${decoded.orderNumber || ""}`
+    : `ZAMÓWIENIE: ${decoded.orderNumber || ""}`;
+  doc.text(titleText, marginLeft, y);
 
+  doc.setFontSize(fsH);
+  doc.setFont("Roboto", "normal");
+  doc.text("Data: ", right - 40, y);
+  const dateW = doc.getTextWidth("Data: ");
+  doc.setFont("Roboto", "bold");
+  doc.text(decoded.orderDate || "", right - 40 + dateW, y);
+  y += 7;
+
+  // Line 2: series
+  doc.setFontSize(14);
+  doc.setFont("Roboto", "bold");
+  doc.text(`${decoded.series.code} — ${decoded.series.collection || decoded.series.name}`, marginLeft, y);
+  y += 6;
+
+  // Line 3: SKU
+  doc.setFontSize(9);
+  doc.setFont("Roboto", "normal");
+  doc.text(`SKU: ${decoded.rawSKU || ""}`, marginLeft, y);
+  y += 5;
+
+  // Separator
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
-  doc.line(15, y, 195, y);
-  y += 3;
+  doc.line(marginLeft, y, right, y);
+  y += 6;
 
-  // --- Table parameters ---
-  const fs = 10;
-  const rh = 8;
-  const sp = 3;
-  const MAX_COLS = 6;
-  const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
-  const FULL_WIDTH_PREFIXES = ["pillow.", "jaski.", "walek."];
+  return y;
+}
 
-  // --- Build render items from sections BEFORE drawing image ---
-  const groups: { sections: GuideSection[] }[] = [];
-  for (const section of sections) {
-    if (section.is_conditional && section.condition_field) {
-      if (!checkDecodedCondition(decoded, section.condition_field)) continue;
-    }
-    const headersKey = section.columns.map(c => c.header).join("|");
-    const lastGroup = groups[groups.length - 1];
-    if (lastGroup && section.is_conditional) {
-      const lastHeaders = lastGroup.sections[0].columns.map(c => c.header).join("|");
-      if (headersKey === lastHeaders && lastGroup.sections[0].is_conditional) {
-        lastGroup.sections.push(section);
-        continue;
-      }
-    }
-    groups.push({ sections: [section] });
-  }
-
-  const renderItems: RenderItem[] = [];
-
-  const adaptiveFontSize = (colCount: number): number =>
-    colCount <= 3 ? 10 : colCount === 4 ? 9 : 8;
-
-  const isFullWidthSection = (cols: GuideColumn[]): boolean =>
-    cols.some(c => FULL_WIDTH_PREFIXES.some(p => c.field.startsWith(p)));
-
-  const buildChunkedItems = (title: string, cols: GuideColumn[], fullWidth: boolean): RenderItem[] => {
-    const items: RenderItem[] = [];
-    if (cols.length <= MAX_COLS) {
-      items.push({
-        title,
-        headers: cols.map(c => c.header),
-        rows: [cols.map(c => resolveDecodedField(c.field, decoded))],
-        fontSize: fullWidth ? 10 : adaptiveFontSize(cols.length),
-        fullWidth,
-      });
-    } else {
-      for (let i = 0; i < cols.length; i += MAX_COLS) {
-        const chunk = cols.slice(i, i + MAX_COLS);
-        items.push({
-          title: i === 0 ? title : "",
-          headers: chunk.map(c => c.header),
-          rows: [chunk.map(c => resolveDecodedField(c.field, decoded))],
-          fontSize: fullWidth ? 10 : adaptiveFontSize(chunk.length),
-          fullWidth,
-        });
-      }
-    }
-    return items;
-  };
-
-  for (const group of groups) {
-    if (group.sections.length > 1) {
-      const groupName = group.sections.map(s => s.section_name).join(" / ");
-      const cols = group.sections[0].columns;
-      const fw = isFullWidthSection(cols);
-      const headers = ["Typ", ...cols.map(c => c.header)];
-      const rows = group.sections.map(section => [
-        section.section_name,
-        ...cols.map(c => resolveDecodedField(c.field, decoded)),
-      ]);
-      renderItems.push({ title: groupName, headers, rows, fontSize: fw ? 10 : adaptiveFontSize(headers.length), columnStyles: { 0: { cellWidth: 20 } }, fullWidth: fw });
-    } else {
-      const section = group.sections[0];
-      const cols = section.columns;
-      const fw = isFullWidthSection(cols);
-      const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
-      const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
-      const hasSplit = !fw && frameCols.length > 0 && foamCols.length > 0;
-
-      if (hasSplit) {
-        renderItems.push(...buildChunkedItems(`${section.section_name} — STOLARKA`, frameCols, false));
-        renderItems.push(...buildChunkedItems(`${section.section_name} — PIANKI`, foamCols, false));
-      } else {
-        renderItems.push(...buildChunkedItems(section.section_name, cols, fw));
-      }
-    }
-  }
-
-  // --- Split into column items and full-width items ---
-  const columnItems = renderItems.filter(item => !item.fullWidth);
-  const fullWidthItems = renderItems.filter(item => item.fullWidth);
-
-  // --- Calculate dynamic image height ---
-  const midPoint = Math.ceil(columnItems.length / 2);
-  const leftItems = columnItems.slice(0, midPoint);
-  const rightItems = columnItems.slice(midPoint);
-
-  const leftH = estimateColumnHeight(leftItems, rh, sp);
-  const rightH = estimateColumnHeight(rightItems, rh, sp);
-  const fullWidthH = estimateColumnHeight(fullWidthItems, rh, sp);
-  const maxColH = Math.max(leftH, rightH) + fullWidthH;
-
-  const pageH = 297;
-  const bottomMargin = 10;
-  const imageGap = 4;
-  const availableForImage = pageH - bottomMargin - y - imageGap - maxColH;
-  const imageH = Math.max(20, Math.min(80, availableForImage));
-
-  // --- Draw variant image ---
+// ─── Draw variant image ──────────────────────────────────────────────
+async function drawVariantImage(
+  doc: any,
+  y: number,
+  variantImageUrl?: string
+): Promise<number> {
   const imageX = 15;
   const imageW = 180;
+  const imageH = 60;
 
   if (variantImageUrl) {
     try {
-      const response = await fetch(variantImageUrl);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
+      let base64: string;
+      try {
+        base64 = await trimWhiteBackground(variantImageUrl);
+      } catch {
+        // Fallback: load without trimming
+        const response = await fetch(variantImageUrl);
+        const blob = await response.blob();
+        base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
 
       const dims = await new Promise<{ w: number; h: number }>((resolve) => {
         const img = new Image();
@@ -264,57 +196,306 @@ export async function generateDecodingPDF(
     drawPlaceholder(doc, imageX, y, imageW, imageH);
   }
 
-  y += imageH + imageGap;
+  return y + imageH + 10;
+}
 
-  // --- Two-column rendering ---
+// ─── Section header renderer ────────────────────────────────────────
+function drawSectionHeader(doc: any, x: number, y: number, title: string, code?: string): number {
+  doc.setFontSize(8);
+  doc.setFont("Roboto", "bold");
+  doc.setTextColor(0, 0, 0);
+  let text = title.toUpperCase();
+  if (code) {
+    const titleWidth = doc.getTextWidth(text + " — ");
+    doc.text(text + " — ", x, y);
+    doc.setFont("Roboto", "normal");
+    doc.text(code, x + titleWidth, y);
+  } else {
+    doc.text(text, x, y);
+  }
+  return y + 3;
+}
+
+// ─── Section render helper ───────────────────────────────────────────
+interface SectionDef {
+  title: string;
+  code?: string;
+  headers: string[];
+  rows: string[][];
+  fullWidth?: boolean;
+}
+
+function renderSectionAt(
+  doc: any,
+  section: SectionDef,
+  x: number,
+  y: number,
+  width: number,
+  fs: number,
+  rh: number,
+  spacing: number
+): number {
+  y = drawSectionHeader(doc, x, y, section.title, section.code);
+  y = addTableAt(doc, y, section.headers, section.rows, x, width, undefined, spacing, fs, rh);
+  return y;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SOFA DECODING
+// ═══════════════════════════════════════════════════════════════════════
+export async function generateDecodingPDF(
+  decoded: DecodedSKU,
+  variantImageUrl?: string
+): Promise<Blob> {
+  const [doc, settings] = await Promise.all([
+    createDoc("portrait", "a4"),
+    fetchGuideSettings(),
+  ]);
+
+  const fs = settings.font_size_table;
+  const rh = settings.table_row_height;
+  const sp = 3; // post-table spacing
+
+  let y = drawDecodingHeader(doc, decoded, undefined, settings);
+  y = await drawVariantImage(doc, y, variantImageUrl);
+
+  // ── Two-column layout ──
   const colLeftX = 15;
-  const colRightX = 105;
-  const colW = 85;
-  const startY = y;
+  const colRightX = 108;
+  const colW = 87;
+  const sectionGap = 8;
 
-  const renderColumn = (items: RenderItem[], xStart: number, yStart: number): number => {
-    let cy = yStart;
-    for (const item of items) {
-      if (item.title) {
-        doc.setFontSize(7);
-        doc.setFont("Roboto", "bold");
-        doc.setTextColor(0, 0, 0);
-        doc.text(item.title.toUpperCase(), xStart, cy);
-        cy += 3;
-      }
-      cy = addTableAt(doc, cy, item.headers, item.rows, xStart, colW, item.columnStyles, sp, item.fontSize, rh);
-    }
-    return cy;
-  };
+  // LEFT COLUMN
+  let yL = y;
 
-  const yLeft = renderColumn(leftItems, colLeftX, startY);
-  const yRight = renderColumn(rightItems, colRightX, startY);
-  y = Math.max(yLeft, yRight);
+  // 1. TKANINA
+  yL = renderSectionAt(doc, {
+    title: "TKANINA",
+    code: `${decoded.fabric.code}${decoded.fabric.color}`,
+    headers: ["Nazwa", "Kolor"],
+    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+  }, colLeftX, yL, colW, fs, rh, sp);
+  yL += sectionGap;
 
-  // --- Full-width items (pillows etc.) ---
-  for (const item of fullWidthItems) {
-    if (item.title) {
-      doc.setFontSize(7);
-      doc.setFont("Roboto", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text(item.title.toUpperCase(), 15, y);
-      y += 3;
-    }
-    y = addTableAt(doc, y, item.headers, item.rows, 15, 180, item.columnStyles, sp, item.fontSize, rh);
+  // 2. SIEDZISKO
+  yL = renderSectionAt(doc, {
+    title: "SIEDZISKO",
+    code: `${decoded.seat.code}${decoded.seat.finish}`,
+    headers: ["Typ", "Wykończenie"],
+    rows: [[decoded.seat.type || decoded.seat.modelName || "-", decoded.seat.finishName]],
+  }, colLeftX, yL, colW, fs, rh, sp);
+  yL += sectionGap;
+
+  // 3. OPARCIE
+  yL = renderSectionAt(doc, {
+    title: "OPARCIE",
+    code: `${decoded.backrest.code}${decoded.backrest.finish}`,
+    headers: ["Wykończenie", "Wariant szycia"],
+    rows: [[decoded.backrest.finishName, decoded.backrest.springType || "-"]],
+  }, colLeftX, yL, colW, fs, rh, sp);
+
+  // RIGHT COLUMN
+  let yR = y;
+
+  // 1. BOCZEK
+  yR = renderSectionAt(doc, {
+    title: "BOCZEK",
+    code: `${decoded.side.code}${decoded.side.finish}`,
+    headers: ["Nazwa", "Wykończenie"],
+    rows: [[decoded.side.name || decoded.side.modelName || "-", decoded.side.finishName]],
+  }, colRightX, yR, colW, fs, rh, sp);
+  yR += sectionGap;
+
+  // 2. SKRZYNIA + AUTOMAT
+  yR = renderSectionAt(doc, {
+    title: "SKRZYNIA + AUTOMAT",
+    headers: ["Skrzynia", "Automat"],
+    rows: [[decoded.chest.code, `${decoded.automat.code} - ${decoded.automat.name}`]],
+  }, colRightX, yR, colW, fs, rh, sp);
+  yR += sectionGap;
+
+  // 3. NÓŻKI
+  const chestLegInfo = decoded.legHeights.sofa_chest
+    ? `${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
+    : "BRAK";
+  const seatLegInfo = decoded.legHeights.sofa_seat
+    ? `${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`
+    : "BRAK (AT2)";
+
+  yR = renderSectionAt(doc, {
+    title: "NÓŻKI",
+    code: decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : undefined,
+    headers: ["Pod skrzynię", "Pod siedzisko"],
+    rows: [[chestLegInfo, seatLegInfo]],
+  }, colRightX, yR, colW, fs, rh, sp);
+
+  // ── Full-width sections ──
+  y = Math.max(yL, yR) + sectionGap;
+  const fullW = 180;
+
+  // PODUSZKA (conditional)
+  if (decoded.pillow) {
+    y = renderSectionAt(doc, {
+      title: "PODUSZKA",
+      code: decoded.pillow.code,
+      headers: ["Nazwa", "Wykończenie", "Wygląd", "Wkład"],
+      rows: [[
+        decoded.pillow.name,
+        decoded.pillow.finishName,
+        decoded.pillow.constructionType || "-",
+        decoded.pillow.insertType || "-",
+      ]],
+    }, colLeftX, y, fullW, fs, rh, sp);
+    y += sectionGap;
+  }
+
+  // JAŚKI / WAŁEK (conditional)
+  const hasJaski = !!decoded.jaski;
+  const hasWalek = !!decoded.walek;
+  if (hasJaski || hasWalek) {
+    const title = [hasJaski ? "JAŚKI" : "", hasWalek ? "WAŁEK" : ""].filter(Boolean).join(" / ");
+    const code = [
+      hasJaski ? decoded.jaski!.code : "",
+      hasWalek ? decoded.walek!.code : "",
+    ].filter(Boolean).join(" / ");
+    const rows: string[][] = [];
+    if (hasJaski) rows.push([decoded.jaski!.name, decoded.jaski!.finishName]);
+    if (hasWalek) rows.push([decoded.walek!.name, decoded.walek!.finishName]);
+
+    y = renderSectionAt(doc, {
+      title,
+      code,
+      headers: ["Nazwa", "Wykończenie"],
+      rows,
+    }, colLeftX, y, fullW, fs, rh, sp);
   }
 
   return toBlob(doc);
 }
 
-function drawPlaceholder(doc: any, x: number, y: number, w: number, h: number) {
-  doc.setFillColor(245, 245, 245);
-  doc.rect(x, y, w, h, "F");
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.3);
-  doc.rect(x, y, w, h);
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
-  doc.setFont("Roboto", "normal");
-  doc.text("Brak zdjęcia", x + w / 2, y + h / 2, { align: "center" });
-  doc.setTextColor(0, 0, 0);
+// ═══════════════════════════════════════════════════════════════════════
+// PUFA DECODING
+// ═══════════════════════════════════════════════════════════════════════
+export async function generatePufaDecodingPDF(decoded: DecodedSKU): Promise<Blob> {
+  const [doc, settings] = await Promise.all([
+    createDoc("portrait", "a4"),
+    fetchGuideSettings(),
+  ]);
+
+  const fs = settings.font_size_table;
+  const rh = settings.table_row_height;
+  const sp = 3;
+  const fullW = 180;
+  const x = 15;
+  const sectionGap = 10;
+
+  let y = drawDecodingHeader(doc, decoded, "PUFA", settings);
+
+  // TKANINA
+  y = renderSectionAt(doc, {
+    title: "TKANINA",
+    code: `${decoded.fabric.code}${decoded.fabric.color}`,
+    headers: ["Nazwa", "Kolor"],
+    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+  }, x, y, fullW, fs, rh, sp);
+  y += sectionGap;
+
+  // SIEDZISKO PUFY
+  const pufaSeat = decoded.pufaSeat;
+  y = renderSectionAt(doc, {
+    title: "SIEDZISKO PUFY",
+    code: decoded.seat.code + decoded.seat.finish,
+    headers: ["Wykończenie"],
+    rows: [[decoded.seat.finishName]],
+  }, x, y, fullW, fs, rh, sp);
+  y += sectionGap;
+
+  // NÓŻKI
+  if (decoded.pufaLegs) {
+    y = renderSectionAt(doc, {
+      title: "NÓŻKI",
+      code: decoded.pufaLegs.code,
+      headers: ["Nazwa", "Wysokość", "Ilość"],
+      rows: [[
+        decoded.legs?.name || decoded.pufaLegs.code,
+        `${decoded.pufaLegs.height}cm`,
+        `${decoded.pufaLegs.count} szt`,
+      ]],
+    }, x, y, fullW, fs, rh, sp);
+  }
+
+  return toBlob(doc);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FOTEL DECODING
+// ═══════════════════════════════════════════════════════════════════════
+export async function generateFotelDecodingPDF(decoded: DecodedSKU): Promise<Blob> {
+  const [doc, settings] = await Promise.all([
+    createDoc("portrait", "a4"),
+    fetchGuideSettings(),
+  ]);
+
+  const fs = settings.font_size_table;
+  const rh = settings.table_row_height;
+  const sp = 3;
+  const fullW = 180;
+  const x = 15;
+  const sectionGap = 10;
+
+  let y = drawDecodingHeader(doc, decoded, "FOTEL", settings);
+
+  // TKANINA
+  y = renderSectionAt(doc, {
+    title: "TKANINA",
+    code: `${decoded.fabric.code}${decoded.fabric.color}`,
+    headers: ["Nazwa", "Kolor"],
+    rows: [[decoded.fabric.name, `${decoded.fabric.color} - ${decoded.fabric.colorName}`]],
+  }, x, y, fullW, fs, rh, sp);
+  y += sectionGap;
+
+  // SIEDZISKO FOTELA
+  y = renderSectionAt(doc, {
+    title: "SIEDZISKO FOTELA",
+    code: decoded.seat.code + decoded.seat.finish,
+    headers: ["Wykończenie"],
+    rows: [[decoded.seat.finishName]],
+  }, x, y, fullW, fs, rh, sp);
+  y += sectionGap;
+
+  // BOCZEK
+  y = renderSectionAt(doc, {
+    title: "BOCZEK",
+    code: `${decoded.side.code}${decoded.side.finish}`,
+    headers: ["Nazwa", "Wykończenie"],
+    rows: [[decoded.side.name || decoded.side.modelName || "-", decoded.side.finishName]],
+  }, x, y, fullW, fs, rh, sp);
+  y += sectionGap;
+
+  // JAŚKI (conditional)
+  if (decoded.jaski) {
+    y = renderSectionAt(doc, {
+      title: "JAŚKI",
+      code: decoded.jaski.code,
+      headers: ["Nazwa", "Wykończenie"],
+      rows: [[decoded.jaski.name, decoded.jaski.finishName]],
+    }, x, y, fullW, fs, rh, sp);
+    y += sectionGap;
+  }
+
+  // NÓŻKI
+  if (decoded.fotelLegs) {
+    y = renderSectionAt(doc, {
+      title: "NÓŻKI",
+      code: decoded.fotelLegs.code,
+      headers: ["Nazwa", "Wysokość", "Ilość"],
+      rows: [[
+        decoded.legs?.name || decoded.fotelLegs.code,
+        `${decoded.fotelLegs.height}cm`,
+        `${decoded.fotelLegs.count} szt`,
+      ]],
+    }, x, y, fullW, fs, rh, sp);
+  }
+
+  return toBlob(doc);
 }
