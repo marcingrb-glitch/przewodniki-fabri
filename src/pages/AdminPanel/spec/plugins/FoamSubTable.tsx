@@ -78,6 +78,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
       spec_type: "foam",
       position_number: maxPos + 1,
       quantity: 1,
+      foam_role: "base",
     });
     if (error) toast.error("Błąd dodawania pianki");
     else { toast.success("Dodano piankę"); queryClient.invalidateQueries({ queryKey }); }
