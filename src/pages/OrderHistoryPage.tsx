@@ -62,6 +62,7 @@ const OrderHistoryPage = () => {
   const debouncedSearch = useDebounce(search, 300);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [seriesFilter, setSeriesFilter] = useState("all");
+  const [fabricFilter, setFabricFilter] = useState<"all" | "missing">("all");
   const [page, setPage] = useState(1);
 
   // Action states
@@ -91,13 +92,14 @@ const OrderHistoryPage = () => {
 
   // Fetch orders
   const { data: ordersResult, isLoading, refetch } = useQuery({
-    queryKey: ["orders-history", debouncedSearch, dateRange?.from, dateRange?.to, seriesFilter, page],
+    queryKey: ["orders-history", debouncedSearch, dateRange?.from, dateRange?.to, seriesFilter, fabricFilter, page],
     queryFn: () =>
       getOrders({
         searchQuery: debouncedSearch,
         dateFrom: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null,
         dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : null,
         seriesCode: seriesFilter,
+        fabricFilter,
         page,
         limit: LIMIT,
       }),
@@ -192,12 +194,13 @@ const OrderHistoryPage = () => {
   // Export CSV
   const exportToCSV = () => {
     if (!orders.length) return;
-    const headers = ["Numer zamówienia", "Data", "SKU", "Seria"];
+    const headers = ["Numer zamówienia", "Data", "SKU", "Seria", "Tkanina (mb)"];
     const rows = orders.map((o: any) => [
       o.order_number,
       format(new Date(o.order_date), "dd.MM.yyyy"),
       `"${o.sku}"`,
       o.series_code || "",
+      o.fabric_usage_mb != null ? String(o.fabric_usage_mb) : "",
     ]);
     const csv = [headers.join(","), ...rows.map((r: string[]) => r.join(","))].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -368,6 +371,20 @@ const OrderHistoryPage = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="no-fabric"
+                checked={fabricFilter === "missing"}
+                onCheckedChange={(checked) => {
+                  setFabricFilter(checked ? "missing" : "all");
+                  resetPage();
+                }}
+              />
+              <label htmlFor="no-fabric" className="text-sm font-medium cursor-pointer">
+                Bez metrażu
+              </label>
+            </div>
           </div>
 
           {/* Loading */}
@@ -476,6 +493,7 @@ const OrderHistoryPage = () => {
                       <TableHead>Data</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead>Seria</TableHead>
+                      <TableHead className="w-[120px]">Tkanina (mb)</TableHead>
                       {isAdmin && <TableHead className="text-center">Widoczność</TableHead>}
                       <TableHead className="text-right">Akcje</TableHead>
                     </TableRow>
@@ -519,6 +537,13 @@ const OrderHistoryPage = () => {
                         </TableCell>
                         <TableCell>
                           {order.series_code && <Badge variant="outline">{order.series_code}</Badge>}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <InlineFabricInput
+                            orderId={order.id}
+                            value={order.fabric_usage_mb}
+                            onSaved={() => refetch()}
+                          />
                         </TableCell>
                         {isAdmin && (
                           <TableCell className="text-center">
@@ -668,5 +693,61 @@ const OrderHistoryPage = () => {
     </div>
   );
 };
+
+function InlineFabricInput({ orderId, value, onSaved }: { orderId: string; value: number | null; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => { setEditing(true); setLocalValue(value?.toString() ?? ""); }}
+        className="text-sm font-mono hover:underline cursor-pointer"
+      >
+        {value != null ? `${value} mb` : <span className="text-muted-foreground">— wpisz</span>}
+      </button>
+    );
+  }
+
+  const handleSave = async () => {
+    setSaving(true);
+    const numVal = localValue === "" ? null : Number(localValue);
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        fabric_usage_mb: numVal,
+        fabric_usage_updated_at: new Date().toISOString(),
+        fabric_usage_updated_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+      } as any)
+      .eq("id", orderId);
+    setSaving(false);
+    if (error) {
+      toast.error("Błąd zapisu");
+    } else {
+      toast.success("Zapisano");
+      setEditing(false);
+      onSaved();
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        type="number"
+        step="0.01"
+        min="0"
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        className="w-[80px] h-7 text-sm"
+        autoFocus
+        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(false); }}
+      />
+      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSave} disabled={saving}>
+        ✓
+      </Button>
+    </div>
+  );
+}
 
 export default OrderHistoryPage;

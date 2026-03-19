@@ -82,6 +82,7 @@ interface GetOrdersParams {
   dateFrom?: string | null;
   dateTo?: string | null;
   seriesCode?: string | null;
+  fabricFilter?: "all" | "missing";
   page?: number;
   limit?: number;
 }
@@ -91,6 +92,7 @@ export async function getOrders({
   dateFrom = null,
   dateTo = null,
   seriesCode = null,
+  fabricFilter = "all",
   page = 1,
   limit = 20,
 }: GetOrdersParams = {}) {
@@ -109,6 +111,9 @@ export async function getOrders({
   }
   if (seriesCode && seriesCode !== "all") {
     query = query.eq("series_code", seriesCode);
+  }
+  if (fabricFilter === "missing") {
+    query = query.is("fabric_usage_mb", null);
   }
 
   const from = (page - 1) * limit;
