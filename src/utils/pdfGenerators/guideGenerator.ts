@@ -266,7 +266,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   let sectionSpacing = numGaps > 0
     ? (availableHeight - totalContentHeight) / numGaps
     : 8;
-  sectionSpacing = Math.max(8, Math.min(14, sectionSpacing));
+  sectionSpacing = Math.max(10, Math.min(14, sectionSpacing));
 
   // ──── RENDER SECTIONS ────
   const coreCount = hasPufa || hasFotel
