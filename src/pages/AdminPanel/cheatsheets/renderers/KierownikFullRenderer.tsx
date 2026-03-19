@@ -440,7 +440,7 @@ function LegendsSection({ data }: { data: SectionRendererProps["data"] }) {
   const exampleSku = EXAMPLE_SKUS.sofa;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="space-y-4">
       <div className="border-2 border-border rounded p-3">
         <p className="text-sm font-semibold mb-2">LEGENDA SKU</p>
         {skuSegments.length > 0 ? (
