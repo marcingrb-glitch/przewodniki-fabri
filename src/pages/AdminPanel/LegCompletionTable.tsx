@@ -229,13 +229,13 @@ export default function LegCompletionTable() {
                       <InlineEditCell
                         value={row.seriesProps?.pufa_leg_height_cm != null ? String(row.seriesProps.pufa_leg_height_cm) : ""}
                         onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_height_cm", v ? Number(v) : null)}
-                        suffix=" cm"
+                        type="number"
                       />
                     ) : row.editable === "fotel" ? (
                       <InlineEditCell
                         value={row.seriesProps?.fotel_leg_height_cm != null ? String(row.seriesProps.fotel_leg_height_cm) : "15"}
                         onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "fotel_leg_height_cm", v ? Number(v) : null)}
-                        suffix=" cm"
+                        type="number"
                       />
                     ) : (
                       row.height
@@ -248,13 +248,13 @@ export default function LegCompletionTable() {
                       <InlineEditCell
                         value={String(row.seriesProps?.pufa_leg_count ?? 4)}
                         onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_count", v ? Number(v) : 4)}
-                        suffix=" szt"
+                        type="number"
                       />
                     ) : row.editable === "fotel" ? (
                       <InlineEditCell
                         value={String(row.seriesProps?.fotel_leg_count ?? 4)}
                         onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "fotel_leg_count", v ? Number(v) : 4)}
-                        suffix=" szt"
+                        type="number"
                       />
                     ) : (
                       row.count
