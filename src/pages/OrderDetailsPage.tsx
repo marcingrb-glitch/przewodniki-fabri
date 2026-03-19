@@ -167,9 +167,9 @@ const OrderDetailsPage = () => {
               )}
             </div>
             {(order as any)?.fabric_usage_mb != null ? (
-              <div className="self-start rounded-lg border-2 border-green-300 bg-green-50 p-4 text-center min-w-[200px]">
-                <p className="text-sm font-semibold text-green-700 mb-1">✓ Zużycie tkaniny</p>
-                <div className="flex items-center justify-center gap-2">
+              <div className="self-start rounded-lg border-2 border-green-300 bg-green-50 p-4 min-w-[200px]">
+                <p className="text-sm font-semibold text-green-700 mb-2">✓ Zużycie tkaniny</p>
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     step="0.01"
@@ -179,15 +179,15 @@ const OrderDetailsPage = () => {
                     className="w-[80px] h-10 rounded-md border border-green-300 bg-white px-3 text-lg font-mono font-bold text-right"
                   />
                   <span className="text-lg font-bold text-green-700">mb</span>
+                  <Button size="sm" variant="outline" className="h-10" onClick={handleSaveFabricUsage} disabled={savingFabric}>
+                    {savingFabric ? "..." : "Zaktualizuj"}
+                  </Button>
                 </div>
-                <Button size="sm" variant="outline" className="mt-2" onClick={handleSaveFabricUsage} disabled={savingFabric}>
-                  {savingFabric ? "..." : "Zaktualizuj"}
-                </Button>
               </div>
             ) : (
-              <div className="self-start rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 p-4 text-center min-w-[200px]">
+              <div className="self-start rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 p-4 min-w-[200px]">
                 <p className="text-sm font-semibold text-orange-700 mb-2">⚠ Zużycie tkaniny</p>
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     step="0.01"
@@ -198,10 +198,10 @@ const OrderDetailsPage = () => {
                     className="w-[80px] h-10 rounded-md border-2 border-orange-300 bg-white px-3 text-lg font-mono font-bold text-right"
                   />
                   <span className="text-lg font-bold text-orange-700">mb</span>
+                  <Button size="sm" className="h-10 bg-orange-600 hover:bg-orange-700" onClick={handleSaveFabricUsage} disabled={savingFabric}>
+                    {savingFabric ? "..." : "Zapisz"}
+                  </Button>
                 </div>
-                <Button size="sm" className="mt-2 bg-orange-600 hover:bg-orange-700" onClick={handleSaveFabricUsage} disabled={savingFabric}>
-                  {savingFabric ? "..." : "Zapisz"}
-                </Button>
               </div>
             )}
           </div>
