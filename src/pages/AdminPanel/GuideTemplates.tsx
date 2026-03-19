@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, Copy, Loader2 } from "lucide-react";
 import { GuideSection, GuideColumn, FIELD_GROUPS, AVAILABLE_FIELDS, CONDITION_FIELDS } from "./fieldResolver";
 
 const emptySection = (productType: string): Omit<GuideSection, "id"> => ({
