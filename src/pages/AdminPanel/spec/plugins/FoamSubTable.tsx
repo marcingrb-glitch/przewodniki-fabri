@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, RotateCcw } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import InlineEditCell from "../InlineEditCell";
 
 interface FoamSubTableProps {
@@ -31,7 +32,6 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
     },
   });
 
-  // Fallback for split seats: if code ends with "D" and no foams → load from base code
   const baseCode = category === "seat" && productCode.endsWith("D")
     ? productCode.slice(0, -1) : null;
 
@@ -60,6 +60,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
 
   const displayFoams = foams.length > 0 ? foams : fallbackFoams;
   const isFallback = foams.length === 0 && fallbackFoams.length > 0;
+  const isDzielone = !!baseCode;
 
   const updateFoam = async (foamId: string, field: string, value: string) => {
     const numFields = ["height", "width", "length", "quantity", "position_number"];
@@ -90,6 +91,44 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
     else { toast.success("Usunięto piankę"); queryClient.invalidateQueries({ queryKey }); }
   };
 
+  const handleEnableCustomFoams = async () => {
+    if (fallbackFoams.length === 0) return;
+    const inserts = fallbackFoams.map((foam: any) => ({
+      product_id: productId,
+      spec_type: "foam" as const,
+      position_number: foam.position_number,
+      name: foam.name,
+      height: foam.height,
+      width: foam.width,
+      length: foam.length,
+      material: foam.material,
+      quantity: foam.quantity,
+      foam_role: foam.foam_role ?? "base",
+      notes: foam.notes,
+    }));
+    const { error } = await supabase.from("product_specs").insert(inserts);
+    if (error) {
+      toast.error("Błąd kopiowania pianek");
+    } else {
+      toast.success(`Skopiowano ${inserts.length} pianek z ${baseCode}. Możesz teraz edytować.`);
+      queryClient.invalidateQueries({ queryKey });
+    }
+  };
+
+  const handleRevertToFallback = async () => {
+    const { error } = await supabase
+      .from("product_specs")
+      .delete()
+      .eq("product_id", productId)
+      .eq("spec_type", "foam");
+    if (error) {
+      toast.error("Błąd usuwania pianek");
+    } else {
+      toast.success("Przywrócono dziedziczenie pianek");
+      queryClient.invalidateQueries({ queryKey });
+    }
+  };
+
   if (displayFoams.length === 0 && !isFallback) {
     return (
       <Button variant="outline" size="sm" onClick={addFoam}>
@@ -108,6 +147,19 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           </span>
         )}
       </h4>
+
+      {isFallback && (
+        <div className="flex items-center gap-2 mb-3">
+          <Checkbox
+            id={`custom-foams-${productId}`}
+            onCheckedChange={(checked) => { if (checked) handleEnableCustomFoams(); }}
+          />
+          <label htmlFor={`custom-foams-${productId}`} className="text-sm font-medium cursor-pointer">
+            Własne pianki (różne od {baseCode})
+          </label>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -221,10 +273,34 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           </TableBody>
         </Table>
       </div>
+
       {!isFallback && (
-        <Button variant="outline" size="sm" className="mt-2" onClick={addFoam}>
-          <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
-        </Button>
+        <div className="flex items-center gap-2 mt-2">
+          <Button variant="outline" size="sm" onClick={addFoam}>
+            <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
+          </Button>
+          {isDzielone && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <RotateCcw className="mr-1 h-3 w-3" /> Przywróć dziedziczenie z {baseCode}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Przywrócić dziedziczenie?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Usunie wszystkie własne pianki tego siedziska i wróci do pianek z {baseCode}. Tej operacji nie można cofnąć.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRevertToFallback}>Przywróć</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       )}
     </div>
   );
