@@ -303,11 +303,15 @@ export async function generateProductionGuidePDF(
   }, colRightX, yR, colW, fs, rh, sp);
   yR += sectionGap;
 
+  const legName = decoded.legs?.name || "";
+  const legColor = decoded.legs?.colorName || "";
+  const legLabel = [legName, legColor].filter(Boolean).join(" ");
+
   const chestLegInfo = decoded.legHeights.sofa_chest
-    ? `${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
+    ? `${legLabel} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`
     : "BRAK";
   const seatLegInfo = decoded.legHeights.sofa_seat
-    ? `${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`
+    ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`
     : "BRAK (AT2)";
 
   yR = renderSectionAt(doc, {
