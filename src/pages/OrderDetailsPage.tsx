@@ -21,7 +21,7 @@ import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
 import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateGuidePDF } from "@/utils/pdfGenerators/guideGenerator";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
-import { generateDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
+import { generateDecodingPDF, generatePufaDecodingPDF, generateFotelDecodingPDF } from "@/utils/pdfGenerators/decodingPDF";
 import { uploadAndSaveOrderFile } from "@/utils/storage";
 import PDFPreview from "@/components/PDFPreview";
 
