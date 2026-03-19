@@ -137,50 +137,72 @@
 }
 
 @media print {
-  header, aside, nav, .no-print, .toaster, [data-sonner-toaster] {
+  @page {
+    margin: 10mm;
+  }
+
+  header, aside, nav, footer, .no-print, .toaster, [data-sonner-toaster],
+  .site-footer, [class*="footer"] {
     display: none !important;
   }
+
   body {
     background: white !important;
     color: black !important;
     font-size: 11pt !important;
   }
+
   main {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
+
   .print-area {
     width: 100% !important;
   }
+
   * {
     color: black !important;
     border-color: black !important;
   }
+
+  section, table, .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  section {
+    break-before: auto;
+  }
+
   table {
     border-collapse: collapse !important;
   }
+
   td, th {
     border: 1px solid black !important;
     padding: 3px 6px !important;
   }
+
   .bg-muted, .bg-red-100, .bg-red-50 {
     background: #f0f0f0 !important;
   }
+
   .bg-red-100, .bg-red-50 {
     background: #fdd !important;
   }
+
   .warning {
     font-weight: bold !important;
     text-decoration: underline !important;
   }
+
   .page-break {
     page-break-before: always;
   }
-  .avoid-break {
-    page-break-inside: avoid;
-  }
+
   .border-4 {
     border-width: 3px !important;
     border-color: black !important;
