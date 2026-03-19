@@ -130,7 +130,7 @@ const OrderHistoryPage = () => {
       const uploads: Promise<void>[] = [];
 
       // Guide (single PDF with sofa + pufa + fotel)
-      uploads.push(generateGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_${orderNumber}.pdf`, "guide")));
+      uploads.push(generateWarehouseGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_magazyn_${orderNumber}.pdf`, "guide")));
 
       // Labels
       uploads.push(generateSofaLabelsPDF(decoded).then((b) => uploadAndSave(b, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")));
@@ -141,8 +141,8 @@ const OrderHistoryPage = () => {
         uploads.push(generateFotelLabelsPDF(decoded).then((b) => uploadAndSave(b, `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")));
       }
 
-      // Decoding
-      uploads.push(generateDecodingPDF(decoded).then((b) => uploadAndSave(b, `dekodowanie_${orderNumber}.pdf`, "decoding")));
+      // Production guide
+      uploads.push(generateProductionGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_produkcja_${orderNumber}.pdf`, "production")));
 
       await Promise.all(uploads);
 
