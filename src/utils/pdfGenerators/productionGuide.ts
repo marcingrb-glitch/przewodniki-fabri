@@ -2,6 +2,11 @@ import { DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createDoc, addTableAt, toBlob } from "@/utils/pdfHelpers";
 
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 // ─── Settings ────────────────────────────────────────────────────────
 async function fetchGuideSettings() {
   const { data } = await supabase
