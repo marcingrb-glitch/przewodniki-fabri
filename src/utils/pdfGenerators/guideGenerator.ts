@@ -108,7 +108,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(marginLeft, y, pageWidth - marginLeft, y);
-  y += 2;
+  y += 6;
 
   const headerHeight = y - marginTop;
 
