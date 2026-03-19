@@ -33,6 +33,7 @@ export const rendererRegistry: Record<string, React.ComponentType<SectionRendere
   seats_compact_table: SeatsCompactRenderer,
   backrests_compact_table: BackrestsCompactRenderer,
   automats_table: AutomatsTableRenderer,
+  warehouse_full: WarehouseFullRenderer,
 };
 
 // Section icons by renderer type
