@@ -169,9 +169,9 @@ const OrderDetailsPage = () => {
               )}
               <div>
                 <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  SKU: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{decoded.rawSKU || order?.sku}</code>
-                </p>
+                <div className="mt-2 rounded bg-muted px-3 py-2 inline-block">
+                  <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
+                </div>
                 <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
                 {decoded.fabricOverride && (
                   <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600">
