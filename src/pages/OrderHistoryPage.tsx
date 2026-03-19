@@ -129,19 +129,15 @@ const OrderHistoryPage = () => {
       // Batch generate & upload
       const uploads: Promise<void>[] = [];
 
-      // Sofa (always)
-      uploads.push(generateGuidePDF(decoded, "sofa").then((b) => uploadAndSave(b, `sofa_przewodnik_${orderNumber}.pdf`, "sofa_guide")));
-      uploads.push(generateSofaLabelsPDF(decoded).then((b) => uploadAndSave(b, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")));
+      // Guide (single PDF with sofa + pufa + fotel)
+      uploads.push(generateGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_${orderNumber}.pdf`, "guide")));
 
-      // Pufa
+      // Labels
+      uploads.push(generateSofaLabelsPDF(decoded).then((b) => uploadAndSave(b, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")));
       if (decoded.pufaSKU) {
-        uploads.push(generateGuidePDF(decoded, "pufa").then((b) => uploadAndSave(b, `pufa_przewodnik_${orderNumber}.pdf`, "pufa_guide")));
         uploads.push(generatePufaLabelsPDF(decoded).then((b) => uploadAndSave(b, `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")));
       }
-
-      // Fotel
       if (decoded.fotelSKU) {
-        uploads.push(generateGuidePDF(decoded, "fotel").then((b) => uploadAndSave(b, `fotel_przewodnik_${orderNumber}.pdf`, "fotel_guide")));
         uploads.push(generateFotelLabelsPDF(decoded).then((b) => uploadAndSave(b, `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")));
       }
 

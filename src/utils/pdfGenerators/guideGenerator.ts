@@ -1,69 +1,6 @@
-import { DecodedSKU } from "@/types";
+import { DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { createDoc, addHeader, addTable, toBlob } from "@/utils/pdfHelpers";
-import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
-
-interface GuideColumn {
-  header: string;
-  field: string;
-}
-
-interface GuideSection {
-  id: string;
-  product_type: string;
-  series_id: string | null;
-  section_name: string;
-  sort_order: number;
-  is_conditional: boolean;
-  condition_field: string | null;
-  columns: GuideColumn[];
-  enabled: boolean;
-}
-
-/**
- * Fetch guide sections with series override logic.
- */
-async function fetchSections(productType: string, seriesCode: string): Promise<GuideSection[]> {
-  // Get series_id from code
-  const { data: seriesData } = await supabase
-    .from("products")
-    .select("id")
-    .eq("category", "series")
-    .eq("code", seriesCode)
-    .maybeSingle();
-
-  const seriesId = seriesData?.id;
-
-  const { data, error } = await supabase
-    .from("guide_sections")
-    .select("*")
-    .eq("product_type", productType)
-    .eq("enabled", true)
-    .order("sort_order");
-
-  if (error || !data) return [];
-
-  const sections = data as unknown as GuideSection[];
-
-  // Override logic: if series-specific exists for a section_name, use it over global
-  const result: GuideSection[] = [];
-  const byName = new Map<string, GuideSection[]>();
-
-  for (const s of sections) {
-    const key = s.section_name;
-    if (!byName.has(key)) byName.set(key, []);
-    byName.get(key)!.push(s);
-  }
-
-  for (const [, group] of byName) {
-    const seriesSpecific = seriesId ? group.find(s => s.series_id === seriesId) : null;
-    const global = group.find(s => s.series_id === null);
-    result.push(seriesSpecific || global || group[0]);
-  }
-
-  result.sort((a, b) => a.sort_order - b.sort_order);
-  return result;
-}
+import { createDoc, addTable, toBlob } from "@/utils/pdfHelpers";
 
 /**
  * Fetch guide settings from DB (singleton).
@@ -82,96 +19,299 @@ async function fetchGuideSettings() {
 }
 
 /**
- * Universal PDF guide generator — data-driven, reads sections from guide_sections table.
+ * Lock bolt positions — hardcoded rules per series × automat.
  */
-export async function generateGuidePDF(
-  decoded: DecodedSKU,
-  productType: "sofa" | "pufa" | "fotel"
-): Promise<Blob> {
-  const [doc, guideSettings] = await Promise.all([
+function getLockBoltPositions(seriesCode: string, automatCode: string): string {
+  if (seriesCode === "S1" && automatCode === "AT2") return "Poz. 1 i 3";
+  return "Poz. 1 i 2";
+}
+
+/**
+ * Format foam items into table rows: [Name, Dimensions, Material, Quantity]
+ */
+function foamsToRows(foams?: ProductFoamItem[]): string[][] {
+  if (!foams || foams.length === 0) return [];
+  return foams.map(f => {
+    const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
+    return [
+      f.name || "-",
+      dims || "-",
+      f.material || "-",
+      String(f.quantity ?? 1),
+    ];
+  });
+}
+
+interface SectionBlock {
+  title: string;
+  tables: { headers: string[]; rows: string[][] }[];
+}
+
+/**
+ * Hardcoded guide PDF generator — single PDF with sofa + conditional pufa + conditional fotel.
+ */
+export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
+  const [doc, gs] = await Promise.all([
     createDoc("portrait", "a4"),
     fetchGuideSettings(),
   ]);
-  const seriesInfo = `${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`;
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginLeft = 15;
+  const marginTop = 15;
+  const marginBottom = 10;
+
+  const hasPufa = decoded.extras.some(e => e.type === "pufa") || !!decoded.pufaSKU;
+  const hasFotel = decoded.extras.some(e => e.type === "fotel") || !!decoded.fotelSKU;
+
+  // ──── HEADER ────
+  let y = marginTop;
+
+  // Line 1: ZAMÓWIENIE: {nr}                    Data: {date}
   const orderNumber = decoded.orderNumber || "";
-  const date = decoded.orderDate || "";
+  const orderDate = decoded.orderDate || "";
 
-  const prefixMap: Record<string, string | undefined> = {
-    sofa: undefined,
-    pufa: "PUFA",
-    fotel: "FOTEL",
-  };
-
-  let y = addHeader(doc, orderNumber, seriesInfo, date, prefixMap[productType]);
-
-  // SKU line
-  const skuMap: Record<string, string> = {
-    sofa: decoded.rawSKU || "",
-    pufa: decoded.pufaSKU || "",
-    fotel: decoded.fotelSKU || "",
-  };
-  doc.setFontSize(guideSettings.font_size_table);
-  doc.setFont("Roboto", "normal");
+  doc.setFont("Roboto", "bold");
+  doc.setFontSize(16);
   doc.setTextColor(0, 0, 0);
-  doc.text(`SKU: ${skuMap[productType]}`, 15, y);
+  doc.text(`ZAMÓWIENIE: ${orderNumber}`, marginLeft, y);
+
+  // Date on the right
+  const dateLabel = "Data: ";
+  const dateValue = orderDate;
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(11);
+  const dateLabelWidth = doc.getTextWidth(dateLabel);
+  const dateValueWidth = doc.getTextWidth(dateValue);
+  const dateRightX = pageWidth - marginLeft;
+  doc.text(dateLabel, dateRightX - dateLabelWidth - dateValueWidth, y);
+  doc.setFont("Roboto", "bold");
+  doc.setFontSize(11);
+  doc.text(dateValue, dateRightX - dateValueWidth, y);
+
   y += 7;
 
-  // Fetch sections from DB
-  const sections = await fetchSections(productType, decoded.series.code);
+  // Line 2: {series.code} — {series.collection}
+  doc.setFont("Roboto", "bold");
+  doc.setFontSize(14);
+  doc.text(`${decoded.series.code} — ${decoded.series.collection}`, marginLeft, y);
+  y += 6;
 
-  const SEAT_FOAM_FIELDS = new Set(["seat.foams_summary", "seat.front", "seat.midStrip_yn"]);
+  // Line 3: SKU: {rawSKU}
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(9);
+  doc.text(`SKU: ${decoded.rawSKU || ""}`, marginLeft, y);
+  y += 4;
 
-  const renderColumns = (colsToRender: GuideColumn[], spacing: number) => {
-    const MAX_COLS = 4;
-    if (colsToRender.length <= MAX_COLS) {
-      const headers = colsToRender.map(c => c.header);
-      const row = colsToRender.map(c => resolveDecodedField(c.field, decoded));
-      y = addTable(doc, y, headers, [row], undefined, spacing, guideSettings.font_size_table, guideSettings.table_row_height);
-    } else {
-      for (let i = 0; i < colsToRender.length; i += MAX_COLS) {
-        const chunk = colsToRender.slice(i, i + MAX_COLS);
-        const headers = chunk.map(c => c.header);
-        const row = chunk.map(c => resolveDecodedField(c.field, decoded));
-        const isLastChunk = i + MAX_COLS >= colsToRender.length;
-        y = addTable(doc, y, headers, [row], undefined, isLastChunk ? spacing : 2, guideSettings.font_size_table, guideSettings.table_row_height);
-      }
-    }
+  // Separator line
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.line(marginLeft, y, pageWidth - marginLeft, y);
+  y += 2;
+
+  const headerHeight = y - marginTop;
+
+  // ──── BUILD SECTIONS ────
+  const sections: SectionBlock[] = [];
+
+  // SIEDZISKO
+  const seatSection: SectionBlock = {
+    title: "SIEDZISKO",
+    tables: [],
   };
 
-  for (const section of sections) {
-    // Check condition BEFORE rendering anything
-    if (section.is_conditional && section.condition_field) {
-      if (!checkDecodedCondition(decoded, section.condition_field)) continue;
+  // Stolarka table
+  const lockBolts = getLockBoltPositions(decoded.series.code, decoded.automat.code);
+  seatSection.tables.push({
+    headers: ["Kod", "Stelaż", "Sprężyna", "Śruby zamkowe"],
+    rows: [[
+      decoded.seat.code,
+      decoded.seat.frame || "-",
+      decoded.seat.springType || "-",
+      lockBolts,
+    ]],
+  });
+
+  // Pianki siedziska
+  const seatFoamRows = foamsToRows(decoded.seat.foams);
+  if (decoded.seat.midStrip) {
+    // Check if mid-strip foam is already in foams
+    const hasMidStripFoam = decoded.seat.foams?.some(f =>
+      f.name?.toLowerCase().includes("pasek") || f.name?.toLowerCase().includes("strip")
+    );
+    if (!hasMidStripFoam) {
+      seatFoamRows.push(["Pasek środkowy", "-", "-", "1"]);
+    }
+  }
+  if (seatFoamRows.length > 0) {
+    seatSection.tables.push({
+      headers: ["Nazwa", "Wymiary", "Materiał", "Ilość"],
+      rows: seatFoamRows,
+    });
+  }
+  sections.push(seatSection);
+
+  // OPARCIE
+  const backrestSection: SectionBlock = {
+    title: "OPARCIE",
+    tables: [],
+  };
+  backrestSection.tables.push({
+    headers: ["Kod", "Stelaż", "Sprężyna"],
+    rows: [[
+      decoded.backrest.code,
+      decoded.backrest.frame || "-",
+      decoded.backrest.springType || "-",
+    ]],
+  });
+  const backrestFoamRows = foamsToRows(decoded.backrest.foams);
+  if (backrestFoamRows.length > 0) {
+    backrestSection.tables.push({
+      headers: ["Nazwa", "Wymiary", "Materiał", "Ilość"],
+      rows: backrestFoamRows,
+    });
+  }
+  sections.push(backrestSection);
+
+  // BOCZEK
+  sections.push({
+    title: "BOCZEK",
+    tables: [{
+      headers: ["Kod", "Stelaż"],
+      rows: [[decoded.side.code, decoded.side.frame || "-"]],
+    }],
+  });
+
+  // SKRZYNIA + AUTOMAT
+  const automatLabel = decoded.automat.code + (decoded.automat.name ? ` — ${decoded.automat.name}` : "");
+  sections.push({
+    title: "SKRZYNIA + AUTOMAT",
+    tables: [{
+      headers: ["Skrzynia", "Automat"],
+      rows: [[decoded.chest.name || decoded.chest.code || "-", automatLabel]],
+    }],
+  });
+
+  // PUFA — conditional
+  if (hasPufa && decoded.pufaSeat) {
+    // Pufa Czapa (foams)
+    const pufaFoamRows: string[][] = [];
+    if (decoded.pufaSeat.foams && decoded.pufaSeat.foams.length > 0) {
+      pufaFoamRows.push(...foamsToRows(decoded.pufaSeat.foams));
+    } else {
+      // Fallback: use text properties
+      if (decoded.pufaSeat.foam) pufaFoamRows.push(["Pianka bazy", decoded.pufaSeat.foam, "-", "1"]);
+      if (decoded.pufaSeat.frontBack) pufaFoamRows.push(["Przód/tył", decoded.pufaSeat.frontBack, "-", "1"]);
+      if (decoded.pufaSeat.sides) pufaFoamRows.push(["Boki", decoded.pufaSeat.sides, "-", "1"]);
+    }
+    if (pufaFoamRows.length > 0) {
+      sections.push({
+        title: "PUFA — CZAPA",
+        tables: [{
+          headers: ["Nazwa", "Wymiary", "Materiał", "Ilość"],
+          rows: pufaFoamRows,
+        }],
+      });
     }
 
-    const cols = section.columns as GuideColumn[];
-    const frameCols = cols.filter(c => c.field.startsWith("seat.") && !SEAT_FOAM_FIELDS.has(c.field));
-    const foamCols = cols.filter(c => SEAT_FOAM_FIELDS.has(c.field));
-    const hasSplit = frameCols.length > 0 && foamCols.length > 0;
+    // Pufa Skrzynka
+    if (decoded.pufaSeat.box) {
+      sections.push({
+        title: "PUFA — SKRZYNKA",
+        tables: [{
+          headers: ["Wys. skrzynki"],
+          rows: [[decoded.pufaSeat.box]],
+        }],
+      });
+    }
+  }
 
-    if (hasSplit) {
-      // Subgroup headers with section name
-      doc.setFontSize(guideSettings.font_size_header);
-      doc.setFont("Roboto", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${section.section_name.toUpperCase()} — STOLARKA`, 15, y);
-      y += 5;
-      renderColumns(frameCols, 4);
+  // FOTEL — conditional
+  if (hasFotel) {
+    const fotelSideLabel = decoded.side.code + (decoded.side.frame ? ` [${decoded.side.frame}]` : "");
+    sections.push({
+      title: "FOTEL",
+      tables: [{
+        headers: ["Front siedziska", "Boczek"],
+        rows: [[decoded.seat.front || "-", fotelSideLabel]],
+      }],
+    });
+  }
 
-      doc.setFontSize(guideSettings.font_size_header);
-      doc.setFont("Roboto", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${section.section_name.toUpperCase()} — PIANKI`, 15, y);
-      y += 5;
-      renderColumns(foamCols, 8);
-    } else {
-      // Section name header
-      doc.setFontSize(guideSettings.font_size_header);
-      doc.setFont("Roboto", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text(section.section_name.toUpperCase(), 15, y);
-      y += 5;
-      renderColumns(cols, 8);
+  // ──── CALCULATE DYNAMIC SPACING ────
+  // Estimate total required height for all sections (without spacing)
+  const TITLE_HEIGHT = gs.font_size_header * 0.4 + 3; // title + gap to table
+  const TABLE_HEADER_HEIGHT = gs.table_row_height + 2;
+  const TABLE_ROW_HEIGHT = gs.table_row_height;
+
+  let totalContentHeight = 0;
+  for (const section of sections) {
+    totalContentHeight += TITLE_HEIGHT;
+    for (const table of section.tables) {
+      totalContentHeight += TABLE_HEADER_HEIGHT + table.rows.length * TABLE_ROW_HEIGHT;
+    }
+    // Sub-table label spacing (for foam tables within a section)
+    if (section.tables.length > 1) {
+      totalContentHeight += 3 * (section.tables.length - 1); // small gap between sub-tables
+    }
+  }
+
+  // Add dashed separator if pufa or fotel
+  const hasSeparator = hasPufa || hasFotel;
+  if (hasSeparator) totalContentHeight += 4;
+
+  const availableHeight = pageHeight - marginTop - marginBottom - headerHeight;
+  const numGaps = sections.length - 1;
+  let sectionSpacing = numGaps > 0
+    ? (availableHeight - totalContentHeight) / numGaps
+    : 8;
+  sectionSpacing = Math.max(4, Math.min(12, sectionSpacing));
+
+  // ──── RENDER SECTIONS ────
+  const coreCount = hasPufa || hasFotel
+    ? sections.findIndex(s => s.title.startsWith("PUFA") || s.title === "FOTEL")
+    : sections.length;
+
+  for (let si = 0; si < sections.length; si++) {
+    const section = sections[si];
+
+    // Dashed separator before extras
+    if (hasSeparator && si === coreCount && si > 0) {
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.setLineWidth(0.3);
+      doc.line(marginLeft, y, pageWidth - marginLeft, y);
+      doc.setLineDashPattern([], 0);
+      y += 4;
+    } else if (si > 0) {
+      y += sectionSpacing;
+    }
+
+    // Section title
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(gs.font_size_header);
+    doc.setTextColor(0, 0, 0);
+    doc.text(section.title, marginLeft, y);
+    y += 3; // Fixed gap: title to table
+
+    // Render tables
+    for (let ti = 0; ti < section.tables.length; ti++) {
+      const table = section.tables[ti];
+
+      // Sub-table label for foam tables (2nd table in section)
+      if (ti === 1) {
+        const foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
+                          section.title === "OPARCIE" ? "Pianki oparcia:" : "";
+        if (foamLabel) {
+          doc.setFont("Roboto", "bold");
+          doc.setFontSize(9);
+          doc.text(foamLabel, marginLeft + 2, y);
+          y += 3;
+        }
+      }
+
+      y = addTable(doc, y, table.headers, table.rows, undefined, ti < section.tables.length - 1 ? 2 : 0, gs.font_size_table, gs.table_row_height);
     }
   }
 
