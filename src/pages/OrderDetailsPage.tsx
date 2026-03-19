@@ -150,35 +150,18 @@ const OrderDetailsPage = () => {
       {/* Header */}
       <Card className="shadow-md">
         <CardHeader>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              {variantImageUrl && (
-                <div
-                  className="relative w-16 h-16 rounded border cursor-pointer hover:opacity-80 transition shrink-0 overflow-hidden"
-                  onClick={() => setImagePopupOpen(true)}
-                >
-                  <img
-                    src={variantImageUrl}
-                    alt="Wariant sofy"
-                    className="w-full h-full object-cover rounded"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition">
-                    <Maximize2 className="w-4 h-4 text-white opacity-0 group-hover:opacity-100" />
-                  </div>
-                </div>
-              )}
-              <div>
-                <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
-                <div className="mt-2 rounded bg-muted px-3 py-2 inline-block">
-                  <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
-                </div>
-                <p className="text-sm text-muted-foreground">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
-                {decoded.fabricOverride && (
-                  <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600">
-                    Zmiana tkaniny: {decoded.fabricOverride.name} {decoded.fabricOverride.color}
-                  </Badge>
-                )}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
+              <div className="mt-2 rounded bg-muted px-3 py-2 inline-block">
+                <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
               </div>
+              <p className="text-sm text-muted-foreground mt-1">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
+              {decoded.fabricOverride && (
+                <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600">
+                  Zmiana tkaniny: {decoded.fabricOverride.name} {decoded.fabricOverride.color}
+                </Badge>
+              )}
             </div>
             <div className="self-start text-right">
               <p className="text-sm text-muted-foreground mb-1">Zużycie tkaniny</p>
@@ -205,7 +188,21 @@ const OrderDetailsPage = () => {
       {/* SOFA */}
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="text-xl">🛋️ SOFA - {decoded.series.code} {decoded.series.name} [{decoded.series.collection}]</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">🛋️ SOFA - {decoded.series.code} {decoded.series.name} [{decoded.series.collection}]</CardTitle>
+            {variantImageUrl && (
+              <div
+                className="w-[120px] h-[120px] rounded-lg border cursor-pointer hover:opacity-80 transition shrink-0 overflow-hidden"
+                onClick={() => setImagePopupOpen(true)}
+              >
+                <img
+                  src={variantImageUrl}
+                  alt="Wariant sofy"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Accordion type="single" defaultValue="decoding" collapsible>
@@ -364,15 +361,15 @@ const OrderDetailsPage = () => {
 
       {variantImageUrl && (
         <Dialog open={imagePopupOpen} onOpenChange={setImagePopupOpen}>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-[90vw] max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Zdjęcie wariantu - {orderNumber}</DialogTitle>
             </DialogHeader>
-            <div className="mt-4">
+            <div className="mt-4 flex items-center justify-center">
               <img
                 src={variantImageUrl}
                 alt="Wariant sofy"
-                className="w-full h-auto rounded"
+                className="max-w-[90vw] max-h-[80vh] object-contain rounded"
               />
             </div>
           </DialogContent>
