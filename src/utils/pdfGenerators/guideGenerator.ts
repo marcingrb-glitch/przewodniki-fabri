@@ -304,6 +304,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
         const foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
                           section.title === "OPARCIE" ? "Pianki oparcia:" : "";
         if (foamLabel) {
+          y += 3;
           doc.setFont("Roboto", "bold");
           doc.setFontSize(9);
           doc.text(foamLabel, marginLeft + 2, y);
