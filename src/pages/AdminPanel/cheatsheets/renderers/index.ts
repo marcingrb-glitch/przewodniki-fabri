@@ -14,6 +14,7 @@ import { SeriesConfigRenderer } from "./SeriesConfigRenderer";
 import { SeatsCompactRenderer } from "./SeatsCompactRenderer";
 import { BackrestsCompactRenderer } from "./BackrestsCompactRenderer";
 import { AutomatsTableRenderer } from "./AutomatsTableRenderer";
+import { WarehouseFullRenderer } from "./WarehouseFullRenderer";
 import React from "react";
 
 export const rendererRegistry: Record<string, React.ComponentType<SectionRendererProps>> = {
@@ -32,6 +33,7 @@ export const rendererRegistry: Record<string, React.ComponentType<SectionRendere
   seats_compact_table: SeatsCompactRenderer,
   backrests_compact_table: BackrestsCompactRenderer,
   automats_table: AutomatsTableRenderer,
+  warehouse_full: WarehouseFullRenderer,
 };
 
 // Section icons by renderer type
@@ -51,4 +53,5 @@ export const sectionIcons: Record<string, string> = {
   generic_table: "📋",
   series_config_summary: "⚙️",
   automats_table: "🔧",
+  warehouse_full: "🏭",
 };
