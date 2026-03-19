@@ -25,6 +25,15 @@ function foamsByRole(specs: ProductSpec[], role: string): ProductSpec[] {
     .sort((a, b) => (a.position_number ?? 0) - (b.position_number ?? 0));
 }
 
+/** Natural sort by code number */
+function naturalSort(items: ProductRow[]): ProductRow[] {
+  return [...items].sort((a, b) => {
+    const codeA = a.code.replace(/^[A-Z]+/, "");
+    const codeB = b.code.replace(/^[A-Z]+/, "");
+    return codeA.localeCompare(codeB, undefined, { numeric: true });
+  });
+}
+
 /** Check if Pianki column has any non-empty data */
 function computeShowPiankiCol(
   seats: ProductRow[],
@@ -59,9 +68,9 @@ function computeShowPiankiCol(
 // ─── main component ────────────────────────────────────────────────
 
 export function WarehouseFullRenderer({ data }: SectionRendererProps) {
-  const seats = data.getByCategory("seat");
-  const backrests = data.getByCategory("backrest");
-  const sides = data.getByCategory("side");
+  const seats = naturalSort(data.getByCategory("seat"));
+  const backrests = naturalSort(data.getByCategory("backrest"));
+  const sides = naturalSort(data.getByCategory("side"));
   const seriesProps = (data.seriesProduct?.properties ?? {}) as Record<string, any>;
 
   if (seats.length === 0 && backrests.length === 0) return <NoData label="stolarka i pianki" />;
@@ -130,7 +139,7 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
                 const hasException = group.seats.some(s => data.getSpringForSeat(s) !== seriesProps.default_spring);
                 return (
                   <div key={group.frame}>
-                    <p className={`text-sm font-medium mb-1 ${hasException ? "text-destructive" : ""}`}>
+                    <p className={`text-sm font-medium mb-1 ${hasException ? "font-bold underline" : ""}`}>
                       Stelaż: {group.frame}
                     </p>
                     <SeatsTable
@@ -178,12 +187,12 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
                 {backrestRows.map((row, i) => {
                   const isException = row.springType && row.springType !== seriesProps.default_spring;
                   return (
-                    <tr key={i} className={isException ? "bg-destructive/10" : ""}>
+                    <tr key={i}>
                       <td className="border border-border px-2 py-1 font-mono font-bold">{row.code}</td>
                       {showModelCol && <td className="border border-border px-2 py-1">{row.models}</td>}
                       <td className="border border-border px-2 py-1">{row.frame}</td>
                       <td className="border border-border px-2 py-1">{row.height != null ? `${row.height} cm` : "—"}</td>
-                      <td className={`border border-border px-2 py-1 ${isException ? "text-destructive font-bold" : ""}`}>
+                      <td className={`border border-border px-2 py-1 ${isException ? "font-bold underline" : ""}`}>
                         {row.springType ?? "—"}
                       </td>
                       <td className="border border-border px-2 py-1 whitespace-pre-line">{row.foams}</td>
@@ -240,7 +249,7 @@ function InfoBox({
   commonBaseFoam: ProductSpec | null;
 }) {
   return (
-    <div className="bg-muted rounded-lg p-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+    <div className="bg-muted rounded-lg p-6 grid grid-cols-2 gap-x-6 gap-y-2 text-base">
       <div><span className="text-muted-foreground">Kolekcja:</span> <strong>{seriesProps.collection ?? "—"}</strong></div>
       {singleFrame && (
         <div><span className="text-muted-foreground">Stelaż siedziska:</span> <strong>{singleFrame}</strong></div>
@@ -358,12 +367,12 @@ function SeatsTable({
             }
 
             return (
-              <tr key={seat.id} className={isSpringException ? "bg-destructive/10" : ""}>
+              <tr key={seat.id}>
                 <td className="border border-border px-2 py-1 font-mono font-bold">{seat.code}</td>
                 {showModel && <td className="border border-border px-2 py-1">{props?.model_name ?? "—"}</td>}
                 <td className="border border-border px-2 py-1">{props?.seat_type ?? "—"}</td>
                 {showSpring && (
-                  <td className={`border border-border px-2 py-1 ${isSpringException ? "text-destructive font-bold" : ""}`}>
+                  <td className={`border border-border px-2 py-1 ${isSpringException ? "font-bold underline" : ""}`}>
                     {spring}
                   </td>
                 )}
@@ -408,7 +417,6 @@ function buildBackrestRows(
   data: SectionRendererProps["data"],
   defaultSpring: string | undefined
 ): BackrestRow[] {
-  // Group backrests with identical code + frame + foams
   const rows: BackrestRow[] = [];
   const processed: Map<string, BackrestRow> = new Map();
 
@@ -425,7 +433,6 @@ function buildBackrestRows(
 
     const existing = processed.get(key);
     if (existing) {
-      // Merge models
       const model = props?.model_name ?? "";
       if (model && !existing.models.includes(model)) {
         existing.models += ` / ${model}`;

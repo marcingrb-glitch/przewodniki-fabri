@@ -22,9 +22,8 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
     return <p className="text-center text-destructive py-8">Nie znaleziono serii</p>;
   }
 
-  const title = workstationCode === "kierownik"
-    ? `SPECYFIKACJA PRODUKCYJNA — ${seriesCode} ${seriesName}`
-    : `ŚCIĄGAWKA — ${getWorkstationLabel(workstationCode)} — ${seriesCode} ${seriesName}`;
+  const collection = (data.seriesProduct?.properties as any)?.collection ?? "";
+  const title = `SPECYFIKACJA TECHNICZNA | SOFA ${seriesCode} ${collection}`.toUpperCase();
 
   return (
     <div className="space-y-8">
@@ -36,10 +35,10 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
 
         const icon = sectionIcons[section.renderer_type] ?? "📋";
 
-        // For sewing_variants renderer, it handles its own header
-        if (section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend") {
+        // For warehouse_full, sewing_variants, finish_legend — no section header
+        if (section.renderer_type === "warehouse_full" || section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend") {
           return (
-            <section key={section.id} className="mb-6 avoid-break">
+            <section key={section.id} className="mb-6">
               <Renderer section={section} data={data} seriesProduct={data.seriesProduct!} />
             </section>
           );
@@ -57,14 +56,4 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
       })}
     </div>
   );
-}
-
-function getWorkstationLabel(code: string): string {
-  const labels: Record<string, string> = {
-    magazyn: "Magazyn stolarki i pianek",
-    krojownia: "Krojownia",
-    nozki: "Kompletacja nóżek",
-    kierownik: "Kierownik produkcji",
-  };
-  return labels[code] ?? code;
 }
