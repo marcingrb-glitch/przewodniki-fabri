@@ -253,7 +253,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     }
     // Sub-table label spacing (for foam tables within a section)
     if (section.tables.length > 1) {
-      totalContentHeight += 3 * (section.tables.length - 1); // small gap between sub-tables
+      totalContentHeight += 6 * (section.tables.length - 1); // small gap between sub-tables
     }
   }
 
@@ -266,7 +266,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
   let sectionSpacing = numGaps > 0
     ? (availableHeight - totalContentHeight) / numGaps
     : 8;
-  sectionSpacing = Math.max(4, Math.min(12, sectionSpacing));
+  sectionSpacing = Math.max(8, Math.min(14, sectionSpacing));
 
   // ──── RENDER SECTIONS ────
   const coreCount = hasPufa || hasFotel
@@ -304,6 +304,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
         const foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
                           section.title === "OPARCIE" ? "Pianki oparcia:" : "";
         if (foamLabel) {
+          y += 3;
           doc.setFont("Roboto", "bold");
           doc.setFontSize(9);
           doc.text(foamLabel, marginLeft + 2, y);
@@ -311,7 +312,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
         }
       }
 
-      y = addTable(doc, y, table.headers, table.rows, undefined, ti < section.tables.length - 1 ? 2 : 0, gs.font_size_table, gs.table_row_height);
+      y = addTable(doc, y, table.headers, table.rows, undefined, 0, gs.font_size_table, gs.table_row_height);
     }
   }
 
