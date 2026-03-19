@@ -253,20 +253,20 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
     }
     // Sub-table label spacing (for foam tables within a section)
     if (section.tables.length > 1) {
-      totalContentHeight += 6 * (section.tables.length - 1); // small gap between sub-tables
+      totalContentHeight += 8 * (section.tables.length - 1);
     }
   }
 
   // Add dashed separator if pufa or fotel
   const hasSeparator = hasPufa || hasFotel;
-  if (hasSeparator) totalContentHeight += 4;
+  if (hasSeparator) totalContentHeight += 10;
 
   const availableHeight = pageHeight - marginTop - marginBottom - headerHeight;
   const numGaps = sections.length - 1;
   let sectionSpacing = numGaps > 0
     ? (availableHeight - totalContentHeight) / numGaps
     : 8;
-  sectionSpacing = Math.max(8, Math.min(14, sectionSpacing));
+  sectionSpacing = Math.max(10, Math.min(14, sectionSpacing));
 
   // ──── RENDER SECTIONS ────
   const coreCount = hasPufa || hasFotel
@@ -278,12 +278,13 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
 
     // Dashed separator before extras
     if (hasSeparator && si === coreCount && si > 0) {
+      y += 4;
       doc.setDrawColor(150, 150, 150);
       doc.setLineDashPattern([2, 2], 0);
       doc.setLineWidth(0.3);
       doc.line(marginLeft, y, pageWidth - marginLeft, y);
       doc.setLineDashPattern([], 0);
-      y += 4;
+      y += 6;
     } else if (si > 0) {
       y += sectionSpacing;
     }
@@ -304,7 +305,7 @@ export async function generateGuidePDF(decoded: DecodedSKU): Promise<Blob> {
         const foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
                           section.title === "OPARCIE" ? "Pianki oparcia:" : "";
         if (foamLabel) {
-          y += 3;
+          y += 5;
           doc.setFont("Roboto", "bold");
           doc.setFontSize(9);
           doc.text(foamLabel, marginLeft + 2, y);
