@@ -196,6 +196,18 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
       {seats.length > 0 && (
         <section>
           <h3 className="text-base font-bold mb-2">Siedziska</h3>
+          <div className="bg-muted rounded-lg p-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3">
+            <div><span className="text-muted-foreground">Kolekcja:</span> <strong>{seriesProps.collection ?? "—"}</strong></div>
+            {singleFrame && (
+              <div><span className="text-muted-foreground">Stelaż siedziska:</span> <strong>{singleFrame}</strong></div>
+            )}
+            {singleSpring && (
+              <div><span className="text-muted-foreground">Sprężyna siedziska:</span> <strong>{singleSpring} (wszystkie modele)</strong></div>
+            )}
+            {commonBaseFoam && (
+              <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{foamLine(commonBaseFoam)}</strong></div>
+            )}
+          </div>
           {!showPiankiCol && (
             <p className="text-sm text-muted-foreground mb-2">
               Pianka bazowa identyczna — różni się tylko front.
