@@ -209,17 +209,23 @@ export default function LegCompletionTable() {
                   {/* Wysokość */}
                   <TableCell>
                     {row.editable === "pufa" ? (
-                      <InlineEditCell
-                        value={row.seriesProps?.pufa_leg_height_cm != null ? String(row.seriesProps.pufa_leg_height_cm) : ""}
-                        onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_height_cm", v ? Number(v) : null)}
-                        type="number"
-                      />
+                      <div className="flex items-center gap-1">
+                        <InlineEditCell
+                          value={row.seriesProps?.pufa_leg_height_cm != null ? String(row.seriesProps.pufa_leg_height_cm) : ""}
+                          onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_height_cm", v ? Number(v) : null)}
+                          type="number"
+                        />
+                        <span className="text-muted-foreground text-xs">cm</span>
+                      </div>
                     ) : row.editable === "fotel" ? (
-                      <InlineEditCell
-                        value={row.seriesProps?.fotel_leg_height_cm != null ? String(row.seriesProps.fotel_leg_height_cm) : "15"}
-                        onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "fotel_leg_height_cm", v ? Number(v) : null)}
-                        type="number"
-                      />
+                      <div className="flex items-center gap-1">
+                        <InlineEditCell
+                          value={row.seriesProps?.fotel_leg_height_cm != null ? String(row.seriesProps.fotel_leg_height_cm) : "15"}
+                          onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "fotel_leg_height_cm", v ? Number(v) : null)}
+                          type="number"
+                        />
+                        <span className="text-muted-foreground text-xs">cm</span>
+                      </div>
                     ) : (
                       row.height
                     )}
@@ -228,17 +234,23 @@ export default function LegCompletionTable() {
                   {/* Ilość */}
                   <TableCell>
                     {row.editable === "pufa" ? (
-                      <InlineEditCell
-                        value={String(row.seriesProps?.pufa_leg_count ?? 4)}
-                        onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_count", v ? Number(v) : 4)}
-                        type="number"
-                      />
+                      <div className="flex items-center gap-1">
+                        <InlineEditCell
+                          value={String(row.seriesProps?.pufa_leg_count ?? 4)}
+                          onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "pufa_leg_count", v ? Number(v) : 4)}
+                          type="number"
+                        />
+                        <span className="text-muted-foreground text-xs">szt</span>
+                      </div>
                     ) : row.editable === "fotel" ? (
-                      <InlineEditCell
-                        value={String(row.seriesProps?.fotel_leg_count ?? 4)}
-                        onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "fotel_leg_count", v ? Number(v) : 4)}
-                        type="number"
-                      />
+                      <div className="flex items-center gap-1">
+                        <InlineEditCell
+                          value={String(row.seriesProps?.fotel_leg_count ?? 4)}
+                          onSave={(v) => saveSeriesLegProp(row.seriesId, row.seriesProps ?? {}, "fotel_leg_count", v ? Number(v) : 4)}
+                          type="number"
+                        />
+                        <span className="text-muted-foreground text-xs">szt</span>
+                      </div>
                     ) : (
                       row.count
                     )}
