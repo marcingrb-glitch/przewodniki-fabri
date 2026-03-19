@@ -3,6 +3,7 @@ import DataTable from "@/components/admin/DataTable";
 import ComponentForm from "@/components/admin/ComponentForm";
 import { useProductsCrud } from "@/hooks/useProductsCrud";
 import { PRODUCT_CONFIGS } from "./productConfigs";
+import LegCompletionTable from "./LegCompletionTable";
 
 interface ProductListPageProps {
   category: string;
@@ -52,6 +53,11 @@ export default function ProductListPage({ category }: ProductListPageProps) {
         onCancel={crud.handleCancel}
         isLoading={crud.submitting}
       />
+      {category === "leg" && (
+        <div className="mt-6">
+          <LegCompletionTable />
+        </div>
+      )}
     </>
   );
 }
