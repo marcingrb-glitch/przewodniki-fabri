@@ -152,7 +152,10 @@ const OrderDetailsPage = () => {
         <CardHeader>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-2xl">ZAMÓWIENIE: {orderNumber}</CardTitle>
+              <CardTitle className="text-2xl">
+                ZAMÓWIENIE: {orderNumber}
+                {order?.shopify_order_name && ` | ${order.shopify_order_name}`}
+              </CardTitle>
               <div className="mt-2 rounded bg-muted px-3 py-2 inline-block">
                 <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
               </div>
