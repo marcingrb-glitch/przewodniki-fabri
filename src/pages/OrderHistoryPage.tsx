@@ -538,6 +538,13 @@ const OrderHistoryPage = () => {
                         <TableCell>
                           {order.series_code && <Badge variant="outline">{order.series_code}</Badge>}
                         </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <InlineFabricInput
+                            orderId={order.id}
+                            value={order.fabric_usage_mb}
+                            onSaved={() => refetch()}
+                          />
+                        </TableCell>
                         {isAdmin && (
                           <TableCell className="text-center">
                             <Button
