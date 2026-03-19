@@ -51,11 +51,11 @@ export function LegCompletionRenderer({ data }: SectionRendererProps) {
     }
   }
 
-  // Automats — use code label instead of name
+  // Automats — resolve code from product, not from properties
   for (const rel of automatConfigs) {
     const props = rel.properties as any;
-    const aCode = props?.automat_code ?? "";
-    const label = aCode || "?";
+    const automatProduct = [...data.seriesComponents, ...data.globalProducts].find(p => p.id === rel.source_product_id);
+    const label = automatProduct?.code ?? props?.automat_code ?? "?";
     if (!props?.has_seat_legs) {
       dontRows.push({ element: "Pod siedziskiem", detail: `(${label})`, type: "BRAK", height: "—", count: "—", reason: "brak nóżek pod siedziskiem" });
     } else if (seatLegType === "from_sku") {
