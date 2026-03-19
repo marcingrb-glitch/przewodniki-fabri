@@ -1,4 +1,6 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -29,6 +31,19 @@ const Breadcrumbs = () => {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);
 
+  // If on /order/:id, fetch order_number for breadcrumb label
+  const isOrderDetail = segments[0] === "order" && segments.length === 2;
+  const orderId = isOrderDetail ? segments[1] : null;
+  const { data: orderNumber } = useQuery({
+    queryKey: ["breadcrumb-order", orderId],
+    queryFn: async () => {
+      const { data } = await supabase.from("orders").select("order_number").eq("id", orderId!).maybeSingle();
+      return data?.order_number ?? null;
+    },
+    enabled: !!orderId,
+    staleTime: 60_000,
+  });
+
   if (segments.length === 0) return null;
 
   const crumbs: BreadcrumbEntry[] = [{ label: "Strona główna", path: "/" }];
@@ -37,7 +52,11 @@ const Breadcrumbs = () => {
   segments.forEach((seg, i) => {
     currentPath += `/${seg}`;
     const isLast = i === segments.length - 1;
-    const label = routeMap[seg] || (seg.length > 8 ? `#${seg.substring(0, 8)}…` : `#${seg}`);
+    let label = routeMap[seg] || (seg.length > 8 ? `#${seg.substring(0, 8)}…` : `#${seg}`);
+    // Override with order number if available
+    if (isOrderDetail && i === 1 && orderNumber) {
+      label = orderNumber;
+    }
     const path = isLast ? undefined : (customPaths[seg] ?? currentPath);
     crumbs.push({ label, path });
   });
