@@ -18,6 +18,8 @@ import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
 import { getOrderById } from "@/utils/supabaseQueries";
 import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
 
 import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateWarehouseGuidePDF } from "@/utils/pdfGenerators/warehouseGuide";
