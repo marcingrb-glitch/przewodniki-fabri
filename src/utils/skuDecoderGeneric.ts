@@ -217,11 +217,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     ? await resolveBackrestProduct(parsed.backrest.code, seriesId, seatModelName)
     : null;
 
-  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat ----
+  // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat, sewingVariants ----
   const [
     fabricRes, sideRes, chestRes, automatRes, legRes,
     pillowRes, jaskiRes, walekRes, finishesRes,
     extrasRes, pufaSeatRes, automatConfigRes,
+    sewingVariantsRes,
   ] = await Promise.all([
     // fabric (global)
     supabase.from("products").select(PRODUCT_SELECT)
@@ -290,6 +291,15 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? (async () => {
           return { data: null };
         })()
+      : Promise.resolve({ data: null }),
+    // sewing variants for backrest
+    seriesId && backrestProduct?.id
+      ? supabase.from("product_relations")
+          .select("properties")
+          .eq("relation_type", "sewing_variant")
+          .eq("target_product_id", backrestProduct.id)
+          .eq("series_id", seriesId)
+          .eq("active", true)
       : Promise.resolve({ data: null }),
   ]);
 
