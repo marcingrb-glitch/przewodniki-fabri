@@ -282,7 +282,7 @@ export async function generateProductionGuidePDF(
     title: "OPARCIE",
     code: `${decoded.backrest.code}${decoded.backrest.finish}`,
     headers: ["Wykończenie", "Wariant szycia"],
-    rows: [[decoded.backrest.finishName, decoded.backrest.springType || "-"]],
+    rows: [[decoded.backrest.finishName, decoded.backrest.top || "-"]],
   }, colLeftX, yL, colW, fs, rh, sp);
 
   // RIGHT COLUMN
