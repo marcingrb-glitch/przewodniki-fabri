@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import SeriesOverview from "./spec/SeriesOverview";
 import GenericSpecSection from "./spec/GenericSpecSection";
 import { SPEC_SECTION_CONFIGS } from "./spec/specSectionConfigs";
 import SeriesLegs from "./spec/SeriesLegs";
@@ -76,9 +75,8 @@ export default function SeriesSpecification() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="models">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="overview">Przegląd</TabsTrigger>
           <TabsTrigger value="models">Modele / Siedziska</TabsTrigger>
           <TabsTrigger value="sides">Boczki</TabsTrigger>
           <TabsTrigger value="backrests">Oparcia</TabsTrigger>
@@ -90,9 +88,6 @@ export default function SeriesSpecification() {
           {hasFotel && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="overview">
-          <SeriesOverview seriesProductId={seriesProduct.id} seriesProduct={seriesProduct} onSeriesUpdate={fetchData} />
-        </TabsContent>
         <TabsContent value="models">
           <GenericSpecSection seriesProductId={seriesProduct.id} category="seat" config={SPEC_SECTION_CONFIGS.seat} />
         </TabsContent>
