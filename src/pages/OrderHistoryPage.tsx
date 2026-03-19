@@ -694,4 +694,60 @@ const OrderHistoryPage = () => {
   );
 };
 
+function InlineFabricInput({ orderId, value, onSaved }: { orderId: string; value: number | null; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => { setEditing(true); setLocalValue(value?.toString() ?? ""); }}
+        className="text-sm font-mono hover:underline cursor-pointer"
+      >
+        {value != null ? `${value} mb` : <span className="text-muted-foreground">— wpisz</span>}
+      </button>
+    );
+  }
+
+  const handleSave = async () => {
+    setSaving(true);
+    const numVal = localValue === "" ? null : Number(localValue);
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        fabric_usage_mb: numVal,
+        fabric_usage_updated_at: new Date().toISOString(),
+        fabric_usage_updated_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+      } as any)
+      .eq("id", orderId);
+    setSaving(false);
+    if (error) {
+      toast.error("Błąd zapisu");
+    } else {
+      toast.success("Zapisano");
+      setEditing(false);
+      onSaved();
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        type="number"
+        step="0.01"
+        min="0"
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        className="w-[80px] h-7 text-sm"
+        autoFocus
+        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(false); }}
+      />
+      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSave} disabled={saving}>
+        ✓
+      </Button>
+    </div>
+  );
+}
+
 export default OrderHistoryPage;
