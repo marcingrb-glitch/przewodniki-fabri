@@ -2,6 +2,11 @@ import { DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createDoc, addTableAt, toBlob } from "@/utils/pdfHelpers";
 
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 // ─── Settings ────────────────────────────────────────────────────────
 async function fetchGuideSettings() {
   const { data } = await supabase
@@ -343,8 +348,8 @@ export async function generateProductionGuidePDF(
       rows: [[
         decoded.pillow.name,
         decoded.pillow.finishName,
-        decoded.pillow.constructionType || "-",
-        decoded.pillow.insertType || "-",
+        capitalize(decoded.pillow.constructionType || "-"),
+        capitalize(decoded.pillow.insertType || "-"),
       ]],
     }, colLeftX, y, fullW, fs, rh, sp);
     y += sectionGap;
