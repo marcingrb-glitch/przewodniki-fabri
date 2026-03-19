@@ -191,48 +191,48 @@ const OrderDetailsPage = () => {
       {/* SOFA */}
       <Card className="shadow-md">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">🛋️ SOFA - {decoded.series.code} {decoded.series.name} [{decoded.series.collection}]</CardTitle>
-            {variantImageUrl && (
-              <div
-                className="w-[120px] h-[120px] rounded-lg border cursor-pointer hover:opacity-80 transition shrink-0 overflow-hidden"
-                onClick={() => setImagePopupOpen(true)}
-              >
-                <img
-                  src={variantImageUrl}
-                  alt="Wariant sofy"
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
-            )}
-          </div>
+          <CardTitle className="text-xl">🛋️ SOFA - {decoded.series.code} {decoded.series.name} [{decoded.series.collection}]</CardTitle>
         </CardHeader>
         <CardContent>
           <Accordion type="single" defaultValue="decoding" collapsible>
             <AccordionItem value="decoding">
               <AccordionTrigger className="text-base font-semibold">Dekodowanie SKU</AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-2 text-sm">
-                  <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`} />
-                  <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, kolor ${decoded.fabric.colorName}`} />
-                  <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.modelName ? `${decoded.seat.modelName}${decoded.seat.type ? ` ${decoded.seat.type}` : ''}` : decoded.seat.type || '?'}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
-                  <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykończenie ${decoded.side.finishName}`} />
-                  <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm${decoded.backrest.springType ? `, sprężyna ${decoded.backrest.springType}` : ''}, wykończenie ${decoded.backrest.finishName}`} />
-                  <InfoRow label="Skrzynia" value={decoded.chest.code} />
-                  <InfoRow label="Automat" value={`${decoded.automat.code} - ${decoded.automat.name}`} />
-                  {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
-                  {decoded.pillow && <InfoRow label="Poduszka" value={`${decoded.pillow.code} - ${decoded.pillow.name}`} />}
-                  {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
-                  {decoded.walek && <InfoRow label="Wałek" value={`${decoded.walek.code} - ${decoded.walek.name}`} />}
-                  <div className="mt-3 border-t pt-3">
-                    <p className="font-semibold mb-1">Nóżki sofy:</p>
-                    {decoded.legHeights.sofa_chest
-                      ? <InfoRow label="Pod skrzynią" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
-                      : <InfoRow label="Pod skrzynią" value="BRAK" />}
-                    {decoded.legHeights.sofa_seat
-                      ? <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
-                      : <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />}
+                <div className="flex gap-6">
+                  <div className="flex-1 space-y-2 text-sm">
+                    <InfoRow label="Seria" value={`${decoded.series.code} - ${decoded.series.name} [${decoded.series.collection}]`} />
+                    <InfoRow label="Tkanina" value={`${decoded.fabric.code}${decoded.fabric.color} - ${decoded.fabric.name}, kolor ${decoded.fabric.colorName}`} />
+                    <InfoRow label="Siedzisko" value={`${decoded.seat.code} - ${decoded.seat.modelName ? `${decoded.seat.modelName}${decoded.seat.type ? ` ${decoded.seat.type}` : ''}` : decoded.seat.type || '?'}, wykończenie ${decoded.seat.finish} (${decoded.seat.finishName})`} />
+                    <InfoRow label="Boczek" value={`${decoded.side.code}${decoded.side.finish} - ${decoded.side.name}, wykończenie ${decoded.side.finishName}`} />
+                    <InfoRow label="Oparcie" value={`${decoded.backrest.code}${decoded.backrest.finish} - ${decoded.backrest.height}cm${decoded.backrest.springType ? `, sprężyna ${decoded.backrest.springType}` : ''}, wykończenie ${decoded.backrest.finishName}`} />
+                    <InfoRow label="Skrzynia" value={decoded.chest.code} />
+                    <InfoRow label="Automat" value={`${decoded.automat.code} - ${decoded.automat.name}`} />
+                    {decoded.legs && <InfoRow label="Nóżki" value={`${decoded.legs.code}${decoded.legs.color || ""} - ${decoded.legs.name} ${decoded.legs.material}${decoded.legs.colorName ? `, ${decoded.legs.colorName}` : ""}`} />}
+                    {decoded.pillow && <InfoRow label="Poduszka" value={`${decoded.pillow.code} - ${decoded.pillow.name}`} />}
+                    {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
+                    {decoded.walek && <InfoRow label="Wałek" value={`${decoded.walek.code} - ${decoded.walek.name}`} />}
+                    <div className="mt-3 border-t pt-3">
+                      <p className="font-semibold mb-1">Nóżki sofy:</p>
+                      {decoded.legHeights.sofa_chest
+                        ? <InfoRow label="Pod skrzynią" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
+                        : <InfoRow label="Pod skrzynią" value="BRAK" />}
+                      {decoded.legHeights.sofa_seat
+                        ? <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
+                        : <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />}
+                    </div>
                   </div>
+                  {variantImageUrl && (
+                    <div
+                      className="flex-shrink-0 cursor-pointer"
+                      onClick={() => setImagePopupOpen(true)}
+                    >
+                      <img
+                        src={variantImageUrl}
+                        alt="Wariant"
+                        className="w-[200px] h-auto rounded-lg border shadow-sm hover:shadow-md transition"
+                      />
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
