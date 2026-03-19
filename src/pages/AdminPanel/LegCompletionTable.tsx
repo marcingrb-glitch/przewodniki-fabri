@@ -128,16 +128,16 @@ export default function LegCompletionTable() {
       // Pufa
       const hasPufa = allExtras.some(e => e.series_id === series.id && (e.code === "PF" || e.code === "PFO"));
       if (hasPufa) {
-        const pufaType = seriesProps?.pufa_leg_type ?? "from_sku";
-        const isPlastic = pufaType === "plastic_2_5";
+        const pufaHeight = seriesProps?.pufa_leg_height_cm;
+        const pufaCount = seriesProps?.pufa_leg_count ?? 4;
         mountRows.push({
           series: seriesCode, seriesId: series.id,
           element: "Pufa",
           detail: "",
-          type: LEG_TYPE_LABELS[pufaType] ?? pufaType ?? "—",
-          height: seriesProps?.pufa_leg_height_cm != null ? `${seriesProps.pufa_leg_height_cm} cm` : "—",
-          count: `${seriesProps?.pufa_leg_count ?? 4} szt`,
-          who: isPlastic ? "Tapicer (na stanowisku)" : "Dziewczyny od nóżek",
+          type: "N z SKU",
+          height: pufaHeight != null ? `${pufaHeight} cm` : "—",
+          count: `${pufaCount} szt`,
+          who: "Dziewczyny od nóżek",
           editable: "pufa",
           seriesProps,
         });
