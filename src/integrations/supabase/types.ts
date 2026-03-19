@@ -441,6 +441,7 @@ export type Database = {
       product_specs: {
         Row: {
           created_at: string
+          foam_role: string | null
           height: number | null
           id: string
           length: number | null
@@ -457,6 +458,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          foam_role?: string | null
           height?: number | null
           id?: string
           length?: number | null
@@ -473,6 +475,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          foam_role?: string | null
           height?: number | null
           id?: string
           length?: number | null
