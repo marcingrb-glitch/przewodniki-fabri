@@ -12,7 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2, Maximize2 } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2, Maximize2, Save } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
