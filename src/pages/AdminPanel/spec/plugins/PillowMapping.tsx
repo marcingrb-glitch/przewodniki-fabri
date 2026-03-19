@@ -120,6 +120,10 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
         </Button>
       </div>
 
+      <p className="text-xs text-muted-foreground">
+        Reguły wykończenia: wykończenie siedziska → wykończenie poduszki (np. A → C = gdy siedzisko ma wykończenie A, poduszka dostaje C)
+      </p>
+
       {mappings.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">Brak mapowań poduszek</p>
       ) : (
@@ -127,7 +131,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[120px]">Poduszka</TableHead>
+                <TableHead className="w-[200px]">Poduszka</TableHead>
                 <TableHead>Reguły wykończenia</TableHead>
                 <TableHead className="w-[140px]">Wyjątek (boczek)</TableHead>
                 <TableHead className="w-[40px]"></TableHead>
@@ -141,7 +145,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
                       value={m.target_product_id ?? ""}
                       onValueChange={(val) => updateTarget(m.id, val)}
                     >
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-8 text-xs w-[180px]">
                         <SelectValue placeholder="wybierz" />
                       </SelectTrigger>
                       <SelectContent>
@@ -228,6 +232,7 @@ function FinishRulesEditor({ rules, onChange }: { rules: FinishRule[]; onChange:
     <div className="flex flex-wrap items-center gap-1">
       {localRules.map((rule, idx) => (
         <div key={idx} className="flex items-center gap-0.5">
+          <span className="text-xs text-muted-foreground mr-1">siedz.</span>
           <Input
             className="h-6 w-10 text-xs text-center px-1"
             value={rule.seat_finish}
@@ -236,6 +241,7 @@ function FinishRulesEditor({ rules, onChange }: { rules: FinishRule[]; onChange:
             maxLength={2}
           />
           <span className="text-xs text-muted-foreground">→</span>
+          <span className="text-xs text-muted-foreground mr-1">poduszka</span>
           <Input
             className="h-6 w-10 text-xs text-center px-1"
             value={rule.pillow_finish}
