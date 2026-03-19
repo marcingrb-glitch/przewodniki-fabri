@@ -159,31 +159,51 @@ const OrderDetailsPage = () => {
               <div className="mt-2 rounded bg-muted px-3 py-2 inline-block">
                 <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
+              <p className="text-base text-muted-foreground font-medium mt-1">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
               {decoded.fabricOverride && (
                 <Badge variant="outline" className="mt-1 border-orange-400 text-orange-600">
                   Zmiana tkaniny: {decoded.fabricOverride.name} {decoded.fabricOverride.color}
                 </Badge>
               )}
             </div>
-            <div className="self-start text-right">
-              <p className="text-sm text-muted-foreground mb-1">Zużycie tkaniny</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="—"
-                  value={fabricUsage ?? ""}
-                  onChange={(e) => setFabricUsage(e.target.value ? Number(e.target.value) : null)}
-                  className="w-[100px] h-10 rounded-md border border-input bg-background px-3 text-lg font-mono font-bold text-right"
-                />
-                <span className="text-lg font-bold">mb</span>
-                <Button size="sm" onClick={handleSaveFabricUsage} disabled={savingFabric}>
+            {(order as any)?.fabric_usage_mb != null ? (
+              <div className="self-start rounded-lg border-2 border-green-300 bg-green-50 p-4 text-center min-w-[200px]">
+                <p className="text-sm font-semibold text-green-700 mb-1">✓ Zużycie tkaniny</p>
+                <div className="flex items-center justify-center gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={fabricUsage ?? ""}
+                    onChange={(e) => setFabricUsage(e.target.value ? Number(e.target.value) : null)}
+                    className="w-[80px] h-10 rounded-md border border-green-300 bg-white px-3 text-lg font-mono font-bold text-right"
+                  />
+                  <span className="text-lg font-bold text-green-700">mb</span>
+                </div>
+                <Button size="sm" variant="outline" className="mt-2" onClick={handleSaveFabricUsage} disabled={savingFabric}>
+                  {savingFabric ? "..." : "Zaktualizuj"}
+                </Button>
+              </div>
+            ) : (
+              <div className="self-start rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 p-4 text-center min-w-[200px]">
+                <p className="text-sm font-semibold text-orange-700 mb-2">⚠ Zużycie tkaniny</p>
+                <div className="flex items-center justify-center gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="—"
+                    value={fabricUsage ?? ""}
+                    onChange={(e) => setFabricUsage(e.target.value ? Number(e.target.value) : null)}
+                    className="w-[80px] h-10 rounded-md border-2 border-orange-300 bg-white px-3 text-lg font-mono font-bold text-right"
+                  />
+                  <span className="text-lg font-bold text-orange-700">mb</span>
+                </div>
+                <Button size="sm" className="mt-2 bg-orange-600 hover:bg-orange-700" onClick={handleSaveFabricUsage} disabled={savingFabric}>
                   {savingFabric ? "..." : "Zapisz"}
                 </Button>
               </div>
-            </div>
+            )}
           </div>
         </CardHeader>
       </Card>
