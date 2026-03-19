@@ -14,6 +14,7 @@ import { SeriesConfigRenderer } from "./SeriesConfigRenderer";
 import { SeatsCompactRenderer } from "./SeatsCompactRenderer";
 import { BackrestsCompactRenderer } from "./BackrestsCompactRenderer";
 import { AutomatsTableRenderer } from "./AutomatsTableRenderer";
+import { WarehouseFullRenderer } from "./WarehouseFullRenderer";
 import React from "react";
 
 export const rendererRegistry: Record<string, React.ComponentType<SectionRendererProps>> = {
