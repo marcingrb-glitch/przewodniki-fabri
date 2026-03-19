@@ -347,7 +347,38 @@ const OrderDetailsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Variant image popup */}
+      {/* Fabric usage */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="text-base">🧵 Zużycie tkaniny</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="np. 2.35"
+                value={fabricUsage ?? ""}
+                onChange={(e) => setFabricUsage(e.target.value ? Number(e.target.value) : null)}
+                className="w-[150px]"
+              />
+              <span className="text-sm text-muted-foreground">mb</span>
+            </div>
+            <Button onClick={handleSaveFabricUsage} size="sm" disabled={savingFabric}>
+              <Save className="h-4 w-4 mr-1" />
+              {savingFabric ? "Zapisuję..." : "Zapisz"}
+            </Button>
+            {(order as any)?.fabric_usage_mb != null && (
+              <span className="text-sm text-muted-foreground">
+                Zapisano: {(order as any).fabric_usage_mb} mb
+                {(order as any)?.fabric_usage_updated_at && ` (${format(new Date((order as any).fabric_usage_updated_at), "dd.MM.yyyy HH:mm")})`}
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       {variantImageUrl && (
         <Dialog open={imagePopupOpen} onOpenChange={setImagePopupOpen}>
           <DialogContent className="max-w-4xl">
