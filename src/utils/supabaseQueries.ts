@@ -82,6 +82,7 @@ interface GetOrdersParams {
   dateFrom?: string | null;
   dateTo?: string | null;
   seriesCode?: string | null;
+  fabricFilter?: "all" | "missing";
   page?: number;
   limit?: number;
 }
@@ -91,6 +92,7 @@ export async function getOrders({
   dateFrom = null,
   dateTo = null,
   seriesCode = null,
+  fabricFilter = "all",
   page = 1,
   limit = 20,
 }: GetOrdersParams = {}) {
