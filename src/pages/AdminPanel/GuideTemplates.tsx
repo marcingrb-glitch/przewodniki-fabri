@@ -39,19 +39,6 @@ export default function GuideTemplates() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<GuideSection | null>(null);
   const [form, setForm] = useState<Omit<GuideSection, "id">>(emptySection("sofa"));
-
-  // Resolve series code from selectedSeriesId
-  const selectedSeriesCode = useMemo(() => {
-    if (selectedSeriesId === "__global__") return undefined;
-    return seriesList.find(s => s.id === selectedSeriesId)?.code;
-  }, [selectedSeriesId, seriesList]);
-
-  const defaultSku = useMemo(() => {
-    if (selectedSeriesCode) return DEFAULT_EXAMPLE_SKUS[selectedSeriesCode] || FALLBACK_EXAMPLE_SKU;
-    return FALLBACK_EXAMPLE_SKU;
-  }, [selectedSeriesCode]);
-
-  const { decoded, isLoading: isDecoding, error: decodeError, skuInput, setSkuInput } = useSkuPreviewDecoder(defaultSku);
   const queryClient = useQueryClient();
 
   const { data: sections = [], isLoading } = useQuery({
@@ -74,6 +61,19 @@ export default function GuideTemplates() {
       return data as { id: string; code: string; name: string }[];
     },
   });
+
+  // Resolve series code from selectedSeriesId
+  const selectedSeriesCode = useMemo(() => {
+    if (selectedSeriesId === "__global__") return undefined;
+    return seriesList.find(s => s.id === selectedSeriesId)?.code;
+  }, [selectedSeriesId, seriesList]);
+
+  const defaultSku = useMemo(() => {
+    if (selectedSeriesCode) return DEFAULT_EXAMPLE_SKUS[selectedSeriesCode] || FALLBACK_EXAMPLE_SKU;
+    return FALLBACK_EXAMPLE_SKU;
+  }, [selectedSeriesCode]);
+
+  const { decoded, isLoading: isDecoding, error: decodeError, skuInput, setSkuInput } = useSkuPreviewDecoder(defaultSku);
 
   const saveMutation = useMutation({
     mutationFn: async (section: Omit<GuideSection, "id"> & { id?: string }) => {
