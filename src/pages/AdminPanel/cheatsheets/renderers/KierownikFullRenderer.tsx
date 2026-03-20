@@ -605,9 +605,9 @@ function SeatsTable({
                     {spring}
                   </td>
                 )}
-                <td className="border border-border px-2 py-1 whitespace-pre-line">{frontText}</td>
-                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line">{piankiText}</td>}
-                <td className="border border-border px-2 py-1">
+                <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{frontText}</td>
+                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{piankiText}</td>}
+                <td className="border border-border px-2 py-1 break-words">
                   {(seat.allowed_finishes ?? []).join(", ") || "—"}
                 </td>
                 <td className="border border-border px-2 py-1 text-center">
