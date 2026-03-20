@@ -132,7 +132,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
   const uniqueModels = [...new Set(allModels)];
   const showModelCol = uniqueModels.length > 1;
   const showSpringCol = uniqueSprings.length > 1;
-  const showPiankiCol = computeShowPiankiCol(seats, data, commonBaseFoam);
+  
   const frameGroups = groupByFrame(seats);
   const multipleFrameGroups = frameGroups.length > 1;
   const defaultSpring = seriesProps.default_spring ?? "";
