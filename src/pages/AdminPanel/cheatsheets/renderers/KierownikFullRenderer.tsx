@@ -182,7 +182,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
               <div><span className="text-muted-foreground">Sprężyna siedziska:</span> <strong>{singleSpring} (wszystkie modele)</strong></div>
             )}
             {commonBaseFoam && (
-              <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{foamLine(commonBaseFoam)}</strong></div>
+              <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{`${commonBaseFoam.height ?? "?"}×${commonBaseFoam.width ?? "?"}×${commonBaseFoam.length ?? "?"}`}{commonBaseFoam.material ? ` ${commonBaseFoam.material}` : ""}</strong></div>
             )}
           </div>
           {multipleFrameGroups ? (
