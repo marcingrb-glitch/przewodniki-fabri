@@ -232,7 +232,7 @@ function InfoBox({
         <div><span className="text-muted-foreground">Sprężyna siedziska:</span> <strong>{singleSpring} (wszystkie modele)</strong></div>
       )}
       {commonBaseFoam && (
-        <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{foamLine(commonBaseFoam)}</strong></div>
+        <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{foamLine(commonBaseFoam)}{commonBaseFoam.material ? ` ${commonBaseFoam.material}` : ""}</strong></div>
       )}
       {seriesProps.fixed_backrest && (
         <div><span className="text-muted-foreground">Oparcie:</span> <strong>{seriesProps.fixed_backrest}</strong></div>
