@@ -96,11 +96,6 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
       {seats.length > 0 && (
         <section>
           <h3 className="text-base font-semibold mb-1">Siedziska</h3>
-          {!showPiankiCol && (
-            <p className="text-sm text-muted-foreground mb-2">
-              Pianka bazowa identyczna — różni się tylko front.
-            </p>
-          )}
           {multipleFrameGroups ? (
             <div className="space-y-4">
               {frameGroups.map(group => {
