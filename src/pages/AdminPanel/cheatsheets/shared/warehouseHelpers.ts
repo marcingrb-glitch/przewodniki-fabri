@@ -170,7 +170,6 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
     seatGroups,
     showModelCol,
     showSpringCol,
-    showPiankiCol,
     backrests: backrestRows,
     sides: sideRows,
   };

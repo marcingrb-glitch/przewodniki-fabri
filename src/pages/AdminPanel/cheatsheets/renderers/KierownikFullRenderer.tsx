@@ -212,7 +212,6 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
               data={data}
               showModel={showModelCol}
               showSpring={showSpringCol}
-              showPianki={showPiankiCol}
               commonBaseFoam={commonBaseFoam}
               defaultSpring={defaultSpring}
             />
