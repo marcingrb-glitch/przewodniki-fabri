@@ -66,24 +66,6 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
   const showModelCol = [...new Set(allModels)].length > 1;
   const showSpringCol = uniqueSprings.length > 1;
 
-  // ── showPiankiCol ──
-  const showPiankiCol = seats.some(seat => {
-    const props = seat.properties as any;
-    if (props?.foam_set === true) return true;
-    const isDzielone = props?.seat_type === "Dzielone";
-    let effectiveSpecs = data.getSpecsForProduct(seat.id);
-    if (isDzielone && effectiveSpecs.filter(s => s.spec_type === "foam").length === 0) {
-      const baseCode = seat.code.replace(/D$/, "");
-      const baseSeat = data.getByCategory("seat").find(s => s.code === baseCode && s.series_id === seat.series_id);
-      if (baseSeat) effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
-    }
-    const baseFoams = foamsByRole(effectiveSpecs, "base");
-    let displayBase = baseFoams;
-    if (commonBaseFoamSpec && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoamSpec)) {
-      displayBase = displayBase.slice(1);
-    }
-    return displayBase.length > 0 || isDzielone;
-  });
 
   // ── Build seat rows ──
   const defaultSpring = seriesProps.default_spring ?? "";
