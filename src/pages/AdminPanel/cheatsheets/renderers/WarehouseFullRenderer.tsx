@@ -61,7 +61,14 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
   let commonBaseFoam: ProductSpec | null = null;
   if (nonSetSeats.length > 0) {
     const firstBaseAll = nonSetSeats.map(s => foamsByRole(data.getSpecsForProduct(s.id), "base")[0]).filter(Boolean);
-    if (firstBaseAll.length === nonSetSeats.length && firstBaseAll.every(f => specsAreEqual(f, firstBaseAll[0]))) {
+    const lengthOk = firstBaseAll.length === nonSetSeats.length;
+    const allEq = firstBaseAll.length > 0 && firstBaseAll.every(f => specsAreEqual(f, firstBaseAll[0]));
+    console.log("[UI DEBUG] lengthOk:", lengthOk, "allEq:", allEq, "len:", firstBaseAll.length, "/", nonSetSeats.length);
+    if (firstBaseAll.length > 1) {
+      console.log("[UI DEBUG] JSON compare 0 vs 1:", JSON.stringify(firstBaseAll[0]) === JSON.stringify(firstBaseAll[1]));
+      console.log("[UI DEBUG] foam[0].material repr:", JSON.stringify(firstBaseAll[0].material), "foam[1].material repr:", JSON.stringify(firstBaseAll[1].material));
+    }
+    if (lengthOk && allEq) {
       commonBaseFoam = firstBaseAll[0];
     }
   }
