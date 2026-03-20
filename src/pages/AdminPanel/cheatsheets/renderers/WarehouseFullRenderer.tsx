@@ -245,14 +245,12 @@ function SeatsTable({
   data,
   showModel,
   showSpring,
-  showPianki,
   commonBaseFoam,
 }: {
   seats: ProductRow[];
   data: SectionRendererProps["data"];
   showModel: boolean;
   showSpring: boolean;
-  showPianki: boolean;
   commonBaseFoam: ProductSpec | null;
 }) {
   const defaultSpring = ((data.seriesConfig as any)?.default_spring ?? "") as string;
@@ -267,7 +265,6 @@ function SeatsTable({
             <th className="border border-border px-2 py-1 text-left">Typ</th>
             {showSpring && <th className="border border-border px-2 py-1 text-left">Sprężyna</th>}
             <th className="border border-border px-2 py-1 text-left">Pianka frontu</th>
-            {showPianki && <th className="border border-border px-2 py-1 text-left">Pianki</th>}
             <th className="border border-border px-2 py-1 text-left">
               <div>Pasek śr. dokleić</div>
               <div className="text-xs font-normal text-muted-foreground">1.5 × 19 × 50 T-21-25</div>
@@ -280,13 +277,9 @@ function SeatsTable({
             const specs = data.getSpecsForProduct(seat.id);
             const spring = data.getSpringForSeat(seat);
             const isSpringException = showSpring && spring !== defaultSpring;
-            const isSet = props?.foam_set === true;
 
-            // Get foams for this seat (with Dzielone fallback)
             const isDzielone = props?.seat_type === "Dzielone";
             let effectiveSpecs = specs;
-            let isRef = false;
-            let refCode: string | null = null;
 
             if (isDzielone && specs.filter(s => s.spec_type === "foam").length === 0) {
               const baseCode = seat.code.replace(/D$/, "");
@@ -295,43 +288,13 @@ function SeatsTable({
               );
               if (baseSeat) {
                 effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
-                isRef = true;
-                refCode = baseCode;
               }
             }
 
-            const baseFoams = foamsByRole(effectiveSpecs, "base");
             const frontFoams = foamsByRole(effectiveSpecs, "front");
-
-            // Front column
             const frontText = frontFoams.length > 0
               ? frontFoams.map(f => foamLine(f)).join("\n")
               : "—";
-
-            // Pianki column
-            let piankiText: string;
-            if (isSet) {
-              const capCount = baseFoams
-                .filter(s => (s.name ?? "").toLowerCase().includes("czapa"))
-                .reduce((sum, s) => sum + (s.quantity ?? 1), 0);
-              piankiText = capCount > 0
-                ? `Set pianek ${seat.code} (${capCount === 1 ? "1 czapa" : capCount + " czapy"})`
-                : `Set pianek ${seat.code}`;
-            } else {
-              // Remove common base foam if extracted to info-box
-              let displayBase = baseFoams;
-              if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
-                displayBase = displayBase.slice(1);
-              }
-              if (displayBase.length > 0) {
-                piankiText = displayBase.map(f => foamLine(f)).join("\n");
-              } else {
-                piankiText = "—";
-              }
-              if (isRef) {
-                piankiText = piankiText !== "—" ? `${piankiText}\n(jak ${refCode} + pasek)` : `(jak ${refCode} + pasek)`;
-              }
-            }
 
             return (
               <tr key={seat.id}>
@@ -344,7 +307,6 @@ function SeatsTable({
                   </td>
                 )}
                 <td className="border border-border px-2 py-1 whitespace-pre-line">{frontText}</td>
-                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line">{piankiText}</td>}
                 <td className="border border-border px-2 py-1 text-center">
                   {props?.center_strip ? <strong>TAK</strong> : "—"}
                 </td>
