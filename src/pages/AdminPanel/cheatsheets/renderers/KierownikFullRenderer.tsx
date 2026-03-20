@@ -38,30 +38,6 @@ function naturalSort(items: ProductRow[]): ProductRow[] {
   });
 }
 
-function computeShowPiankiCol(
-  seats: ProductRow[],
-  data: SectionRendererProps["data"],
-  commonBaseFoam: ProductSpec | null
-): boolean {
-  return seats.some(seat => {
-    const props = seat.properties as any;
-    const specs = data.getSpecsForProduct(seat.id);
-    if (props?.foam_set === true) return true;
-    const isDzielone = props?.seat_type === "Dzielone";
-    let effectiveSpecs = specs;
-    if (isDzielone && specs.filter(s => s.spec_type === "foam").length === 0) {
-      const baseCode = seat.code.replace(/D$/, "");
-      const baseSeat = data.getByCategory("seat").find(s => s.code === baseCode && s.series_id === seat.series_id);
-      if (baseSeat) effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
-    }
-    const baseFoams = foamsByRole(effectiveSpecs, "base");
-    let displayBase = baseFoams;
-    if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
-      displayBase = displayBase.slice(1);
-    }
-    return displayBase.length > 0;
-  });
-}
 
 function groupByFrame(seats: ProductRow[]): { frame: string; seats: ProductRow[] }[] {
   const groups: Map<string, ProductRow[]> = new Map();
@@ -156,7 +132,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
   const uniqueModels = [...new Set(allModels)];
   const showModelCol = uniqueModels.length > 1;
   const showSpringCol = uniqueSprings.length > 1;
-  const showPiankiCol = computeShowPiankiCol(seats, data, commonBaseFoam);
+  
   const frameGroups = groupByFrame(seats);
   const multipleFrameGroups = frameGroups.length > 1;
   const defaultSpring = seriesProps.default_spring ?? "";
@@ -209,11 +185,6 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
               <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{foamLine(commonBaseFoam)}</strong></div>
             )}
           </div>
-          {!showPiankiCol && (
-            <p className="text-sm text-muted-foreground mb-2">
-              Pianka bazowa identyczna — różni się tylko front.
-            </p>
-          )}
           {multipleFrameGroups ? (
             <div className="space-y-4">
               {frameGroups.map(group => {
@@ -228,7 +199,6 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
                       data={data}
                       showModel={showModelCol}
                       showSpring={showSpringCol}
-                      showPianki={showPiankiCol}
                       commonBaseFoam={commonBaseFoam}
                       defaultSpring={defaultSpring}
                     />
@@ -242,7 +212,6 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
               data={data}
               showModel={showModelCol}
               showSpring={showSpringCol}
-              showPianki={showPiankiCol}
               commonBaseFoam={commonBaseFoam}
               defaultSpring={defaultSpring}
             />
@@ -516,7 +485,6 @@ function SeatsTable({
   data,
   showModel,
   showSpring,
-  showPianki,
   commonBaseFoam,
   defaultSpring,
 }: {
@@ -524,7 +492,6 @@ function SeatsTable({
   data: SectionRendererProps["data"];
   showModel: boolean;
   showSpring: boolean;
-  showPianki: boolean;
   commonBaseFoam: ProductSpec | null;
   defaultSpring: string;
 }) {
@@ -538,7 +505,6 @@ function SeatsTable({
             <th className="border border-border px-2 py-1 text-left">Typ</th>
             {showSpring && <th className="border border-border px-2 py-1 text-left">Sprężyna</th>}
             <th className="border border-border px-2 py-1 text-left">Pianka frontu</th>
-            {showPianki && <th className="border border-border px-2 py-1 text-left">Pianki</th>}
             <th className="border border-border px-2 py-1 text-left">Dozwolone szwy</th>
             <th className="border border-border px-2 py-1 text-left">
               <div>Pasek śr. dokleić</div>
@@ -552,12 +518,9 @@ function SeatsTable({
             const specs = data.getSpecsForProduct(seat.id);
             const spring = data.getSpringForSeat(seat);
             const isSpringException = showSpring && spring !== defaultSpring;
-            const isSet = props?.foam_set === true;
 
             const isDzielone = props?.seat_type === "Dzielone";
             let effectiveSpecs = specs;
-            let isRef = false;
-            let refCode: string | null = null;
 
             if (isDzielone && specs.filter(s => s.spec_type === "foam").length === 0) {
               const baseCode = seat.code.replace(/D$/, "");
@@ -566,35 +529,13 @@ function SeatsTable({
               );
               if (baseSeat) {
                 effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
-                isRef = true;
-                refCode = baseCode;
               }
             }
 
-            const baseFoams = foamsByRole(effectiveSpecs, "base");
             const frontFoams = foamsByRole(effectiveSpecs, "front");
             const frontText = frontFoams.length > 0
               ? frontFoams.map(f => foamLine(f)).join("\n")
               : "—";
-
-            let piankiText: string;
-            if (isSet) {
-              const capCount = baseFoams
-                .filter(s => (s.name ?? "").toLowerCase().includes("czapa"))
-                .reduce((sum, s) => sum + (s.quantity ?? 1), 0);
-              piankiText = capCount > 0
-                ? `Set pianek ${seat.code} (${capCount === 1 ? "1 czapa" : capCount + " czapy"})`
-                : `Set pianek ${seat.code}`;
-            } else {
-              let displayBase = baseFoams;
-              if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
-                displayBase = displayBase.slice(1);
-              }
-              piankiText = displayBase.length > 0 ? displayBase.map(f => foamLine(f)).join("\n") : "—";
-              if (isRef) {
-                piankiText = piankiText !== "—" ? `${piankiText}\n(jak ${refCode} + pasek)` : `(jak ${refCode} + pasek)`;
-              }
-            }
 
             return (
               <tr key={seat.id}>
@@ -607,7 +548,6 @@ function SeatsTable({
                   </td>
                 )}
                 <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{frontText}</td>
-                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{piankiText}</td>}
                 <td className="border border-border px-2 py-1 break-words">
                   {(seat.allowed_finishes ?? []).join(", ") || "—"}
                 </td>

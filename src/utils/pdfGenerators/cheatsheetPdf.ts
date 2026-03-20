@@ -18,7 +18,7 @@ export interface CheatsheetPdfData {
   seatGroups: { frame: string; seatIndices: number[] }[] | null;
   showModelCol: boolean;
   showSpringCol: boolean;
-  showPiankiCol: boolean;
+  
   backrests: CheatsheetBackrestRow[];
   sides: CheatsheetSideRow[];
 }
@@ -30,7 +30,7 @@ export interface CheatsheetSeatRow {
   spring?: string;
   isSpringException?: boolean;
   frontFoams: string;
-  pianki: string;
+  
   centerStrip: boolean;
 }
 
@@ -147,12 +147,6 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     doc.text("Siedziska", mL, y + 4);
     y += 7;
 
-    if (!data.showPiankiCol) {
-      doc.setFontSize(8);
-      doc.setFont("Roboto", "normal");
-      doc.text("Pianka bazowa identyczna — różni się tylko front.", mL, y + 3);
-      y += 6;
-    }
 
     if (data.seatGroups) {
       for (const group of data.seatGroups) {
@@ -243,7 +237,7 @@ function renderSeatsTable(
   headers.push("Typ"); colStyles[colIdx] = { cellWidth: 22 }; colIdx++;
   if (data.showSpringCol) { headers.push("Sprężyna"); colStyles[colIdx] = { cellWidth: 20 }; colIdx++; }
   headers.push("Pianka frontu"); colStyles[colIdx] = { cellWidth: 45 }; colIdx++;
-  if (data.showPiankiCol) { headers.push("Pianki"); colStyles[colIdx] = { cellWidth: 45 }; colIdx++; }
+  
   headers.push("Pasek śr. dokleić\n1.5 × 19 × 50 T-21-25"); colStyles[colIdx] = { cellWidth: 35 };
 
   const rows = seats.map(s => {
@@ -252,7 +246,7 @@ function renderSeatsTable(
     row.push(s.type);
     if (data.showSpringCol) row.push(s.isSpringException ? `${s.spring} *` : (s.spring || "—"));
     row.push(s.frontFoams);
-    if (data.showPiankiCol) row.push(s.pianki);
+    
     row.push(s.centerStrip ? "TAK" : "—");
     return row;
   });
