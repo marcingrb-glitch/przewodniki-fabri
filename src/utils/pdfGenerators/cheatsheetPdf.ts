@@ -18,7 +18,7 @@ export interface CheatsheetPdfData {
   seatGroups: { frame: string; seatIndices: number[] }[] | null;
   showModelCol: boolean;
   showSpringCol: boolean;
-  showPiankiCol: boolean;
+  
   backrests: CheatsheetBackrestRow[];
   sides: CheatsheetSideRow[];
 }
