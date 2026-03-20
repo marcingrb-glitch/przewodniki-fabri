@@ -26,7 +26,7 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
   const title = `SPECYFIKACJA TECHNICZNA | SOFA ${seriesCode} ${collection}`.toUpperCase();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 overflow-hidden">
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">{title}</h1>
 
       {data.sections.map(section => {

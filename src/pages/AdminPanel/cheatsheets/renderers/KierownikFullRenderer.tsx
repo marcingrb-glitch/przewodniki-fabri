@@ -268,7 +268,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
         <section>
           <h3 className="text-base font-bold mb-2">Boczki</h3>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -299,7 +299,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
         <section>
           <h3 className="text-base font-bold mb-2">Oparcia</h3>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -323,8 +323,8 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
                       <td className={`border border-border px-2 py-1 ${isException ? "font-bold underline" : ""}`}>
                         {row.springType ?? "—"}
                       </td>
-                      <td className="border border-border px-2 py-1 whitespace-pre-line">{row.foams}</td>
-                      <td className="border border-border px-2 py-1">{row.allowedFinishes}</td>
+                      <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{row.foams}</td>
+                      <td className="border border-border px-2 py-1 break-words">{row.allowedFinishes}</td>
                     </tr>
                   );
                 })}
@@ -339,7 +339,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
         <section>
           <h3 className="text-base font-bold mb-2">Skrzynie</h3>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -368,7 +368,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
         <section>
           <h3 className="text-base font-bold mb-2">Automaty</h3>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -485,7 +485,7 @@ function FabricsSection({ data }: { data: SectionRendererProps["data"] }) {
     <section>
       <h3 className="text-base font-bold mb-2">Tkaniny</h3>
       <div className="rounded-md border border-border overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <table className="w-full text-sm border-collapse table-fixed">
           <thead>
             <tr className="bg-muted">
               <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -500,7 +500,7 @@ function FabricsSection({ data }: { data: SectionRendererProps["data"] }) {
                 <td className="border border-border px-2 py-1 font-mono font-bold">{f.code}</td>
                 <td className="border border-border px-2 py-1">{f.name}</td>
                 <td className="border border-border px-2 py-1">{(f.properties as any)?.price_group ?? "—"}</td>
-                <td className="border border-border px-2 py-1 text-xs">{formatColors(f.colors)}</td>
+                <td className="border border-border px-2 py-1 text-xs break-words">{formatColors(f.colors)}</td>
               </tr>
             ))}
           </tbody>
@@ -529,7 +529,7 @@ function SeatsTable({
 }) {
   return (
     <div className="rounded-md border border-border overflow-hidden">
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full text-sm border-collapse table-fixed">
         <thead>
           <tr className="bg-muted">
             <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -605,9 +605,9 @@ function SeatsTable({
                     {spring}
                   </td>
                 )}
-                <td className="border border-border px-2 py-1 whitespace-pre-line">{frontText}</td>
-                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line">{piankiText}</td>}
-                <td className="border border-border px-2 py-1">
+                <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{frontText}</td>
+                {showPianki && <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{piankiText}</td>}
+                <td className="border border-border px-2 py-1 break-words">
                   {(seat.allowed_finishes ?? []).join(", ") || "—"}
                 </td>
                 <td className="border border-border px-2 py-1 text-center">
@@ -740,7 +740,7 @@ function LegsSection({ data, config }: { data: SectionRendererProps["data"]; con
         <div className="mt-4">
           <p className="text-sm font-semibold mb-2">📋 Typy nóżek</p>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -755,7 +755,7 @@ function LegsSection({ data, config }: { data: SectionRendererProps["data"]; con
                     <td className="border border-border px-2 py-1 font-mono font-bold">{leg.code}</td>
                     <td className="border border-border px-2 py-1">{leg.name}</td>
                     <td className="border border-border px-2 py-1">{(leg.properties as any)?.material ?? "—"}</td>
-                    <td className="border border-border px-2 py-1 text-xs">{formatColors(leg.colors)}</td>
+                    <td className="border border-border px-2 py-1 text-xs break-words">{formatColors(leg.colors)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -809,7 +809,7 @@ function PillowsSection({
         <div className="mb-4">
           <p className="text-sm font-semibold mb-1">Mapowanie poduszek per siedzisko</p>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Siedzisko</th>
@@ -837,7 +837,7 @@ function PillowsSection({
         <div className="mb-2">
           <p className="text-sm font-semibold mb-1">Jaśki i wałki</p>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse table-fixed">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
