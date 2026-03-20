@@ -755,7 +755,7 @@ function LegsSection({ data, config }: { data: SectionRendererProps["data"]; con
                     <td className="border border-border px-2 py-1 font-mono font-bold">{leg.code}</td>
                     <td className="border border-border px-2 py-1">{leg.name}</td>
                     <td className="border border-border px-2 py-1">{(leg.properties as any)?.material ?? "—"}</td>
-                    <td className="border border-border px-2 py-1 text-xs">{formatColors(leg.colors)}</td>
+                    <td className="border border-border px-2 py-1 text-xs break-words">{formatColors(leg.colors)}</td>
                   </tr>
                 ))}
               </tbody>
