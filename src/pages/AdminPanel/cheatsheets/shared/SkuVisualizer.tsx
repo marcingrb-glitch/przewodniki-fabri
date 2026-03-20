@@ -45,8 +45,8 @@ export function SkuVisualizer({
   });
 
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-flex items-start gap-1">
+    <div>
+      <div className="flex flex-wrap items-start gap-1">
         {matched.map((m, i) => (
           <div key={i} className="flex items-center">
             {i > 0 && (
