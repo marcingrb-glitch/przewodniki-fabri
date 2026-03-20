@@ -61,14 +61,24 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
     }
   }
   // ⬇️ TEMPORARY DEBUG — remove after diagnosis ⬇️
-  console.log("[PDF DEBUG] nonSetSeats:", nonSetSeats.length, nonSetSeats.map(s => s.code));
-  console.log("[PDF DEBUG] specs per seat:", nonSetSeats.map(s => ({
-    code: s.code,
-    allSpecs: data.getSpecsForProduct(s.id).length,
-    foams: data.getSpecsForProduct(s.id).filter(sp => sp.spec_type === "foam").map(sp => ({ foam_role: (sp as any).foam_role, name: sp.name, material: sp.material })),
-    baseFoams: foamsByRole(data.getSpecsForProduct(s.id), "base").length,
-  })));
-  console.log("[PDF DEBUG] commonBaseFoamSpec:", commonBaseFoamSpec);
+  if (nonSetSeats.length > 0) {
+    const firstBaseAll = nonSetSeats.map(s => foamsByRole(data.getSpecsForProduct(s.id), "base")[0]).filter(Boolean);
+    console.log("[PDF DEBUG] nonSetSeats:", nonSetSeats.length, nonSetSeats.map(s => s.code));
+    console.log("[PDF DEBUG] baseFoams detail:", firstBaseAll.map(f => ({
+      name: f.name, material: f.material, h: f.height, w: f.width, l: f.length, role: (f as any).foam_role,
+    })));
+    if (firstBaseAll.length > 1) {
+      const ref = firstBaseAll[0];
+      console.log("[PDF DEBUG] equality check vs first:", firstBaseAll.slice(1).map((f, i) => ({
+        idx: i + 1,
+        eq: specsAreEqual(f, ref),
+        diffs: {
+          h: f.height === ref.height, w: f.width === ref.width, l: f.length === ref.length, m: f.material === ref.material,
+        }
+      })));
+    }
+    console.log("[PDF DEBUG] commonBaseFoamSpec:", commonBaseFoamSpec);
+  }
 
   // ── Columns visibility ──
   const allModels = seats.map(s => (s.properties as any)?.model_name).filter(Boolean);
