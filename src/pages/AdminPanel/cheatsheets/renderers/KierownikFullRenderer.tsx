@@ -529,7 +529,7 @@ function SeatsTable({
 }) {
   return (
     <div className="rounded-md border border-border overflow-hidden">
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full text-sm border-collapse table-fixed">
         <thead>
           <tr className="bg-muted">
             <th className="border border-border px-2 py-1 text-left">Kod</th>
