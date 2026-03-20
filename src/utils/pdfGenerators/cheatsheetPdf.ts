@@ -76,18 +76,32 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
   if (data.fixedChest) infoLines.push({ label: "Skrzynia: ", value: data.fixedChest });
   if (data.fixedAutomat) infoLines.push({ label: "Automat: ", value: data.fixedAutomat });
 
-  const rows2Col = Math.ceil(infoLines.length / 2);
-  const boxH = rows2Col * 8 + 16;
+  const pad = 8;
+  const lh = 7;
+  const maxLabelW = contentW - 2 * pad;
+
+  // Check if 2-column layout fits
+  doc.setFontSize(10);
+  doc.setFont("Roboto", "normal");
+  const colW = maxLabelW / 2 - 5;
+  const fits2Col = infoLines.every(item => {
+    doc.setFont("Roboto", "normal");
+    const labelW = doc.getTextWidth(item.label);
+    doc.setFont("Roboto", "bold");
+    const valueW = doc.getTextWidth(item.value);
+    doc.setFont("Roboto", "normal");
+    return (labelW + valueW + 2) <= colW;
+  });
+
+  const use2Col = fits2Col && infoLines.length > 2;
+  const rowCount = use2Col ? Math.ceil(infoLines.length / 2) : infoLines.length;
+  const boxH = rowCount * lh + 2 * pad;
+
   doc.setFillColor(245, 245, 245);
   doc.rect(mL, y, contentW, boxH, "F");
 
-  const pad = 8;
-  const colW = (contentW - 2 * pad) / 2;
   const lx = mL + pad;
-  const rx = mL + pad + colW + 10;
-  let ly = y + pad + 5;
-  let ry = y + pad + 5;
-  const lh = 8;
+  let lineY = y + pad + 4;
 
   function infoLine(x: number, yRef: number, label: string, value: string): number {
     doc.setFont("Roboto", "normal");
@@ -99,13 +113,22 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     return yRef + lh;
   }
 
-  infoLines.forEach((item, i) => {
-    if (i % 2 === 0) {
-      ly = infoLine(lx, ly, item.label, item.value);
-    } else {
-      ry = infoLine(rx, ry, item.label, item.value);
+  if (use2Col) {
+    const rx = mL + pad + colW + 10;
+    let ly = lineY;
+    let ry = lineY;
+    infoLines.forEach((item, i) => {
+      if (i % 2 === 0) {
+        ly = infoLine(lx, ly, item.label, item.value);
+      } else {
+        ry = infoLine(rx, ry, item.label, item.value);
+      }
+    });
+  } else {
+    for (const item of infoLines) {
+      lineY = infoLine(lx, lineY, item.label, item.value);
     }
-  });
+  }
 
   y += boxH + 8;
 
@@ -184,17 +207,7 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
-  // ── Spring exception note ──
-  if (hasAnySpringException) {
-    if (y > pageH - 15) { doc.addPage(); y = mT; }
-    doc.setFontSize(8);
-    doc.setFont("Roboto", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.text("* Sprężyna inna niż domyślna", mL, y + 3);
-    y += 8;
-  }
-
-  // ── Footer on each page ──
+  // ── Footer on each page (+ spring note on last page) ──
   const totalPages = doc.getNumberOfPages();
   const now = new Date().toLocaleDateString("pl-PL");
   for (let p = 1; p <= totalPages; p++) {
@@ -202,6 +215,9 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     doc.setFontSize(7);
     doc.setFont("Roboto", "normal");
     doc.setTextColor(150, 150, 150);
+    if (hasAnySpringException && p === totalPages) {
+      doc.text("* Sprężyna inna niż domyślna", mL, pageH - 10);
+    }
     doc.text(`Wygenerowano: ${now} | ${data.seriesCode} ${data.seriesName}`, pageW - mR, pageH - 5, { align: "right" });
   }
   doc.setTextColor(0, 0, 0);
