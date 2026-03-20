@@ -147,12 +147,6 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     doc.text("Siedziska", mL, y + 4);
     y += 7;
 
-    if (!data.showPiankiCol) {
-      doc.setFontSize(8);
-      doc.setFont("Roboto", "normal");
-      doc.text("Pianka bazowa identyczna — różni się tylko front.", mL, y + 3);
-      y += 6;
-    }
 
     if (data.seatGroups) {
       for (const group of data.seatGroups) {
