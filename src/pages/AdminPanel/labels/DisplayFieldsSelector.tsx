@@ -29,7 +29,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
   ],
   side: [
     { value: "side.code", label: "Kod boczka", source: "products (side)" },
-    { value: "side.name", label: "Boczek", source: "products.name (side)" },
+    { value: "side.name", label: "Model", source: "products.name (side)" },
     { value: "side.frame", label: "Stelaż", source: "products.properties.frame (side)" },
     { value: "side.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "side.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
