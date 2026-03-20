@@ -56,7 +56,17 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
   let commonBaseFoamSpec: ProductSpec | null = null;
   if (nonSetSeats.length > 0) {
     const firstBaseAll = nonSetSeats.map(s => foamsByRole(data.getSpecsForProduct(s.id), "base")[0]).filter(Boolean);
-    if (firstBaseAll.length === nonSetSeats.length && firstBaseAll.every(f => specsAreEqual(f, firstBaseAll[0]))) {
+    const lengthMatch = firstBaseAll.length === nonSetSeats.length;
+    const allEqual = firstBaseAll.length > 0 && firstBaseAll.every(f => specsAreEqual(f, firstBaseAll[0]));
+    console.log("[PDF DEBUG INLINE] firstBaseAll.length:", firstBaseAll.length, "nonSetSeats.length:", nonSetSeats.length, "lengthMatch:", lengthMatch, "allEqual:", allEqual);
+    if (firstBaseAll.length > 1) {
+      const ref = firstBaseAll[0];
+      console.log("[PDF DEBUG INLINE] ref foam:", { h: ref.height, w: ref.width, l: ref.length, m: ref.material, types: { h: typeof ref.height, w: typeof ref.width, l: typeof ref.length, m: typeof ref.material }});
+      const f1 = firstBaseAll[1];
+      console.log("[PDF DEBUG INLINE] foam[1]:", { h: f1.height, w: f1.width, l: f1.length, m: f1.material, types: { h: typeof f1.height, w: typeof f1.width, l: typeof f1.length, m: typeof f1.material }});
+      console.log("[PDF DEBUG INLINE] strict eq:", { h: f1.height === ref.height, w: f1.width === ref.width, l: f1.length === ref.length, m: f1.material === ref.material });
+    }
+    if (lengthMatch && allEqual) {
       commonBaseFoamSpec = firstBaseAll[0];
     }
   }
