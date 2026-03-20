@@ -207,17 +207,7 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
-  // ── Spring exception note ──
-  if (hasAnySpringException) {
-    if (y > pageH - 15) { doc.addPage(); y = mT; }
-    doc.setFontSize(8);
-    doc.setFont("Roboto", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.text("* Sprężyna inna niż domyślna", mL, y + 3);
-    y += 8;
-  }
-
-  // ── Footer on each page ──
+  // ── Footer on each page (+ spring note on last page) ──
   const totalPages = doc.getNumberOfPages();
   const now = new Date().toLocaleDateString("pl-PL");
   for (let p = 1; p <= totalPages; p++) {
@@ -225,6 +215,9 @@ export async function generateCheatsheetPDF(data: CheatsheetPdfData): Promise<Bl
     doc.setFontSize(7);
     doc.setFont("Roboto", "normal");
     doc.setTextColor(150, 150, 150);
+    if (hasAnySpringException && p === totalPages) {
+      doc.text("* Sprężyna inna niż domyślna", mL, pageH - 10);
+    }
     doc.text(`Wygenerowano: ${now} | ${data.seriesCode} ${data.seriesName}`, pageW - mR, pageH - 5, { align: "right" });
   }
   doc.setTextColor(0, 0, 0);
