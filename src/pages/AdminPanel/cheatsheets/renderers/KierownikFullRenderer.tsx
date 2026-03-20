@@ -500,7 +500,7 @@ function FabricsSection({ data }: { data: SectionRendererProps["data"] }) {
                 <td className="border border-border px-2 py-1 font-mono font-bold">{f.code}</td>
                 <td className="border border-border px-2 py-1">{f.name}</td>
                 <td className="border border-border px-2 py-1">{(f.properties as any)?.price_group ?? "—"}</td>
-                <td className="border border-border px-2 py-1 text-xs">{formatColors(f.colors)}</td>
+                <td className="border border-border px-2 py-1 text-xs break-words">{formatColors(f.colors)}</td>
               </tr>
             ))}
           </tbody>
