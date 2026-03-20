@@ -30,7 +30,7 @@ export interface CheatsheetSeatRow {
   spring?: string;
   isSpringException?: boolean;
   frontFoams: string;
-  pianki: string;
+  
   centerStrip: boolean;
 }
 
