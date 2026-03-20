@@ -89,19 +89,6 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
     const frontFoams = foamsByRole(effectiveSpecs, "front");
     const frontText = frontFoams.length > 0 ? frontFoams.map(f => foamLine(f)).join("\n") : "—";
 
-    let piankiText: string;
-    if (isSet) {
-      const capCount = baseFoams.filter(s => (s.name ?? "").toLowerCase().includes("czapa")).reduce((sum, s) => sum + (s.quantity ?? 1), 0);
-      piankiText = capCount > 0 ? `Set pianek ${seat.code} (${capCount === 1 ? "1 czapa" : capCount + " czapy"})` : `Set pianek ${seat.code}`;
-    } else {
-      let displayBase = baseFoams;
-      if (commonBaseFoamSpec && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoamSpec)) {
-        displayBase = displayBase.slice(1);
-      }
-      piankiText = displayBase.length > 0 ? displayBase.map(f => foamLine(f)).join("\n") : "—";
-      if (isRef) piankiText = piankiText !== "—" ? `${piankiText}\n(jak ${refCode} + pasek)` : `(jak ${refCode} + pasek)`;
-    }
-
     return {
       code: seat.code,
       model: props?.model_name ?? undefined,
@@ -109,7 +96,6 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
       spring,
       isSpringException: spring !== defaultSpring,
       frontFoams: frontText,
-      pianki: piankiText,
       centerStrip: !!props?.center_strip,
     };
   });
