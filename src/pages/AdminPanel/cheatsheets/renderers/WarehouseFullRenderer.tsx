@@ -34,36 +34,6 @@ function naturalSort(items: ProductRow[]): ProductRow[] {
   });
 }
 
-/** Check if Pianki column has any non-empty data */
-function computeShowPiankiCol(
-  seats: ProductRow[],
-  data: SectionRendererProps["data"],
-  commonBaseFoam: ProductSpec | null
-): boolean {
-  return seats.some(seat => {
-    const props = seat.properties as any;
-    const specs = data.getSpecsForProduct(seat.id);
-    const isSet = props?.foam_set === true;
-    if (isSet) return true;
-
-    const isDzielone = props?.seat_type === "Dzielone";
-    let effectiveSpecs = specs;
-    if (isDzielone && specs.filter(s => s.spec_type === "foam").length === 0) {
-      const baseCode = seat.code.replace(/D$/, "");
-      const baseSeat = data.getByCategory("seat").find(
-        s => s.code === baseCode && s.series_id === seat.series_id
-      );
-      if (baseSeat) effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
-    }
-
-    const baseFoams = foamsByRole(effectiveSpecs, "base");
-    let displayBase = baseFoams;
-    if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
-      displayBase = displayBase.slice(1);
-    }
-    return displayBase.length > 0;
-  });
-}
 
 // ─── main component ────────────────────────────────────────────────
 

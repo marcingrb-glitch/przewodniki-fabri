@@ -38,30 +38,6 @@ function naturalSort(items: ProductRow[]): ProductRow[] {
   });
 }
 
-function computeShowPiankiCol(
-  seats: ProductRow[],
-  data: SectionRendererProps["data"],
-  commonBaseFoam: ProductSpec | null
-): boolean {
-  return seats.some(seat => {
-    const props = seat.properties as any;
-    const specs = data.getSpecsForProduct(seat.id);
-    if (props?.foam_set === true) return true;
-    const isDzielone = props?.seat_type === "Dzielone";
-    let effectiveSpecs = specs;
-    if (isDzielone && specs.filter(s => s.spec_type === "foam").length === 0) {
-      const baseCode = seat.code.replace(/D$/, "");
-      const baseSeat = data.getByCategory("seat").find(s => s.code === baseCode && s.series_id === seat.series_id);
-      if (baseSeat) effectiveSpecs = data.getSpecsForProduct(baseSeat.id);
-    }
-    const baseFoams = foamsByRole(effectiveSpecs, "base");
-    let displayBase = baseFoams;
-    if (commonBaseFoam && displayBase.length > 0 && specsAreEqual(displayBase[0], commonBaseFoam)) {
-      displayBase = displayBase.slice(1);
-    }
-    return displayBase.length > 0;
-  });
-}
 
 function groupByFrame(seats: ProductRow[]): { frame: string; seats: ProductRow[] }[] {
   const groups: Map<string, ProductRow[]> = new Map();

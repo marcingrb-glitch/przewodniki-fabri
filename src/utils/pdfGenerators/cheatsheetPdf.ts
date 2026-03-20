@@ -246,7 +246,7 @@ function renderSeatsTable(
     row.push(s.type);
     if (data.showSpringCol) row.push(s.isSpringException ? `${s.spring} *` : (s.spring || "—"));
     row.push(s.frontFoams);
-    if (data.showPiankiCol) row.push(s.pianki);
+    
     row.push(s.centerStrip ? "TAK" : "—");
     return row;
   });
