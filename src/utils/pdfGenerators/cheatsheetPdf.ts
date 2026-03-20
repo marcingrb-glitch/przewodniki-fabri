@@ -237,7 +237,7 @@ function renderSeatsTable(
   headers.push("Typ"); colStyles[colIdx] = { cellWidth: 22 }; colIdx++;
   if (data.showSpringCol) { headers.push("Sprężyna"); colStyles[colIdx] = { cellWidth: 20 }; colIdx++; }
   headers.push("Pianka frontu"); colStyles[colIdx] = { cellWidth: 45 }; colIdx++;
-  if (data.showPiankiCol) { headers.push("Pianki"); colStyles[colIdx] = { cellWidth: 45 }; colIdx++; }
+  
   headers.push("Pasek śr. dokleić\n1.5 × 19 × 50 T-21-25"); colStyles[colIdx] = { cellWidth: 35 };
 
   const rows = seats.map(s => {
