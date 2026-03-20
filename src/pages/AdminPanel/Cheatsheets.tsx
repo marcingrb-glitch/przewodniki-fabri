@@ -71,7 +71,7 @@ export default function Cheatsheets() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `sciagawka-magazyn-${selectedSeries?.code ?? "X"}.pdf`;
+      a.download = `sciagawka-${selectedStation}-${selectedSeries?.code ?? "X"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

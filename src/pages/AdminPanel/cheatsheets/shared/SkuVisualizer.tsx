@@ -1,3 +1,5 @@
+import { useRef, useEffect, useState } from "react";
+
 const SEGMENT_LABELS: Record<string, string> = {
   series: "Seria",
   fabric: "Tkanina",
@@ -29,6 +31,10 @@ export function SkuVisualizer({
   sku: string;
   segments: any[];
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
   const parts = sku.split("-");
 
   const matched = parts.map((part) => {
@@ -44,9 +50,35 @@ export function SkuVisualizer({
     return { part, segment: null };
   });
 
+  useEffect(() => {
+    const container = containerRef.current;
+    const inner = innerRef.current;
+    if (!container || !inner) return;
+
+    const observer = new ResizeObserver(() => {
+      const containerW = container.offsetWidth;
+      const innerW = inner.scrollWidth;
+      if (innerW > containerW && containerW > 0) {
+        setScale(containerW / innerW);
+      } else {
+        setScale(1);
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [matched.length]);
+
   return (
-    <div>
-      <div className="flex flex-wrap items-start gap-1">
+    <div ref={containerRef} className="w-full overflow-hidden">
+      <div
+        ref={innerRef}
+        className="inline-flex items-start gap-1"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          marginBottom: scale < 1 ? `${-(1 - scale) * (innerRef.current?.offsetHeight ?? 60)}px` : undefined,
+        }}
+      >
         {matched.map((m, i) => (
           <div key={i} className="flex items-center">
             {i > 0 && (
