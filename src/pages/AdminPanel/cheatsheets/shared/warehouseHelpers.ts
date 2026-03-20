@@ -60,6 +60,15 @@ export function buildCheatsheetPdfData(data: CheatsheetData): CheatsheetPdfData 
       commonBaseFoamSpec = firstBaseAll[0];
     }
   }
+  // ⬇️ TEMPORARY DEBUG — remove after diagnosis ⬇️
+  console.log("[PDF DEBUG] nonSetSeats:", nonSetSeats.length, nonSetSeats.map(s => s.code));
+  console.log("[PDF DEBUG] specs per seat:", nonSetSeats.map(s => ({
+    code: s.code,
+    allSpecs: data.getSpecsForProduct(s.id).length,
+    foams: data.getSpecsForProduct(s.id).filter(sp => sp.spec_type === "foam").map(sp => ({ foam_role: (sp as any).foam_role, name: sp.name, material: sp.material })),
+    baseFoams: foamsByRole(data.getSpecsForProduct(s.id), "base").length,
+  })));
+  console.log("[PDF DEBUG] commonBaseFoamSpec:", commonBaseFoamSpec);
 
   // ── Columns visibility ──
   const allModels = seats.map(s => (s.properties as any)?.model_name).filter(Boolean);
