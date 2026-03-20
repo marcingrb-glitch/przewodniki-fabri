@@ -74,9 +74,7 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
   // Has spring column?
   const showSpringCol = uniqueSprings.length > 1;
 
-  // Show Pianki column?
-  const showPiankiCol = computeShowPiankiCol(seats, data, commonBaseFoam);
-
+  // Group by frame for S2-style
   // Group by frame for S2-style
   const frameGroups = groupByFrame(seats);
   const multipleFrameGroups = frameGroups.length > 1;
