@@ -323,8 +323,8 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
                       <td className={`border border-border px-2 py-1 ${isException ? "font-bold underline" : ""}`}>
                         {row.springType ?? "—"}
                       </td>
-                      <td className="border border-border px-2 py-1 whitespace-pre-line">{row.foams}</td>
-                      <td className="border border-border px-2 py-1">{row.allowedFinishes}</td>
+                      <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{row.foams}</td>
+                      <td className="border border-border px-2 py-1 break-words">{row.allowedFinishes}</td>
                     </tr>
                   );
                 })}
