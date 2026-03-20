@@ -5,11 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout() {
   const location = useLocation();
   const { isAdmin, permissions } = useAuth();
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() => localStorage.getItem("admin_series_id") || "");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { data: seriesList = [] } = useQuery({
     queryKey: ["admin-series-products"],
@@ -95,9 +98,34 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-120px)]">
-      <aside className="w-[280px] shrink-0 border-r bg-muted/30 p-4 space-y-4 sticky top-0 self-start">
-        <h2 className="text-lg font-bold px-3">
+    <div className="flex min-h-[calc(100vh-120px)] relative">
+      {/* Toggle button — always visible */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-[72px] left-2 z-50 no-print"
+        title={sidebarOpen ? "Schowaj menu" : "Pokaż menu"}
+      >
+        {sidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+      </Button>
+
+      {/* Overlay when sidebar open */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 z-30 no-print"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed top-[64px] left-0 bottom-0 w-[280px] border-r bg-background p-4 space-y-4 overflow-y-auto z-40 transition-transform duration-200 no-print",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <h2 className="text-lg font-bold px-3 mt-8">
           {isAdmin ? "⚙️ Panel Administracyjny" : "📋 Panel"}
         </h2>
 
@@ -139,6 +167,7 @@ export default function AdminLayout() {
         )}
       </aside>
 
+      {/* Main content — full width always */}
       <main className="flex-1 p-6">
         <Outlet context={{ selectedSeriesId }} />
       </main>
