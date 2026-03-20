@@ -185,11 +185,6 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
               <div><span className="text-muted-foreground">Pianka bazowa:</span> <strong>{foamLine(commonBaseFoam)}</strong></div>
             )}
           </div>
-          {!showPiankiCol && (
-            <p className="text-sm text-muted-foreground mb-2">
-              Pianka bazowa identyczna — różni się tylko front.
-            </p>
-          )}
           {multipleFrameGroups ? (
             <div className="space-y-4">
               {frameGroups.map(group => {
