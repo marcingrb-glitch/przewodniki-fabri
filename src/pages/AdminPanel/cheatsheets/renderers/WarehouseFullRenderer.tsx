@@ -110,7 +110,6 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
                       data={data}
                       showModel={showModelCol}
                       showSpring={showSpringCol}
-                      showPianki={showPiankiCol}
                       commonBaseFoam={commonBaseFoam}
                     />
                   </div>
