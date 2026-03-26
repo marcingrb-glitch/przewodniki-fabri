@@ -1,18 +1,15 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import html2pdf from "html2pdf.js";
 import CheatsheetRenderer from "./cheatsheets/CheatsheetRenderer";
 import { useCheatsheetData } from "./cheatsheets/useCheatsheetData";
 
 export default function Cheatsheets() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("");
   const [selectedStation, setSelectedStation] = useState<string>("");
-  const [downloading, setDownloading] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const { data: seriesList = [] } = useQuery({
     queryKey: ["cheatsheet-series-products"],
@@ -59,26 +56,8 @@ export default function Cheatsheets() {
 
   const cheatsheetData = useCheatsheetData(selectedSeriesId, selectedStation);
 
-  async function handleDownloadPdf() {
-    const el = printRef.current;
-    if (!el || downloading) return;
-    setDownloading(true);
-    try {
-      const filename = `sciagawka-${selectedStation}-${selectedSeries?.code ?? "X"}.pdf`;
-      await html2pdf()
-        .set({
-          margin: 10,
-          filename,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, windowWidth: 1100 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-        })
-        .from(el)
-        .save();
-    } finally {
-      setDownloading(false);
-    }
+  function handleDownloadPdf() {
+    window.print();
   }
 
   return (
@@ -116,8 +95,8 @@ export default function Cheatsheets() {
 
         {selectedSeriesId && selectedStation && (
           <div className="flex gap-2 ml-auto">
-            <Button onClick={handleDownloadPdf} size="sm" variant="outline" disabled={downloading}>
-              <Download className="mr-1 h-4 w-4" /> {downloading ? "Generuję..." : "Pobierz PDF"}
+          <Button onClick={handleDownloadPdf} size="sm" variant="outline">
+              <Download className="mr-1 h-4 w-4" /> Pobierz PDF
             </Button>
           </div>
         )}
@@ -128,7 +107,7 @@ export default function Cheatsheets() {
           Wybierz serię i stanowisko, aby wygenerować ściągawkę.
         </div>
       ) : (
-        <div className="print-area" ref={printRef}>
+        <div className="print-area">
           <CheatsheetRenderer
             data={cheatsheetData}
             workstationCode={selectedStation}
