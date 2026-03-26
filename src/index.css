@@ -185,6 +185,25 @@
     page-break-inside: avoid;
   }
 
+  /* Cheatsheet print: compact layout for A4 */
+  .print-area table {
+    font-size: 9pt !important;
+  }
+  .print-area th,
+  .print-area td {
+    padding: 2px 6px !important;
+  }
+  .print-area h1 {
+    font-size: 16pt !important;
+  }
+  .print-area h2,
+  .print-area h3 {
+    font-size: 11pt !important;
+  }
+  .print-area .text-sm {
+    font-size: 8pt !important;
+  }
+
   section {
     break-before: auto;
   }
