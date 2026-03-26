@@ -221,7 +221,7 @@ const ShopifyOrderForm = () => {
           series_code: parsed.series,
           decoded_data: decoded,
           created_by: user?.id,
-          visible_to_workers: false,
+          visible_to_workers: true,
           variant_image_url: variantImageUrl,
           mimeeq_shortcode: mimeeqShortcode,
           shopify_order_name: orderName || undefined,
