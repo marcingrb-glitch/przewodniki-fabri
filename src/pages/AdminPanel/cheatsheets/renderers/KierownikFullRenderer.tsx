@@ -162,7 +162,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
   const walki = naturalSort(data.getByCategory("walek"));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* 1. Legends */}
       <LegendsSection data={data} />
 
@@ -173,7 +173,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
       {seats.length > 0 && (
         <section>
           <h3 className="text-base font-bold mb-2">Siedziska</h3>
-          <div className="bg-muted rounded-lg p-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3">
+          <div className="bg-muted rounded-lg p-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-2">
             <div><span className="text-muted-foreground">Kolekcja:</span> <strong>{seriesProps.collection ?? "—"}</strong></div>
             {singleFrame && (
               <div><span className="text-muted-foreground">Stelaż siedziska:</span> <strong>{singleFrame}</strong></div>
@@ -186,7 +186,7 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
             )}
           </div>
           {multipleFrameGroups ? (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {frameGroups.map(group => {
                 const hasException = group.seats.some(s => data.getSpringForSeat(s) !== defaultSpring);
                 return (
@@ -425,7 +425,7 @@ function LegendsSection({ data }: { data: SectionRendererProps["data"] }) {
   const exampleSku = EXAMPLE_SKUS.sofa;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="border-2 border-border rounded p-3">
         <p className="text-sm font-semibold mb-2">LEGENDA SKU</p>
         {skuSegments.length > 0 ? (
@@ -649,7 +649,7 @@ function LegsSection({ data, config }: { data: SectionRendererProps["data"]; con
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {doRows.length > 0 && (
             <div>
               <p className="font-bold mb-2">🟢 CO KOMPLETOWAĆ</p>
