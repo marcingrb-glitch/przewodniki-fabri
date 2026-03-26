@@ -8,7 +8,7 @@ export function SewingVariantsRenderer({ section, data }: SectionRendererProps) 
     <div className="border-4 border-orange-500 rounded-lg p-4 bg-orange-50 dark:bg-orange-950/30">
       <h2 className="text-lg font-bold mb-2 text-orange-700 dark:text-orange-400">⚠️ {section.section_name} — WAŻNE!</h2>
       {section.notes && <p className="text-sm mb-3 font-medium">{section.notes}</p>}
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full table-auto text-sm border-collapse">
         <thead>
           <tr className="bg-orange-100 dark:bg-orange-900/40">
             <th className="border border-border px-2 py-1 text-left">Wariant</th>

@@ -15,7 +15,7 @@ export function SidesFullRenderer({ data }: SectionRendererProps) {
 
   return (
     <div className="rounded-md border border-border overflow-hidden">
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full table-auto text-sm border-collapse">
         <thead>
           <tr className="bg-muted">
             <th className="border border-border px-2 py-1 text-left">Kod</th>

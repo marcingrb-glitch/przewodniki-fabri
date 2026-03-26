@@ -6,7 +6,7 @@ export function SpringsTableRenderer({ data }: SectionRendererProps) {
   if (seats.length === 0) return null;
 
   return (
-    <table className="w-full text-sm border-collapse">
+    <table className="w-full table-auto text-sm border-collapse">
       <thead>
         <tr className="bg-muted">
           <th className="border border-border px-2 py-1 text-left">Model</th>

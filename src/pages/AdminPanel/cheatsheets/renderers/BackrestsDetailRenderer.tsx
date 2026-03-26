@@ -19,7 +19,7 @@ export function BackrestsDetailRenderer({ data }: SectionRendererProps) {
               <div><span className="text-muted-foreground">Góra:</span> {props?.top ?? "—"}</div>
             </div>
             {specs.length > 0 && (
-              <table className="w-full text-xs mt-2 border-collapse">
+              <table className="w-full table-auto text-xs mt-2 border-collapse">
                 <thead>
                   <tr className="bg-muted">
                     <th className="border border-border px-1 py-0.5 text-left">#</th>
