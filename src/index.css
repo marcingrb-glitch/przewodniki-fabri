@@ -207,8 +207,8 @@
   .print-area h3::after {
     content: "";
     display: block;
-    height: 8cm;
-    margin-bottom: -8cm;
+  height: 3cm;
+    margin-bottom: -3cm;
   }
 
   /* Prevent bordered boxes from splitting across pages */
