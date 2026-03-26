@@ -196,9 +196,16 @@
     border-color: black !important;
   }
 
-  section, table, .avoid-break {
+  table, .avoid-break {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .print-area h2,
+  .print-area h3,
+  .print-area .bg-muted.rounded-lg {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   /* Cheatsheet print: compact layout for A4 */
