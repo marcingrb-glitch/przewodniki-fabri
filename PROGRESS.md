@@ -1,6 +1,6 @@
 # Kobik DB Refactor — Progress Tracker
 
-*Wersja 3.6.0 • 20 marca 2026 (sesja popołudniowa)*
+*Wersja 3.7.0 • 26 marca 2026*
 
 ## Etap 1 — Nowe tabele + seed data — DONE ✓
 
@@ -254,6 +254,38 @@ Cały codebase działa na zunifikowanym schemacie:
 - **Label etykiety boczka** — "Model" zamiast "Boczek" (redundantne z nagłówkiem)
 - **Sidebar admin panelu** — chowane domyślnie, overlay z toggle button (do wdrożenia)
 - **foam_role backfill** — ALTER TABLE DEFAULT nie aktualizuje istniejących wierszy w PostgreSQL. Wymagany ręczny UPDATE.
+
+---
+
+## Etap 10 — Ściągawki S2 (sesja 26.03.2026)
+
+### 10.1 — Legenda SKU per seria ✓ (deployed)
+- EXAMPLE_SKUS z kluczami S1/S2/N2 zamiast "sofa"/"narożnik"
+- LegendsSection lookup po seriesProduct.code
+
+### 10.2 — Kolumna "Pianka bazy" w tabelce siedzisk ✓ (deployed)
+- Nowa kolumna widoczna tylko gdy commonBaseFoam=null (S2)
+- Wszystkie pianki foam_role=base, multi-line
+- Oba renderery: WarehouseFullRenderer + KierownikFullRenderer
+
+### 10.3 — Format ilości pianek ✓ (deployed)
+- "Ćwierćwałek 10×4×44 | 2 szt." zamiast "Ćwierćwałek 2× 10×4×44"
+- qty=1 → bez sufixu. Oba renderery + foamHelpers.ts
+
+### 10.4 — Nagłówki kolumn skrócone ✓ (deployed)
+- "Dozwolone szwy" → "Szwy" (KierownikFullRenderer)
+- "Pasek śr. dokleić" → "Pasek środ." (oba renderery)
+
+### 10.5 — Print CSS fixy ✓ (deployed)
+- section + border-4/border-2/bg-muted.rounded-lg → break-inside: avoid
+- ::after hack z ujemnym margin ODRZUCONY (ukrywa małe tabele)
+
+### 10.6 — CheatsheetRenderer section→div ✓ (deployed)
+- Full-page renderery (kierownik_full, warehouse_full, sewing_variants, finish_legend, sides_full) owrapowane w <div> zamiast <section>
+- Zapobiega break-inside:avoid na całym rendererze
+
+### 10.7 — Fix nazw pianek w admin panelu ✓ (ręcznie)
+- Usunięcie wymiarów z nazw pianek oparcia Barga (były zduplikowane w wyświetlaniu)
 
 ---
 
