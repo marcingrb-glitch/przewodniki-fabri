@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
   Search, CalendarIcon, FileSpreadsheet, Eye, EyeOff, RotateCw, Trash2,
-  PackageOpen, Plus, Loader2, Info, CheckSquare,
+  PackageOpen, Plus, Loader2, CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -311,12 +311,6 @@ const OrderHistoryPage = () => {
         </CardHeader>
         <CardContent>
           {/* Worker info */}
-          {!isAdmin && (
-            <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 mb-4 text-sm text-muted-foreground">
-              <Info className="h-4 w-4 shrink-0" />
-              Widzisz tylko swoje zamówienia
-            </div>
-          )}
           {/* Filters */}
           <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center">
             <div className="relative flex-1">
