@@ -149,6 +149,13 @@
   max-width: 100%;
 }
 
+@media print {
+  .print-area .inline-flex {
+    transform: scale(0.7) !important;
+    transform-origin: top left !important;
+  }
+}
+
 /* Underline spacing fix — prevent underline looking like strikethrough */
 .print-area u,
 .print-area [style*="underline"] {
@@ -158,6 +165,8 @@
 @media print {
   @page {
     margin: 10mm;
+    margin-top: 5mm;
+    margin-bottom: 5mm;
   }
 
   header, aside, nav, footer, .no-print, .toaster, [data-sonner-toaster],
