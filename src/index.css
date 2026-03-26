@@ -139,7 +139,7 @@
 /* Cheatsheet table vertical centering */
 .print-area td,
 .print-area th {
-  vertical-align: middle;
+  vertical-align: middle !important;
 }
 
 /* Underline spacing fix — prevent underline looking like strikethrough */
