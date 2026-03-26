@@ -20,8 +20,9 @@ const SEGMENT_LABELS: Record<string, string> = {
 export { SEGMENT_LABELS };
 
 export const EXAMPLE_SKUS: Record<string, string> = {
-  sofa: "S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF",
-  narożnik: "N2-130P-T13C-SD4B-B5B-OP68A-SK23-AT1-P1B",
+  S1: "S1-T3D-SD2NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF",
+  S2: "S2-T13C-SD4B-B5B-OP68A-SK23-AT1-N4-P01-J1-W1",
+  N2: "N2-130P-T13C-SD4B-B5B-OP68A-SK23-AT1-P1B",
 };
 
 export function SkuVisualizer({

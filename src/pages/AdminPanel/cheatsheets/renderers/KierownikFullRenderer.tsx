@@ -422,7 +422,8 @@ function LegendsSection({ data }: { data: SectionRendererProps["data"] }) {
     enabled: !!sofaTypeId,
   });
 
-  const exampleSku = EXAMPLE_SKUS.sofa;
+  const seriesCode = data.seriesProduct?.code ?? "S1";
+  const exampleSku = EXAMPLE_SKUS[seriesCode] ?? EXAMPLE_SKUS.S1;
 
   return (
     <div className="space-y-2">
