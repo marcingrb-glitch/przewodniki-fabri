@@ -69,7 +69,7 @@ export function SkuVisualizer({
   }, [matched.length]);
 
   return (
-    <div ref={containerRef} className="w-full overflow-hidden">
+    <div ref={containerRef} className="w-full overflow-hidden max-w-full">
       <div
         ref={innerRef}
         className="inline-flex items-start gap-1"

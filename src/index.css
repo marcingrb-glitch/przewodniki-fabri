@@ -140,6 +140,13 @@
 .print-area td,
 .print-area th {
   vertical-align: middle !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* SkuVisualizer PDF safety */
+.print-area .inline-flex {
+  max-width: 100%;
 }
 
 /* Underline spacing fix — prevent underline looking like strikethrough */
