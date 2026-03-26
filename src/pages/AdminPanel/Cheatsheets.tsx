@@ -1,20 +1,19 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import html2pdf from "html2pdf.js";
 import CheatsheetRenderer from "./cheatsheets/CheatsheetRenderer";
 import { useCheatsheetData } from "./cheatsheets/useCheatsheetData";
-import { buildCheatsheetPdfData } from "./cheatsheets/shared/warehouseHelpers";
-import { generateCheatsheetPDF } from "@/utils/pdfGenerators/cheatsheetPdf";
 
 export default function Cheatsheets() {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>("");
   const [selectedStation, setSelectedStation] = useState<string>("");
   const [downloading, setDownloading] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
-  // Load series from products table (category='series')
   const { data: seriesList = [] } = useQuery({
     queryKey: ["cheatsheet-series-products"],
     queryFn: async () => {
@@ -29,7 +28,6 @@ export default function Cheatsheets() {
     },
   });
 
-  // Load workstations that have cheatsheet sections
   const { data: stations = [] } = useQuery({
     queryKey: ["cheatsheet-workstations"],
     queryFn: async () => {
@@ -59,22 +57,25 @@ export default function Cheatsheets() {
 
   const selectedSeries = seriesList.find(s => s.id === selectedSeriesId);
 
-  // Hook data lifted to parent for PDF access
   const cheatsheetData = useCheatsheetData(selectedSeriesId, selectedStation);
 
   async function handleDownloadPdf() {
-    if (!cheatsheetData || downloading) return;
+    const el = printRef.current;
+    if (!el || downloading) return;
     setDownloading(true);
     try {
-      const pdfData = buildCheatsheetPdfData(cheatsheetData);
-      if (!pdfData) return;
-      const blob = await generateCheatsheetPDF(pdfData);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `sciagawka-${selectedStation}-${selectedSeries?.code ?? "X"}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const filename = `sciagawka-${selectedStation}-${selectedSeries?.code ?? "X"}.pdf`;
+      await html2pdf()
+        .set({
+          margin: 10,
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+        })
+        .from(el)
+        .save();
     } finally {
       setDownloading(false);
     }
@@ -127,7 +128,7 @@ export default function Cheatsheets() {
           Wybierz serię i stanowisko, aby wygenerować ściągawkę.
         </div>
       ) : (
-        <div className="print-area">
+        <div className="print-area" ref={printRef}>
           <CheatsheetRenderer
             data={cheatsheetData}
             workstationCode={selectedStation}
