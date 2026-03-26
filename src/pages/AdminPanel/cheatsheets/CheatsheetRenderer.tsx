@@ -38,9 +38,9 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
         // For warehouse_full, sewing_variants, finish_legend — no section header
         if (section.renderer_type === "warehouse_full" || section.renderer_type === "kierownik_full" || section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend" || section.renderer_type === "sides_full") {
           return (
-            <section key={section.id} className="mt-4">
+    <div key={section.id} className="mt-4">
               <Renderer section={section} data={data} seriesProduct={data.seriesProduct!} />
-            </section>
+            </div>
           );
         }
 
