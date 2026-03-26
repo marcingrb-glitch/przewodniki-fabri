@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
   Search, CalendarIcon, FileSpreadsheet, Eye, EyeOff, RotateCw, Trash2,
-  PackageOpen, Plus, Loader2, Info, CheckSquare,
+  PackageOpen, Plus, Loader2, CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
