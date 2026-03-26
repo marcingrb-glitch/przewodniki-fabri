@@ -240,7 +240,7 @@ const OrderForm = () => {
         series_code: parsed.series,
         decoded_data: decoded,
         created_by: user?.id,
-        visible_to_workers: isAdmin ? visibleToWorkers : false,
+        visible_to_workers: isAdmin ? visibleToWorkers : true,
         variant_image_url: !variantImage && autoImageUrl ? autoImageUrl : undefined,
         mimeeq_shortcode: shortcode.trim().toUpperCase() || undefined,
         shopify_order_name: shopifyOrderName.trim() || undefined
