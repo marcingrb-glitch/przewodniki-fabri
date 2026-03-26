@@ -422,7 +422,8 @@ function LegendsSection({ data }: { data: SectionRendererProps["data"] }) {
     enabled: !!sofaTypeId,
   });
 
-  const exampleSku = EXAMPLE_SKUS.sofa;
+  const seriesCode = data.seriesProduct?.code ?? "S1";
+  const exampleSku = EXAMPLE_SKUS[seriesCode] ?? EXAMPLE_SKUS.S1;
 
   return (
     <div className="space-y-2">
@@ -495,6 +496,8 @@ function SeatsTable({
   commonBaseFoam: ProductSpec | null;
   defaultSpring: string;
 }) {
+  const showBaseFoamCol = !commonBaseFoam;
+
   return (
     <div className="rounded-md border border-border overflow-hidden">
       <table className="w-full text-sm border-collapse table-auto">
@@ -504,6 +507,7 @@ function SeatsTable({
             {showModel && <th className="border border-border px-2 py-1 text-left">Model</th>}
             <th className="border border-border px-2 py-1 text-left">Typ</th>
             {showSpring && <th className="border border-border px-2 py-1 text-left">Sprężyna</th>}
+            {showBaseFoamCol && <th className="border border-border px-2 py-1 text-left">Pianka bazy</th>}
             <th className="border border-border px-2 py-1 text-left">Pianka frontu</th>
             <th className="border border-border px-2 py-1 text-left">Dozwolone szwy</th>
             <th className="border border-border px-2 py-1 text-left">
@@ -537,6 +541,11 @@ function SeatsTable({
               ? frontFoams.map(f => foamLine(f)).join("\n")
               : "—";
 
+            const baseFoams = foamsByRole(effectiveSpecs, "base");
+            const baseText = baseFoams.length > 0
+              ? baseFoams.map(f => foamLine(f)).join("\n")
+              : "—";
+
             return (
               <tr key={seat.id}>
                 <td className="border border-border px-2 py-1 font-mono font-bold">{seat.code}</td>
@@ -546,6 +555,9 @@ function SeatsTable({
                   <td className={`border border-border px-2 py-1 ${isSpringException ? "font-bold underline" : ""}`}>
                     {spring}
                   </td>
+                )}
+                {showBaseFoamCol && (
+                  <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{baseText}</td>
                 )}
                 <td className="border border-border px-2 py-1 whitespace-pre-line break-words">{frontText}</td>
                 <td className="border border-border px-2 py-1 break-words">
