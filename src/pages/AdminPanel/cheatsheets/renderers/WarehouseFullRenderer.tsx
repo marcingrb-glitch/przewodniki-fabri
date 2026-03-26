@@ -133,7 +133,7 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
         <section>
           <h3 className="text-base font-semibold mb-2">Oparcia</h3>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full table-auto text-sm border-collapse">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -171,7 +171,7 @@ export function WarehouseFullRenderer({ data }: SectionRendererProps) {
         <section>
           <h3 className="text-base font-semibold mb-2">Boczki</h3>
           <div className="rounded-md border border-border overflow-hidden">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full table-auto text-sm border-collapse">
               <thead>
                 <tr className="bg-muted">
                   <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -257,7 +257,7 @@ function SeatsTable({
 
   return (
     <div className="rounded-md border border-border overflow-hidden">
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full table-auto text-sm border-collapse">
         <thead>
           <tr className="bg-muted">
             <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -394,7 +394,7 @@ function ChestsSection({ data }: { data: SectionRendererProps["data"] }) {
     <section>
       <h3 className="text-base font-semibold mb-2">Skrzynie</h3>
       <div className="rounded-md border border-border overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <table className="w-full table-auto text-sm border-collapse">
           <thead>
             <tr className="bg-muted">
               <th className="border border-border px-2 py-1 text-left">Kod</th>
@@ -438,7 +438,7 @@ function AutomatsSection({ data }: { data: SectionRendererProps["data"] }) {
     <section>
       <h3 className="text-base font-semibold mb-2">Automaty</h3>
       <div className="rounded-md border border-border overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <table className="w-full table-auto text-sm border-collapse">
           <thead>
             <tr className="bg-muted">
               <th className="border border-border px-2 py-1 text-left">Kod</th>

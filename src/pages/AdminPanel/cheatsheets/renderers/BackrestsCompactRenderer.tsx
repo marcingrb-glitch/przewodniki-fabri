@@ -6,7 +6,7 @@ export function BackrestsCompactRenderer({ data }: SectionRendererProps) {
   if (backrests.length === 0) return <NoData label="oparcia" />;
 
   return (
-    <table className="w-full text-xs border-collapse">
+    <table className="w-full table-auto text-xs border-collapse">
       <thead>
         <tr className="bg-muted">
           <th className="border border-border px-1 py-1 text-left">Kod</th>

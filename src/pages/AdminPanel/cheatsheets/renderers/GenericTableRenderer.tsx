@@ -21,7 +21,7 @@ export function GenericTableRenderer({ section, data }: SectionRendererProps) {
   if (!columns.length) return null;
 
   return (
-    <table className="w-full text-sm border-collapse">
+    <table className="w-full table-auto text-sm border-collapse">
       <thead>
         <tr className="bg-muted">
           {columns.map((col, i) => (

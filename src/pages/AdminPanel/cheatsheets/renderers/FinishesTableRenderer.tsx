@@ -9,7 +9,7 @@ export function FinishesTableRenderer({ section, data }: SectionRendererProps) {
   const columns = section.columns;
 
   return (
-    <table className="w-full text-sm border-collapse">
+    <table className="w-full table-auto text-sm border-collapse">
       <thead>
         <tr className="bg-muted">
           {columns.map((col, i) => (

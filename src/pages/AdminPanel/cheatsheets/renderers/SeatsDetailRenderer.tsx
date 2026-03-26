@@ -29,7 +29,7 @@ export function SeatsDetailRenderer({ data }: SectionRendererProps) {
                     Pianki jak {referenceCode} + pasek środkowy
                   </p>
                 )}
-                <table className="w-full text-xs mt-2 border-collapse">
+                <table className="w-full table-auto text-xs mt-2 border-collapse">
                   <thead>
                     <tr className="bg-muted">
                       <th className="border border-border px-1 py-0.5 text-left">#</th>
