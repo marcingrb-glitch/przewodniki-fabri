@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Printer, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import CheatsheetRenderer from "./cheatsheets/CheatsheetRenderer";
 import { useCheatsheetData } from "./cheatsheets/useCheatsheetData";
 import { buildCheatsheetPdfData } from "./cheatsheets/shared/warehouseHelpers";
@@ -117,9 +117,6 @@ export default function Cheatsheets() {
           <div className="flex gap-2 ml-auto">
             <Button onClick={handleDownloadPdf} size="sm" variant="outline" disabled={downloading}>
               <Download className="mr-1 h-4 w-4" /> {downloading ? "Generuję..." : "Pobierz PDF"}
-            </Button>
-            <Button onClick={() => window.print()} size="sm">
-              <Printer className="mr-1 h-4 w-4" /> Drukuj
             </Button>
           </div>
         )}
