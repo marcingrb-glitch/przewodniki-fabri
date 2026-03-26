@@ -136,6 +136,18 @@
   }
 }
 
+/* Cheatsheet table vertical centering */
+.print-area td,
+.print-area th {
+  vertical-align: middle;
+}
+
+/* Underline spacing fix — prevent underline looking like strikethrough */
+.print-area u,
+.print-area [style*="underline"] {
+  text-underline-offset: 3px;
+}
+
 @media print {
   @page {
     margin: 10mm;
