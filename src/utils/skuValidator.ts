@@ -39,9 +39,6 @@ export async function validateSKU(sku: string, skuAliases?: Record<string, strin
     warnings.push("Nóżki w SKU są dla dodatku (pufy/fotela), nie dla sofy");
   }
 
-  if (isSK23 && !isAT2) {
-    warnings.push("SK23 zwykle występuje z AT2 (wyrzutkowym)");
-  }
 
   return {
     valid: errors.length === 0,
