@@ -26,7 +26,7 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
   const title = `SPECYFIKACJA TECHNICZNA | SOFA ${seriesCode} ${collection}`.toUpperCase();
 
   return (
-    <div className="space-y-8 overflow-hidden">
+    <div className="space-y-4 overflow-hidden">
       <h1 className="text-2xl font-bold border-b-2 border-foreground pb-2">{title}</h1>
 
       {data.sections.map(section => {
@@ -38,14 +38,14 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
         // For warehouse_full, sewing_variants, finish_legend — no section header
         if (section.renderer_type === "warehouse_full" || section.renderer_type === "kierownik_full" || section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend" || section.renderer_type === "sides_full") {
           return (
-            <section key={section.id} className="mb-6">
+            <section key={section.id} className="mb-2">
               <Renderer section={section} data={data} seriesProduct={data.seriesProduct!} />
             </section>
           );
         }
 
         return (
-          <section key={section.id} className="mb-6 avoid-break">
+          <section key={section.id} className="mb-2">
             <h2 className="text-lg font-bold mb-2">{icon} {section.section_name}</h2>
             {section.notes && section.renderer_type !== "finish_warnings" && (
               <p className="text-sm text-muted-foreground mb-2">{section.notes}</p>
