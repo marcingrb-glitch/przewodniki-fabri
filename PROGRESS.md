@@ -1,6 +1,6 @@
 # Kobik DB Refactor — Progress Tracker
 
-*Wersja 3.7.0 • 26 marca 2026*
+*Wersja 3.8.0 • 26 marca 2026*
 
 ## Etap 1 — Nowe tabele + seed data — DONE ✓
 
@@ -289,6 +289,30 @@ Cały codebase działa na zunifikowanym schemacie:
 
 ---
 
+## Fixy RLS + UX (sesja 26.03.2026)
+
+### Fix RLS orders — INSERT ✓ (SQL)
+- Stara policy: `created_by = auth.uid() AND (NOT visible_to_workers OR is_admin)` — blokowała workerów
+- Nowa: `created_by = auth.uid()` — każdy authenticated może tworzyć swoje zamówienia
+
+### Fix RLS orders — DELETE ✓ (SQL)
+- Stara policy: admin-only
+- Nowa: `created_by = auth.uid() OR has_role(auth.uid(), 'admin')` — worker usuwa swoje, admin wszystkie
+
+### Error handling orders — brief do Lovable
+- Toast z treścią błędu (zamiast ciszy) — ShopifyOrderForm
+- Badge "Błąd" + treść pod spodem (zamiast "Nierozpoznany") — ShopifyLineItemsSelector
+- 403 i duplicate key przetłumaczone na polski
+
+### Worker delete own orders — brief do Lovable
+- Przycisk kosza widoczny dla właściciela zamówienia (nie tylko admin)
+- Bulk delete i regenerowanie zostają admin-only
+
+### SK23+AT1 warning usunięty — brief do Lovable
+- Fałszywy warning "SK23 zwykle występuje z AT2" usunięty z skuValidator.ts
+
+---
+
 ## Następne kroki
 
 1. **KOBIK-PRODUCTS.md update** — poprawki: S2 collection=Elma, sprężyna Bargi 63A (nie 54A), foam_role, sewing_technique, production_notes
@@ -394,3 +418,9 @@ Cały codebase działa na zunifikowanym schemacie:
 - `brief-remove-debug-logs.md` — deployed ✓
 - `brief-sku-autofit-and-filename.md` — deployed ✓ (legenda SKU auto-scale + filename PDF)
 - `brief-collapsible-sidebar.md` — deployed ✓ (chowane menu boczne)
+
+## Pliki z sesji 26.03.2026 (fixy RLS + UX)
+
+- `SQL fix RLS INSERT orders` — executed ✓ (usunięcie warunku visible_to_workers)
+- `SQL fix RLS DELETE orders` — executed ✓ (owner or admin can delete)
+- `brief-fix-order-errors-and-delete.md` — do wdrożenia (error handling + worker delete + SK23 warning)
