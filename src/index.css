@@ -196,25 +196,8 @@
     border-color: black !important;
   }
 
-  table, .avoid-break {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  /* Prevent orphaned section headers — if less than ~8cm left on page,
-     move heading to next page so it stays with its table */
-  .print-area h2::after,
-  .print-area h3::after {
-    content: "";
-    display: block;
-  height: 5cm;
-    margin-bottom: -5cm;
-  }
-
-  /* Prevent bordered boxes from splitting across pages */
-  .print-area .border-4,
-  .print-area .border-2,
-  .print-area .bg-muted.rounded-lg {
+  section, table, .avoid-break,
+  .border-4, .border-2, .bg-muted.rounded-lg {
     break-inside: avoid;
     page-break-inside: avoid;
   }
