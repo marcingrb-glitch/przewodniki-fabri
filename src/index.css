@@ -211,6 +211,14 @@
     margin-bottom: -8cm;
   }
 
+  /* Prevent bordered boxes from splitting across pages */
+  .print-area .border-4,
+  .print-area .border-2,
+  .print-area .bg-muted.rounded-lg {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
   /* Cheatsheet print: compact layout for A4 */
   .print-area table {
     font-size: 9pt !important;
@@ -230,9 +238,6 @@
     font-size: 8pt !important;
   }
 
-  section {
-    break-before: auto;
-  }
 
   table {
     border-collapse: collapse !important;
