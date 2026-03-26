@@ -54,6 +54,7 @@ export default function Cheatsheets() {
     krojownia: "✂️",
     nozki: "👟",
     kierownik: "👔",
+    boczki: "🛋️",
   };
 
   const selectedSeries = seriesList.find(s => s.id === selectedSeriesId);

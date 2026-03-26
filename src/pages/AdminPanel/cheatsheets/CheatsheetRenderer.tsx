@@ -36,7 +36,7 @@ export default function CheatsheetRenderer({ data, workstationCode, seriesCode, 
         const icon = sectionIcons[section.renderer_type] ?? "📋";
 
         // For warehouse_full, sewing_variants, finish_legend — no section header
-        if (section.renderer_type === "warehouse_full" || section.renderer_type === "kierownik_full" || section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend") {
+        if (section.renderer_type === "warehouse_full" || section.renderer_type === "kierownik_full" || section.renderer_type === "sewing_variants" || section.renderer_type === "finish_legend" || section.renderer_type === "sides_full") {
           return (
             <section key={section.id} className="mb-6">
               <Renderer section={section} data={data} seriesProduct={data.seriesProduct!} />
