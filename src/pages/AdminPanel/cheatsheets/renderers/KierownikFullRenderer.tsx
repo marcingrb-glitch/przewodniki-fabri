@@ -510,10 +510,7 @@ function SeatsTable({
             {showBaseFoamCol && <th className="border border-border px-2 py-1 text-left">Pianka bazy</th>}
             <th className="border border-border px-2 py-1 text-left">Pianka frontu</th>
             <th className="border border-border px-2 py-1 text-left">Szwy</th>
-            <th className="border border-border px-2 py-1 text-left">
-              <div>Pasek środ.</div>
-              <div className="text-xs font-normal text-muted-foreground">1.5 × 19 × 50 T-21-25</div>
-            </th>
+            <th className="border border-border px-2 py-1 text-left">Pasek środ.</th>
           </tr>
         </thead>
         <tbody>
