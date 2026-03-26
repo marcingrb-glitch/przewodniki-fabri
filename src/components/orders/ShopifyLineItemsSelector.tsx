@@ -126,9 +126,14 @@ const ShopifyLineItemsSelector = ({
                   </Badge>
                 )}
                 {item.decode_error && (
-                  <Badge variant="destructive" className="text-xs">
-                    Nierozpoznany
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant="destructive" className="text-xs">
+                      Błąd
+                    </Badge>
+                    <span className="text-xs text-destructive ml-0">
+                      {item.decode_error}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

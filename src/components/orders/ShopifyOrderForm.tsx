@@ -232,7 +232,14 @@ const ShopifyOrderForm = () => {
           prev.map((li) => li.line_item_id === item.line_item_id ? { ...li, decoded: true, decode_error: undefined } : li)
         );
       } catch (error: any) {
-        const errMsg = error.message || "Nieznany błąd";
+        let errMsg = error.message || "Nieznany błąd";
+        // Translate common Supabase errors to Polish
+        if (error.code === "42501" || error.status === 403 || errMsg.includes("policy")) {
+          errMsg = "Brak uprawnień do zapisu zamówienia. Skontaktuj się z administratorem.";
+        } else if (error.code === "23505") {
+          errMsg = "Zamówienie o tym numerze już istnieje.";
+        }
+        sonnerToast.error(`❌ ${item.title || item.sku}`, { description: errMsg });
         results.push({ item, error: errMsg });
         setLineItems((prev) =>
           prev.map((li) => li.line_item_id === item.line_item_id ? { ...li, decoded: false, decode_error: errMsg } : li)
@@ -255,7 +262,11 @@ const ShopifyOrderForm = () => {
         navigate(`/order/${firstSuccess.orderId}`);
       }
     } else {
-      sonnerToast.error("Nie udało się zdekodować żadnej pozycji");
+      const firstError = results.find((r) => r.error)?.error;
+      sonnerToast.error("Nie udało się zdekodować żadnej pozycji", {
+        description: firstError || undefined,
+        duration: 8000,
+      });
     }
 
     setIsGenerating(false);

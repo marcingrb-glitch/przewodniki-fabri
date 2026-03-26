@@ -55,7 +55,7 @@ const LIMIT = 20;
 
 const OrderHistoryPage = () => {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   // Filters
   const [search, setSearch] = useState("");
@@ -573,29 +573,29 @@ const OrderHistoryPage = () => {
                               <Eye className="h-4 w-4" />
                             </Button>
                             {isAdmin && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={regeneratingId === order.id}
-                                  onClick={() => handleRegenerate(order)}
-                                >
-                                  {regeneratingId === order.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <RotateCw className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => setDeleteTarget({ id: order.id, orderNumber: order.order_number })}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                disabled={regeneratingId === order.id}
+                                onClick={() => handleRegenerate(order)}
+                              >
+                                {regeneratingId === order.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RotateCw className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
+                            {(isAdmin || order.created_by === user?.id) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteTarget({ id: order.id, orderNumber: order.order_number })}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             )}
                           </div>
                         </TableCell>
