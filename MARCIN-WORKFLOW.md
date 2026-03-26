@@ -53,8 +53,10 @@ Bridge = pliki w repo (TODO.md, handoffy, CLAUDE.md).
 2. Usuń stary plik
 3. Wrzuć nowy z repo
 
-Pliki wymagające podmiany: TODO.md, PROGRESS.md, CLAUDE.md, KOBIK-PRODUCTS.md + pliki które Code zmienił.
+Pliki wymagające podmiany: TODO.md, PROGRESS.md, CLAUDE.md, KOBIK-PRODUCTS.md, INSTRUCTIONS.md (treść → Instructions) + pliki które Code zmienił.
 Szybko: Finder → repo folder → drag & drop.
+
+Specjalnie: `INSTRUCTIONS.md` → skopiuj TREŚĆ pliku (nie plik sam) i wklej w Project Settings → Instructions w claude.ai.
 
 ## Gdy coś poszło nie tak
 

@@ -25,7 +25,7 @@ supabase/
   functions/           — Edge Functions (Deno runtime)
 ```
 
-Key files: `TODO.md` (bieżące taski), `PROGRESS.md` (archiwum + decyzje), `KOBIK-PRODUCTS.md` (reguły biznesowe).
+Key files: `TODO.md` (bieżące taski), `PROGRESS.md` (archiwum + decyzje), `KOBIK-PRODUCTS.md` (reguły biznesowe), `INSTRUCTIONS.md` (Instructions dla claude.ai).
 
 ## Tech Stack
 
@@ -92,11 +92,13 @@ Queries: `from("products").eq("category", "series")` — to poprawny pattern, NI
 
 ## PDF Generation
 
-- jsPDF w przeglądarce (nie server-side)
+- **Ściągawki stanowiskowe**: `window.print()` — NIE html2pdf/html2canvas (vertical-align i JS nie działają w html2canvas). CSS print w `index.css`.
+- **Przewodniki produkcyjne + etykiety**: jsPDF w przeglądarce (browser-side)
 - Fonty: Noto Sans (`/public/fonts/`) — polskie znaki
-- Formaty: przewodnik A4, etykiety 100×30mm, ściągawki A4 landscape
+- Formaty: przewodnik A4, etykiety 100×30mm, ściągawki A4 portrait
 - Print CSS: `.no-print` na UI, `.print-area` na content
 - Backward compat NIE jest potrzebny
+- Przyszłość: jeśli potrzebny auto-download PDF bez dialogu → Puppeteer w Edge Function
 
 ## Nie dotykaj
 
