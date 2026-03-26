@@ -201,11 +201,14 @@
     page-break-inside: avoid;
   }
 
-  .print-area h2,
-  .print-area h3,
-  .print-area .bg-muted.rounded-lg {
-    break-after: avoid;
-    page-break-after: avoid;
+  /* Prevent orphaned section headers — if less than ~8cm left on page,
+     move heading to next page so it stays with its table */
+  .print-area h2::after,
+  .print-area h3::after {
+    content: "";
+    display: block;
+    height: 8cm;
+    margin-bottom: -8cm;
   }
 
   /* Cheatsheet print: compact layout for A4 */
