@@ -25,9 +25,9 @@ export function formatFoamsDetailed(foams?: ProductFoamItem[]): string[] {
   
   return foams.map(f => {
     const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
-    const qty = (f.quantity ?? 1) > 1 ? `${f.quantity}× ` : "";
     const mat = f.material ? ` ${f.material}` : "";
     const name = f.name ? `${f.name}: ` : "";
-    return `${name}${qty}${dims}${mat}`;
+    const qtySuffix = (f.quantity ?? 1) > 1 ? ` | ${f.quantity} szt.` : "";
+    return `${name}${dims}${mat}${qtySuffix}`;
   });
 }
