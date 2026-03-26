@@ -50,6 +50,7 @@ Queries: `from("products").eq("category", "series")` — to poprawny pattern, NI
 ## Git Workflow
 
 - Commit convention: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
+- Auto-rebase: `git config pull.rebase true` (ustawione w repo). `git pull && git push` wystarczy — nie trzeba `--rebase`.
 - Always commit after completing an edit. Push after session.
 - Terminal commands: clean, no comments (#), no pagers, copy-paste ready.
 - Download folder (fallback): `~/Downloads/Kobik_Git/` (mkdir -p on first use)
