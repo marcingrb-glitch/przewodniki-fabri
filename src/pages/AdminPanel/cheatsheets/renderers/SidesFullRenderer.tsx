@@ -11,7 +11,7 @@ function naturalSort(items: any[]) {
 
 export function SidesFullRenderer({ data }: SectionRendererProps) {
   const sides = naturalSort(data.getByCategory("side"));
-  if (sides.length === 0) return <NoData />;
+  if (sides.length === 0) return <NoData label="Boczki" />;
 
   return (
     <div className="rounded-md border border-border overflow-hidden">
