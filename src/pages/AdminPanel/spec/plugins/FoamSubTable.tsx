@@ -177,99 +177,26 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayFoams.map((foam: any) => (
-              <TableRow key={foam.id}>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.position_number ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} />
+            {category === "chaise" ? (() => {
+              const seatFoams = displayFoams.filter((f: any) => (f.position_number ?? 0) < 10);
+              const backrestFoams = displayFoams.filter((f: any) => (f.position_number ?? 0) >= 10);
+              return (
+                <>
+                  {seatFoams.length > 0 && (
+                    <>
+                      <TableRow><TableCell colSpan={10} className="bg-muted/50 font-semibold text-xs py-1">Pianki siedziskowe</TableCell></TableRow>
+                      {seatFoams.map((foam: any) => renderFoamRow(foam, isFallback))}
+                    </>
                   )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.foam_role ?? "base"}</span>
-                  ) : (
-                    <select
-                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                      value={foam.foam_role ?? "base"}
-                      onChange={(e) => updateFoam(foam.id, "foam_role", e.target.value)}
-                    >
-                      <option value="base">base</option>
-                      <option value="front">front</option>
-                    </select>
+                  {backrestFoams.length > 0 && (
+                    <>
+                      <TableRow><TableCell colSpan={10} className="bg-muted/50 font-semibold text-xs py-1">Pianki oparcia szezlonga</TableCell></TableRow>
+                      {backrestFoams.map((foam: any) => renderFoamRow(foam, isFallback))}
+                    </>
                   )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.name ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.height ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.height} type="number" onSave={(v) => updateFoam(foam.id, "height", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.width ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.width} type="number" onSave={(v) => updateFoam(foam.id, "width", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.length ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.length} type="number" onSave={(v) => updateFoam(foam.id, "length", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.material ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.material} onSave={(v) => updateFoam(foam.id, "material", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm">{foam.quantity ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.quantity} type="number" onSave={(v) => updateFoam(foam.id, "quantity", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isFallback ? (
-                    <span className="text-sm text-muted-foreground">{foam.notes ?? "—"}</span>
-                  ) : (
-                    <InlineEditCell value={foam.notes} onSave={(v) => updateFoam(foam.id, "notes", v)} />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {!isFallback && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Usunąć piankę?</AlertDialogTitle>
-                          <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteFoam(foam.id)}>Usuń</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+                </>
+              );
+            })() : displayFoams.map((foam: any) => renderFoamRow(foam, isFallback))}
           </TableBody>
         </Table>
       </div>

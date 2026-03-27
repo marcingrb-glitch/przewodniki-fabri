@@ -80,7 +80,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
       relation_type: "seat_pillow_map",
       source_product_id: productId,
       target_product_id: null,
-      properties: { pillow_finish_rules: [] },
+      properties: { pillow_finish_rules: [], insert_type: "dinaro_xl" },
     });
     if (error) toast.error("Błąd dodawania mapowania");
     else { toast.success("Dodano mapowanie"); invalidate(); }
@@ -132,6 +132,7 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[280px]">Poduszka</TableHead>
+                <TableHead className="w-[140px]">Wkład</TableHead>
                 <TableHead>Reguły wykończenia</TableHead>
                 <TableHead className="w-[140px]">Wyjątek (boczek)</TableHead>
                 <TableHead className="w-[40px]"></TableHead>

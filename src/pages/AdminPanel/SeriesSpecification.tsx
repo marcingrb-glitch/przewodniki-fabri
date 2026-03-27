@@ -2,17 +2,20 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Tables } from "@/integrations/supabase/types";
 import GenericSpecSection from "./spec/GenericSpecSection";
 import { SPEC_SECTION_CONFIGS } from "./spec/specSectionConfigs";
+import ParentSeriesSection from "./spec/ParentSeriesSection";
+import ParentSewingVariantsReadonly from "./spec/plugins/ParentSewingVariantsReadonly";
 import SeriesLegs from "./spec/SeriesLegs";
 import SeriesChests from "./spec/SeriesChests";
 import SeriesPufa from "./spec/SeriesPufa";
 import SeriesFotel from "./spec/SeriesFotel";
 import SeriesAutomats from "./spec/SeriesAutomats";
-
 
 type SeriesProduct = Tables<"products">;
 
@@ -22,6 +25,7 @@ export default function SeriesSpecification() {
 
   const [seriesProduct, setSeriesProduct] = useState<SeriesProduct | null>(null);
   const [extras, setExtras] = useState<{ code: string }[]>([]);
+  const [hasChaise, setHasChaise] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -43,6 +47,15 @@ export default function SeriesSpecification() {
         .eq("category", "extra")
         .eq("series_id", sp.id);
       setExtras(extrasData ?? []);
+
+      const { data: chaiseData } = await supabase
+        .from("products")
+        .select("id")
+        .eq("category", "chaise")
+        .eq("series_id", sp.id)
+        .eq("active", true)
+        .limit(1);
+      setHasChaise((chaiseData ?? []).length > 0);
     }
 
     setLoading(false);
@@ -50,10 +63,26 @@ export default function SeriesSpecification() {
 
   useEffect(() => { fetchData(); }, [seriesCode]);
 
+  const seriesProps = (seriesProduct?.properties as Record<string, any>) ?? {};
+  const parentSeriesId = seriesProps.parent_series_id ?? null;
+
+  const { data: parentSeries } = useQuery({
+    queryKey: ["parent-series", parentSeriesId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, code, name")
+        .eq("id", parentSeriesId)
+        .single();
+      return data;
+    },
+    enabled: !!parentSeriesId,
+  });
+  const parentSeriesCode = parentSeries?.code ?? "";
+
   if (loading) return <div className="p-8 text-muted-foreground text-center">Ładowanie specyfikacji...</div>;
   if (!seriesProduct) return <div className="p-8 text-center text-destructive">Nie znaleziono serii "{seriesCode}"</div>;
 
-  const seriesProps = (seriesProduct.properties as Record<string, any>) ?? {};
   const hasPufa = extras.some(e => e.code === "PF" || e.code === "PFO");
   const hasFotel = extras.some(e => e.code === "FT");
 
@@ -86,16 +115,68 @@ export default function SeriesSpecification() {
           
           {hasPufa && <TabsTrigger value="pufa">Pufa</TabsTrigger>}
           {hasFotel && <TabsTrigger value="fotel">Fotel</TabsTrigger>}
+          {hasChaise && <TabsTrigger value="chaise">Szezlong</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="models">
-          <GenericSpecSection seriesProductId={seriesProduct.id} category="seat" config={SPEC_SECTION_CONFIGS.seat} />
+          {parentSeriesId ? (
+            <ParentSeriesSection
+              seriesProductId={seriesProduct.id}
+              parentSeriesId={parentSeriesId}
+              parentSeriesCode={parentSeriesCode}
+              category="seat"
+              config={SPEC_SECTION_CONFIGS.seat}
+              ownLabel="Siedziska 130 cm"
+              parentLabel={`Siedziska 190 cm (z serii ${parentSeriesCode})`}
+            />
+          ) : (
+            <GenericSpecSection seriesProductId={seriesProduct.id} category="seat" config={SPEC_SECTION_CONFIGS.seat} />
+          )}
         </TabsContent>
         <TabsContent value="sides">
-          <GenericSpecSection seriesProductId={seriesProduct.id} category="side" config={SPEC_SECTION_CONFIGS.side} />
+          {parentSeriesId ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Boczki</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 space-y-3">
+                  <p className="text-muted-foreground">
+                    Boczki pobierane z serii <strong>{parentSeriesCode}</strong>
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/admin/spec/${parentSeriesCode}`)}
+                  >
+                    Przejdź do {parentSeriesCode} → Boczki <ExternalLink className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <GenericSpecSection seriesProductId={seriesProduct.id} category="side" config={SPEC_SECTION_CONFIGS.side} />
+          )}
         </TabsContent>
         <TabsContent value="backrests">
-          <GenericSpecSection seriesProductId={seriesProduct.id} category="backrest" config={SPEC_SECTION_CONFIGS.backrest} />
+          {parentSeriesId ? (
+            <div className="space-y-8">
+              <ParentSeriesSection
+                seriesProductId={seriesProduct.id}
+                parentSeriesId={parentSeriesId}
+                parentSeriesCode={parentSeriesCode}
+                category="backrest"
+                config={SPEC_SECTION_CONFIGS.backrest}
+                ownLabel="Oparcia 130 cm"
+                parentLabel={`Oparcia 190 cm (z serii ${parentSeriesCode})`}
+              />
+              <ParentSewingVariantsReadonly
+                seriesProductId={seriesProduct.id}
+                parentSeriesId={parentSeriesId}
+              />
+            </div>
+          ) : (
+            <GenericSpecSection seriesProductId={seriesProduct.id} category="backrest" config={SPEC_SECTION_CONFIGS.backrest} />
+          )}
         </TabsContent>
         <TabsContent value="chests">
           <SeriesChests seriesProductId={seriesProduct.id} seriesProperties={seriesProps} onUpdate={fetchData} />
@@ -114,6 +195,24 @@ export default function SeriesSpecification() {
         {hasFotel && (
           <TabsContent value="fotel">
             <SeriesFotel seriesProductId={seriesProduct.id} seriesProperties={seriesProps} />
+          </TabsContent>
+        )}
+        {hasChaise && (
+          <TabsContent value="chaise">
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+                Stelaż szezlonga: 124.2 × 79 × 26 cm (wszystkie modele). Oparcie szezlonga bez sprężyn.
+              </div>
+              <GenericSpecSection
+                seriesProductId={seriesProduct.id}
+                category="chaise"
+                config={SPEC_SECTION_CONFIGS.chaise}
+              />
+              <ParentSewingVariantsReadonly
+                seriesProductId={seriesProduct.id}
+                parentSeriesId={parentSeriesId}
+              />
+            </div>
           </TabsContent>
         )}
       </Tabs>
