@@ -11,6 +11,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const { isAdmin, permissions } = useAuth();
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() => localStorage.getItem("admin_series_id") || "");
+  const [sharedOpen, setSharedOpen] = useState(false);
 
   const { data: seriesList = [] } = useQuery({
     queryKey: ["admin-series-products"],
