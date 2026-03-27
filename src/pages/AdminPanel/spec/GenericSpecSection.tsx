@@ -297,13 +297,6 @@ export default function GenericSpecSection({ seriesProductId, category, config }
             </div>
           </div>
           )}
-          {category === "chaise" && (
-            <div className="flex gap-4 flex-wrap">
-              <span>Model: <strong>{product.model_name ?? "—"}</strong></span>
-              <span>Sprężyna: <strong>{product.spring_type ?? "—"}</strong></span>
-              <span>Stelaż: {product.frame ?? "—"}</span>
-            </div>
-          )}
 
         {/* Dane techniczne — backrest */}
         {category === "backrest" && (
