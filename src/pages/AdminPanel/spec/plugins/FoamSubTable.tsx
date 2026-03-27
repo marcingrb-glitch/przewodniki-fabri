@@ -137,6 +137,100 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
     );
   }
 
+  const renderFoamRow = (foam: any, fallback: boolean) => (
+    <TableRow key={foam.id}>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.position_number ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.position_number} type="number" onSave={(v) => updateFoam(foam.id, "position_number", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.foam_role ?? "base"}</span>
+        ) : (
+          <select
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            value={foam.foam_role ?? "base"}
+            onChange={(e) => updateFoam(foam.id, "foam_role", e.target.value)}
+          >
+            <option value="base">base</option>
+            <option value="front">front</option>
+          </select>
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.name ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.name} onSave={(v) => updateFoam(foam.id, "name", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.height ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.height} type="number" onSave={(v) => updateFoam(foam.id, "height", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.width ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.width} type="number" onSave={(v) => updateFoam(foam.id, "width", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.length ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.length} type="number" onSave={(v) => updateFoam(foam.id, "length", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.material ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.material} onSave={(v) => updateFoam(foam.id, "material", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm">{foam.quantity ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.quantity} type="number" onSave={(v) => updateFoam(foam.id, "quantity", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {fallback ? (
+          <span className="text-sm text-muted-foreground">{foam.notes ?? "—"}</span>
+        ) : (
+          <InlineEditCell value={foam.notes} onSave={(v) => updateFoam(foam.id, "notes", v)} />
+        )}
+      </TableCell>
+      <TableCell>
+        {!fallback && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="h-3 w-3 text-destructive" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Usunąć piankę?</AlertDialogTitle>
+                <AlertDialogDescription>Ta operacja jest nieodwracalna.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteFoam(foam.id)}>Usuń</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+
   return (
     <div>
       <h4 className="text-sm font-semibold mb-2">
