@@ -159,6 +159,21 @@ export default function PillowMapping({ productId, seriesProductId }: PillowMapp
                     </Select>
                   </TableCell>
                   <TableCell>
+                    <Select
+                      value={m.properties?.insert_type ?? "dinaro_xl"}
+                      onValueChange={(val) => updateProps(m, { insert_type: val })}
+                    >
+                      <SelectTrigger className="h-8 text-xs w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dinaro_xl">Dinaro XL</SelectItem>
+                        <SelectItem value="dinaro_130">Dinaro 130</SelectItem>
+                        <SelectItem value="dinaro">Dinaro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
                     <FinishRulesEditor
                       rules={m.pillow_finish_rules}
                       onChange={(rules) => updateProps(m, { pillow_finish_rules: rules })}
