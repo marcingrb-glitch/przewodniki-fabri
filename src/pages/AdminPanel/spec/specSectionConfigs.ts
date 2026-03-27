@@ -123,4 +123,34 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
     withCompatibilityMatrix: true,
     groupByModel: false,
   },
+
+  chaise: {
+    category: "chaise",
+    title: "Szezlongi",
+    labelSingular: "Szezlong",
+    propertyKeys: [
+      "model_name", "frame", "spring_type", "backrest_has_springs",
+    ],
+    columns: [
+      { key: "code", label: "Kod" },
+      { key: "model_name", label: "Model" },
+      { key: "spring_type", label: "Sprężyna" },
+    ],
+    fields: [
+      { name: "code", label: "Kod", type: "text", required: true },
+      { name: "name", label: "Nazwa", type: "text", required: true },
+      { name: "model_name", label: "Model", type: "text" },
+      { name: "frame", label: "Stelaż", type: "text" },
+      { name: "spring_type", label: "Sprężyna", type: "text" },
+      { name: "backrest_has_springs", label: "Sprężyny w oparciu", type: "boolean" },
+      { name: "allowed_finishes", label: "Wykończenia", type: "multi-select", options: [
+        { value: "A", label: "A" }, { value: "B", label: "B" },
+        { value: "C", label: "C" }, { value: "D", label: "D" },
+      ]},
+      { name: "default_finish", label: "Domyślne wykończenie", type: "text" },
+    ],
+    withFoams: true,
+    withSewingVariants: false,
+    groupByModel: false,
+  },
 };

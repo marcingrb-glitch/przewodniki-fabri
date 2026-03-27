@@ -127,6 +127,8 @@ export const PRODUCT_CONFIGS: Record<string, ProductCategoryConfig> = {
       ]},
       { name: "insert_type", label: "Wkład", type: "select", options: [
         { value: "dinaro xl", label: "Dinaro XL" },
+        { value: "dinaro 130", label: "Dinaro 130" },
+        { value: "dinaro", label: "Dinaro" },
       ]},
       { name: "allowed_finishes", label: "Możliwe wykończenia", type: "multi-select", required: true, options: [
         { value: "A", label: "A (Stebnówka)" },
