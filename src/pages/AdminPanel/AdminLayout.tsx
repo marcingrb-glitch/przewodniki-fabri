@@ -50,7 +50,6 @@ export default function AdminLayout() {
   const canViewSpecs = isAdmin || permissions.can_view_specs;
   const canViewCheatsheets = isAdmin || permissions.can_view_cheatsheets;
 
-  const [sharedOpen, setSharedOpen] = useState(false);
 
   const sharedLinks = isAdmin
     ? [
