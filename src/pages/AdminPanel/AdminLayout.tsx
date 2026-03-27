@@ -5,11 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { ChevronDown } from "lucide-react";
 
 export default function AdminLayout() {
   const location = useLocation();
   const { isAdmin, permissions } = useAuth();
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() => localStorage.getItem("admin_series_id") || "");
+  const [sharedOpen, setSharedOpen] = useState(false);
 
   const { data: seriesList = [] } = useQuery({
     queryKey: ["admin-series-products"],
@@ -48,9 +50,9 @@ export default function AdminLayout() {
   const canViewSpecs = isAdmin || permissions.can_view_specs;
   const canViewCheatsheets = isAdmin || permissions.can_view_cheatsheets;
 
+
   const sharedLinks = isAdmin
     ? [
-        { to: "/admin/users", label: "👥 Użytkownicy" },
         { to: "/admin/fabrics", label: "Tkaniny" },
         { to: "/admin/finishes", label: "Wykończenia" },
         { to: "/admin/chests", label: "Skrzynie" },
@@ -101,11 +103,19 @@ export default function AdminLayout() {
           {isAdmin ? "⚙️ Panel Administracyjny" : "📋 Panel"}
         </h2>
 
+        {isAdmin && <NavItem to="/admin/users" label="👥 Użytkownicy" />}
+
         {sharedLinks.length > 0 && (
           <>
             <div className="space-y-0.5">
-              <p className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase">Wspólne</p>
-              {sharedLinks.map((l) => <NavItem key={l.to} {...l} />)}
+              <button
+                onClick={() => setSharedOpen(!sharedOpen)}
+                className="flex items-center justify-between w-full text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase hover:text-foreground transition-colors"
+              >
+                Wspólne
+                <ChevronDown className={cn("h-3 w-3 transition-transform", sharedOpen && "rotate-180")} />
+              </button>
+              {sharedOpen && sharedLinks.map((l) => <NavItem key={l.to} {...l} />)}
             </div>
             <Separator />
           </>
