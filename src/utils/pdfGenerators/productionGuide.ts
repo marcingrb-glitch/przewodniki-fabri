@@ -375,6 +375,25 @@ export async function generateProductionGuidePDF(
     }, colLeftX, y, fullW, fs, rh, sp);
   }
 
+  // Special notes at the bottom of the page
+  if (decoded.specialNotes && decoded.specialNotes.length > 0) {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginLeft = 15;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let noteY = pageHeight - 20;
+    for (const note of decoded.specialNotes) {
+      doc.setFillColor(255, 255, 200);
+      doc.setDrawColor(200, 150, 0);
+      doc.setLineWidth(0.5);
+      doc.rect(marginLeft, noteY - 5, pageWidth - 2 * marginLeft, 10, "FD");
+      doc.setFont("Roboto", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text(note, marginLeft + 3, noteY + 1);
+      noteY -= 14;
+    }
+  }
+
   return toBlob(doc);
 }
 
