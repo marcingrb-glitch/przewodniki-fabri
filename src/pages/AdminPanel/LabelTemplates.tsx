@@ -166,20 +166,26 @@ export default function LabelTemplates() {
     legs: "legHeights.sofa_chest",
   };
 
+  // Human-readable labels for condition_field values
+  const CONDITION_LABELS: Record<string, string> = {
+    "legHeights.sofa_chest": "Tylko gdy ma nóżki (skrzynia)",
+    "legHeights.sofa_seat": "Tylko gdy ma nóżki (siedzisko)",
+    "pufaLegs": "Tylko gdy ma nóżki (pufa)",
+    "has_special_notes": "Tylko SD01N + B9B (listwa)",
+    "extras_pufa_fotel": "Tylko z pufą/fotelem",
+  };
+
   const isLegComponent = (component: string) => component in LEG_CONDITION_MAP;
 
   const handleComponentChange = async (id: string, component: string) => {
     await updateMutation.mutateAsync({ id, field: "component", value: component });
     // Clear display_fields when component changes
     await updateMutation.mutateAsync({ id, field: "display_fields", value: [] });
-    // Auto-set conditional for leg components
-    const isLeg = isLegComponent(component);
-    await updateMutation.mutateAsync({ id, field: "is_conditional", value: isLeg });
-    await updateMutation.mutateAsync({
-      id,
-      field: "condition_field",
-      value: isLeg ? LEG_CONDITION_MAP[component] : null,
-    });
+    // Auto-set conditional for leg components only — don't reset manual conditions
+    if (isLegComponent(component)) {
+      await updateMutation.mutateAsync({ id, field: "is_conditional", value: true });
+      await updateMutation.mutateAsync({ id, field: "condition_field", value: LEG_CONDITION_MAP[component] });
+    }
   };
 
   const filteredTemplates = templates.filter((t) => {
@@ -322,9 +328,9 @@ export default function LabelTemplates() {
                             />
                           </TableCell>
                           <TableCell>
-                            {tpl.is_conditional ? (
+                            {tpl.is_conditional && tpl.condition_field ? (
                               <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                                ⚡ Tylko gdy ma nóżki
+                                ⚡ {CONDITION_LABELS[tpl.condition_field] || tpl.condition_field}
                               </Badge>
                             ) : (
                               <span className="text-xs text-muted-foreground">Zawsze</span>
@@ -363,12 +369,47 @@ export default function LabelTemplates() {
                     ? seriesList.find(s => s.id === selectedSeries)?.code
                     : undefined;
                   return (
-                    <LabelConfigurator
-                      template={selected}
-                      onFieldsChange={(fields) => handleFieldsChange(selected.id, fields)}
-                      onClose={() => setSelectedTemplateId(null)}
-                      previewSeriesCode={selectedSeriesCode}
-                    />
+                    <>
+                      <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-muted/50 mb-2">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selected.is_conditional}
+                            onChange={async (e) => {
+                              const checked = e.target.checked;
+                              await updateMutation.mutateAsync({ id: selected.id, field: "is_conditional", value: checked });
+                              if (!checked) {
+                                await updateMutation.mutateAsync({ id: selected.id, field: "condition_field", value: null });
+                              }
+                            }}
+                          />
+                          Warunkowa
+                        </label>
+                        {selected.is_conditional && (
+                          <Select
+                            value={selected.condition_field || ""}
+                            onValueChange={async (v) => {
+                              await updateMutation.mutateAsync({ id: selected.id, field: "condition_field", value: v || null });
+                            }}
+                          >
+                            <SelectTrigger className="w-[260px] h-8">
+                              <SelectValue placeholder="Wybierz warunek..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(CONDITION_LABELS).map(([key, label]) => (
+                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <LabelConfigurator
+                        template={selected}
+                        onFieldsChange={(fields) => handleFieldsChange(selected.id, fields)}
+                        onClose={() => setSelectedTemplateId(null)}
+                        previewSeriesCode={selectedSeriesCode}
+                      />
+                    </>
                   );
                 })()}
                 <Button
