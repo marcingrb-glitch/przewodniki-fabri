@@ -316,10 +316,22 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
           return { data: null };
         })()
       : Promise.resolve({ data: null }),
-    // chest (global)
+    // chest (global, width-aware)
     parsed.chest
-      ? supabase.from("products").select(PRODUCT_SELECT)
-          .eq("code", parsed.chest).eq("category", "chest").maybeSingle()
+      ? (async () => {
+          const { data: all } = await supabase.from("products").select(PRODUCT_SELECT)
+            .eq("code", parsed.chest).eq("category", "chest");
+          if (!all || all.length === 0) return { data: null };
+          if (all.length === 1) return { data: all[0] };
+          // Multiple chests with same code — pick by width
+          if (targetWidth) {
+            const byWidth = all.find((c: any) => (c.properties as any)?.width === targetWidth);
+            if (byWidth) return { data: byWidth };
+          }
+          // Fallback: pick one without width or first
+          const noWidth = all.find((c: any) => !(c.properties as any)?.width);
+          return { data: noWidth ?? all[0] };
+        })()
       : Promise.resolve({ data: null }),
     // automat (global)
     parsed.automat
