@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Download, Package, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Download, Package, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,7 @@ const ShopifyOrderForm = () => {
   const [fabricChange, setFabricChange] = useState(false);
   const [fabricName, setFabricName] = useState("");
   const [fabricColor, setFabricColor] = useState("");
+  const [visibleToWorkers, setVisibleToWorkers] = useState(true);
   const handleFetchOrder = async () => {
     if (!shopifyOrderNumber.trim()) {
       toast({
@@ -222,7 +224,7 @@ const ShopifyOrderForm = () => {
           series_code: parsed.series,
           decoded_data: decoded,
           created_by: user?.id,
-          visible_to_workers: true,
+          visible_to_workers: isAdmin ? visibleToWorkers : true,
           variant_image_url: variantImageUrl,
           mimeeq_shortcode: mimeeqShortcode,
           shopify_order_name: orderName || undefined,
@@ -283,6 +285,7 @@ const ShopifyOrderForm = () => {
     setFabricChange(false);
     setFabricName("");
     setFabricColor("");
+    setVisibleToWorkers(true);
   };
 
   const selectedWithSku = lineItems.filter((item) => item.selected && item.sku).length;
@@ -367,6 +370,34 @@ const ShopifyOrderForm = () => {
                 </div>
               )}
             </div>
+
+            {isAdmin && (
+              <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <Checkbox
+                  id="visibleToWorkers"
+                  checked={visibleToWorkers}
+                  onCheckedChange={(checked) => setVisibleToWorkers(checked as boolean)}
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="visibleToWorkers" className="text-sm font-medium leading-none cursor-pointer">
+                      Widoczne dla pracowników
+                    </Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs text-xs">
+                          <p>Jeśli zaznaczone, wszyscy pracownicy będą mogli zobaczyć to zamówienie.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Pracownicy zobaczą to zamówienie w historii</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {orderFetched && orderName && (
