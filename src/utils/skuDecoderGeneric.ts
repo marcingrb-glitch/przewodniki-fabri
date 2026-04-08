@@ -404,7 +404,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const seatFinishName = FINISHES[seatFinish] || seatFinish;
   const seatType = prop(seatProduct, "seat_type", "");
   const seatSpringType = prop(seatProduct, "spring_type", "");
-  const seatFrameModification = prop(seatProduct, "frame_modification", "");
+  let seatFrameModification = prop(seatProduct, "frame_modification", "") as string;
+  // SD01N + B9B: dodatkowa listwa Vienna przykręcana
+  if (seatCode === "SD01N" && parsed.side.code === "B9" && (parsed.side.finish || sideDefaultFinish) === "B") {
+    seatFrameModification = seatFrameModification
+      ? `${seatFrameModification} + Listwa Vienna przykręcana`
+      : "Listwa Vienna przykręcana";
+  }
 
   // ---- SIDE ----
   const sideName = sideProduct?.name ?? "Nieznany";

@@ -92,8 +92,6 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "fotelLegs.count_info": return decoded.fotelLegs ? `${decoded.fotelLegs.count} szt` : "-";
     case "fotelLegs.height_info": return decoded.fotelLegs ? `H ${decoded.fotelLegs.height}cm` : "-";
 
-    case "listwa.label":
-      return (decoded.specialNotes ?? []).length > 0 ? "Listwa Vienna przykręcana" : "-";
     case "extras.label": return "";
     case "extras.pufa_sku": return decoded.pufaSKU || "-";
     case "extras.fotel_sku": return decoded.fotelSKU || "-";
