@@ -122,9 +122,10 @@ const ShopifyOrderForm = () => {
     const results: { item: ShopifyLineItem; orderId?: string; error?: string }[] = [];
 
     for (const item of itemsWithSku) {
+      const itemIndex = itemsWithSku.indexOf(item) + 1;
       const itemOrderNumber = itemsWithSku.length === 1
         ? baseOrderNumber.trim()
-        : `${baseOrderNumber.trim()}-${item.line_item_id}`;
+        : `${baseOrderNumber.trim()}-${itemIndex}`;
 
       try {
         // Normalize SKU: trim, uppercase, collapse whitespace
