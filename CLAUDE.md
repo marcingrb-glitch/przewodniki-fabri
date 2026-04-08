@@ -101,6 +101,25 @@ Queries: `from("products").eq("category", "series")` — to poprawny pattern, NI
 - Backward compat NIE jest potrzebny
 - Przyszłość: jeśli potrzebny auto-download PDF bez dialogu → Puppeteer w Edge Function
 
+## SKU Parsing & Decoding
+
+- Parser cache (`segmentRulesCache` w skuParserGeneric.ts) jest in-memory — zmiany regex w `sku_segments` wymagają hard refresh przeglądarki
+- Decoder ma 3-step seat fallback: exact → zero-padded (SD1→SD01) → strip finish. Aliasy SKU (`product_relations.sku_alias`) matchują surowy segment (bez zero-padding)
+- `allowed_finishes` na produkcie wymusza valid finish — decoder fallbackuje do `default_finish` gdy parsed finish jest nieprawidłowy
+- Warunkowe modyfikacje (np. listwa SD01N+B9B): tekst w `products.properties.frame_modification` z "(tylko z X)" — decoder stripuje na dokumentach, admin widzi pełny tekst
+
+## Label Templates
+
+- `is_conditional` + `condition_field` kontrolują kiedy etykieta się drukuje — check w `decodingFieldResolver.ts:checkDecodedCondition()`
+- Dostępne warunki: `has_special_notes`, `extras_pufa_fotel`, `legHeights.*`, `pufaLegs`
+- Admin panel: `LabelTemplates.tsx` — toggle "Warunkowa" + select z `CONDITION_LABELS` mapą
+- Nowe warunki: dodaj do `checkDecodedCondition()` + `CONDITION_LABELS` w LabelTemplates.tsx
+
+## Lovable Integration
+
+- Migracje SQL z `supabase/migrations/` NIE wykonują się automatycznie przez Lovable — trzeba poprosić Lovable o uruchomienie lub wkleić ręcznie w Supabase SQL Editor
+- Lovable może nadpisać dane w DB przy re-seedzie — weryfikuj stan bazy po zmianach
+
 ## Nie dotykaj
 
 - Auth flow (login, registration, approval)
