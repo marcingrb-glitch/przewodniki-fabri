@@ -309,7 +309,7 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
 
       // Special notes right after first SIEDZISKO table (Kod/Stelaż), before foams
       if (section.title === "SIEDZISKO" && ti === 0 && decoded.specialNotes && decoded.specialNotes.length > 0) {
-        y += 4;
+        y += 2;
         for (const note of decoded.specialNotes) {
           doc.setFillColor(255, 255, 200);
           doc.setDrawColor(200, 150, 0);
@@ -319,7 +319,7 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           doc.text(note, marginLeft + 3, y + 1);
-          y += 12;
+          y += 7;
         }
       }
     }
