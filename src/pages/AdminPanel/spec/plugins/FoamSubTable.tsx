@@ -149,7 +149,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
 
   if (displayFoams.length === 0 && !isFallback) {
     return (
-      <Button variant="outline" size="sm" onClick={addFoam}>
+      <Button variant="outline" size="sm" onClick={() => addFoam()}>
         <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
       </Button>
     );
