@@ -95,7 +95,9 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
 
   doc.setFont("Roboto", "bold");
   doc.setFontSize(14);
-  doc.text(`${decoded.series.code} — ${decoded.series.collection}`, marginLeft, y);
+  const whOrientLabel = decoded.orientation === "L" ? " (Lewy)" : decoded.orientation === "P" ? " (Prawy)" : "";
+  const whWidthLabel = decoded.width ? ` ${decoded.width}cm` : "";
+  doc.text(`${decoded.series.code} — ${decoded.series.collection}${whWidthLabel}${whOrientLabel}`, marginLeft, y);
   y += 6;
 
   doc.setFont("Roboto", "normal");
@@ -185,6 +187,36 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
       rows: [[decoded.side.code, decoded.side.frame || "-", decoded.side.name || "-"]],
     }],
   });
+
+  // SZEZLONG — conditional (narożnik)
+  if (decoded.chaise) {
+    const chaiseSection: SectionBlock = {
+      title: "SZEZLONG",
+      tables: [{
+        headers: ["Kod", "Stelaż", "Sprężyna"],
+        rows: [[
+          decoded.chaise.code,
+          decoded.chaise.frame || "-",
+          decoded.chaise.springType || "-",
+        ]],
+      }],
+    };
+    const chaiseSeatFoamRows = foamsToRows(decoded.chaise.seatFoams);
+    if (chaiseSeatFoamRows.length > 0) {
+      chaiseSection.tables.push({
+        headers: ["Nazwa", "Wymiary", "Materiał", "Ilość"],
+        rows: chaiseSeatFoamRows,
+      });
+    }
+    const chaiseBackrestFoamRows = foamsToRows(decoded.chaise.backrestFoams);
+    if (chaiseBackrestFoamRows.length > 0) {
+      chaiseSection.tables.push({
+        headers: ["Oparcie szezl.", "Wymiary", "Materiał", "Ilość"],
+        rows: chaiseBackrestFoamRows,
+      });
+    }
+    sections.push(chaiseSection);
+  }
 
   // SKRZYNIA + AUTOMAT
   const automatLabel = decoded.automat.code + (decoded.automat.name ? ` — ${decoded.automat.name}` : "");

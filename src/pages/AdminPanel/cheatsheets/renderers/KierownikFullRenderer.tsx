@@ -393,33 +393,21 @@ export function KierownikFullRenderer({ data }: SectionRendererProps) {
 function LegendsSection({ data }: { data: SectionRendererProps["data"] }) {
   const finishes = data.getByCategory("finish");
 
-  // Load SKU segments for sofa
-  const { data: productTypes = [] } = useQuery({
-    queryKey: ["kierownik-product-types"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("product_types")
-        .select("id, code")
-        .eq("code", "sofa")
-        .limit(1);
-      return data ?? [];
-    },
-  });
-
-  const sofaTypeId = productTypes.find(pt => pt.code === "sofa")?.id;
+  // Load SKU segments for this series' product type
+  const seriesProductTypeId = data.seriesProduct?.product_type_id as string | undefined;
 
   const { data: skuSegments = [] } = useQuery({
-    queryKey: ["kierownik-sku-segments", sofaTypeId],
+    queryKey: ["kierownik-sku-segments", seriesProductTypeId],
     queryFn: async () => {
-      if (!sofaTypeId) return [];
+      if (!seriesProductTypeId) return [];
       const { data } = await supabase
         .from("sku_segments")
         .select("*")
-        .eq("product_type_id", sofaTypeId)
+        .eq("product_type_id", seriesProductTypeId)
         .order("position");
       return data ?? [];
     },
-    enabled: !!sofaTypeId,
+    enabled: !!seriesProductTypeId,
   });
 
   const seriesCode = data.seriesProduct?.code ?? "S1";

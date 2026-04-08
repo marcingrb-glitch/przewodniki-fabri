@@ -323,9 +323,8 @@ function applyToResult(
       break;
 
     case "width":
-      // Narożnik: width + orientation — extend ParsedSKU later for N2
-      (result as any).width = captures.width || "";
-      (result as any).orientation = captures.orientation || "";
+      result.width = captures.width || "";
+      result.orientation = (captures.orientation || "") as "L" | "P";
       break;
 
     default:

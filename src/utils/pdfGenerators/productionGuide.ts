@@ -118,7 +118,9 @@ function drawProductionHeader(
 
   doc.setFontSize(14);
   doc.setFont("Roboto", "bold");
-  doc.text(`${decoded.series.code} — ${decoded.series.collection || decoded.series.name}`, marginLeft, y);
+  const orientationLabel = decoded.orientation === "L" ? " (Lewy)" : decoded.orientation === "P" ? " (Prawy)" : "";
+  const widthLabel = decoded.width ? ` ${decoded.width}cm` : "";
+  doc.text(`${decoded.series.code} — ${decoded.series.collection || decoded.series.name}${widthLabel}${orientationLabel}`, marginLeft, y);
   y += 6;
 
   doc.setFontSize(9);
@@ -373,6 +375,47 @@ export async function generateProductionGuidePDF(
       headers: ["Nazwa", "Wykończenie"],
       rows,
     }, colLeftX, y, fullW, fs, rh, sp);
+  }
+
+  // ── Chaise section (narożnik only) ──
+  if (decoded.chaise) {
+    y += sectionGap;
+    y = renderSectionAt(doc, {
+      title: "SZEZLONG",
+      code: decoded.chaise.code,
+      headers: ["Model", "Stelaż", "Sprężyna"],
+      rows: [[
+        decoded.chaise.modelName || decoded.chaise.name,
+        decoded.chaise.frame || "-",
+        decoded.chaise.springType || "-",
+      ]],
+    }, colLeftX, y, fullW, fs, rh, sp);
+
+    if (decoded.chaise.seatFoams && decoded.chaise.seatFoams.length > 0) {
+      y += 2;
+      const foamRows = decoded.chaise.seatFoams.map(f => {
+        const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
+        return [f.name, dims, f.material, String(f.quantity)];
+      });
+      y = renderSectionAt(doc, {
+        title: "PIANKI SZEZLONGA",
+        headers: ["Nazwa", "Wymiary", "Materiał", "Szt"],
+        rows: foamRows,
+      }, colLeftX, y, fullW, fs, rh, sp);
+    }
+
+    if (decoded.chaise.backrestFoams && decoded.chaise.backrestFoams.length > 0) {
+      y += 2;
+      const brFoamRows = decoded.chaise.backrestFoams.map(f => {
+        const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
+        return [f.name, dims, f.material, String(f.quantity)];
+      });
+      y = renderSectionAt(doc, {
+        title: "OPARCIE SZEZLONGA",
+        headers: ["Nazwa", "Wymiary", "Materiał", "Szt"],
+        rows: brFoamRows,
+      }, colLeftX, y, fullW, fs, rh, sp);
+    }
   }
 
   // Special notes at the bottom of the page

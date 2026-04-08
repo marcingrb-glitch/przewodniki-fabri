@@ -80,6 +80,24 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "walek.construction_type": return decoded.walek?.constructionType || "-";
     case "walek.insert_type": return decoded.walek?.insertType || "-";
 
+    case "chaise.code": return decoded.chaise?.code || "-";
+    case "chaise.name": return decoded.chaise?.name || "-";
+    case "chaise.modelName": return decoded.chaise?.modelName || "-";
+    case "chaise.frame": return decoded.chaise?.frame || "-";
+    case "chaise.springType": return decoded.chaise?.springType || "-";
+    case "chaise.backrestHasSprings": return decoded.chaise?.backrestHasSprings ? "TAK" : "NIE";
+    case "chaise.seatFoams_summary": {
+      const lines = formatFoamsDetailed(decoded.chaise?.seatFoams);
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.backrestFoams_summary": {
+      const lines = formatFoamsDetailed(decoded.chaise?.backrestFoams);
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+
+    case "width": return decoded.width || "-";
+    case "orientation": return decoded.orientation === "L" ? "Lewy" : decoded.orientation === "P" ? "Prawy" : "-";
+
     case "pufaSeat.frontBack": return decoded.pufaSeat?.frontBack || "-";
     case "pufaSeat.sides": return decoded.pufaSeat?.sides || "-";
     case "pufaSeat.foam": return decoded.pufaSeat?.foam || "-";
@@ -119,6 +137,9 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
 export function checkDecodedCondition(decoded: DecodedSKU, conditionField: string): boolean {
   if (conditionField === "has_special_notes") {
     return (decoded.specialNotes ?? []).length > 0;
+  }
+  if (conditionField === "has_chaise") {
+    return !!decoded.chaise;
   }
   if (conditionField === "extras_pufa_fotel") {
     const hasPufa = decoded.extras.some(e => e.type === "pufa");

@@ -35,7 +35,8 @@ const PRODUCT_SELECT = "id, code, name, category, series_id, properties, colors,
 
 async function findSeatInProducts(
   code: string,
-  seriesId: string
+  seriesId: string,
+  targetWidth?: number
 ): Promise<ProductRow | null> {
   // Step 1: exact match
   const { data: exact } = await supabase
@@ -45,7 +46,12 @@ async function findSeatInProducts(
     .eq("category", "seat")
     .eq("series_id", seriesId)
     .maybeSingle();
-  if (exact) return exact as unknown as ProductRow;
+  if (exact) {
+    if (targetWidth && (exact as any).properties?.width && (exact as any).properties.width !== targetWidth) {
+      return null; // width mismatch — let caller fallback to parent
+    }
+    return exact as unknown as ProductRow;
+  }
 
   // Step 2: zero-padded (SD1 → SD01)
   const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
@@ -57,7 +63,12 @@ async function findSeatInProducts(
       .eq("category", "seat")
       .eq("series_id", seriesId)
       .maybeSingle();
-    if (padded) return padded as unknown as ProductRow;
+    if (padded) {
+      if (targetWidth && (padded as any).properties?.width && (padded as any).properties.width !== targetWidth) {
+        return null;
+      }
+      return padded as unknown as ProductRow;
+    }
   }
 
   return null;
@@ -66,25 +77,35 @@ async function findSeatInProducts(
 async function resolveSeatProduct(
   rawSegment: string,
   parsedFinish: string | undefined,
-  seriesId: string
+  seriesId: string,
+  parentSeriesId?: string | null,
+  targetWidth?: number
 ): Promise<{ product: ProductRow | null; finish?: string }> {
-  // If finish already parsed, try rawSegment as-is
-  if (parsedFinish) {
-    const found = await findSeatInProducts(rawSegment, seriesId);
-    if (found) return { product: found, finish: parsedFinish };
-  }
+  // Try own series first, then parent if width mismatch or not found
+  const seriesIds = [seriesId, ...(parentSeriesId ? [parentSeriesId] : [])];
 
-  // Try full raw segment
-  const fullMatch = await findSeatInProducts(rawSegment, seriesId);
-  if (fullMatch) return { product: fullMatch, finish: parsedFinish };
+  for (const sid of seriesIds) {
+    // Only filter by width in own series (parent series has no width property = default 190)
+    const width = sid === seriesId ? targetWidth : undefined;
 
-  // Try stripping last letter as finish
-  if (!parsedFinish && rawSegment.length >= 3) {
-    const possibleFinish = rawSegment.slice(-1);
-    const possibleCode = rawSegment.slice(0, -1);
-    if (/^[A-D]$/.test(possibleFinish)) {
-      const codeMatch = await findSeatInProducts(possibleCode, seriesId);
-      if (codeMatch) return { product: codeMatch, finish: possibleFinish };
+    // If finish already parsed, try rawSegment as-is
+    if (parsedFinish) {
+      const found = await findSeatInProducts(rawSegment, sid, width);
+      if (found) return { product: found, finish: parsedFinish };
+    }
+
+    // Try full raw segment
+    const fullMatch = await findSeatInProducts(rawSegment, sid, width);
+    if (fullMatch) return { product: fullMatch, finish: parsedFinish };
+
+    // Try stripping last letter as finish
+    if (!parsedFinish && rawSegment.length >= 3) {
+      const possibleFinish = rawSegment.slice(-1);
+      const possibleCode = rawSegment.slice(0, -1);
+      if (/^[A-D]$/.test(possibleFinish)) {
+        const codeMatch = await findSeatInProducts(possibleCode, sid, width);
+        if (codeMatch) return { product: codeMatch, finish: possibleFinish };
+      }
     }
   }
 
@@ -98,53 +119,89 @@ async function resolveSeatProduct(
 async function resolveBackrestProduct(
   code: string,
   seriesId: string,
-  seatModelName: string | null
+  seatModelName: string | null,
+  parentSeriesId?: string | null,
+  targetWidth?: number
 ): Promise<ProductRow | null> {
   const baseSelect = PRODUCT_SELECT;
+  const seriesIds = [seriesId, ...(parentSeriesId ? [parentSeriesId] : [])];
 
-  if (seatModelName) {
-    // Step 1: match by model_name
+  for (const sid of seriesIds) {
     const { data: allBr } = await supabase
       .from("products")
       .select(baseSelect)
       .eq("code", code)
       .eq("category", "backrest")
-      .eq("series_id", seriesId);
+      .eq("series_id", sid);
 
-    if (allBr && allBr.length > 0) {
-      // Token-based bidirectional matching: split both by comma/space, check if ANY token overlaps
-      const seatTokens = seatModelName.toLowerCase().split(/[\s,/]+/).filter(Boolean);
-      
-      const byModel = allBr.find((b: any) => {
-        const mn = (b.properties as any)?.model_name;
-        if (!mn || typeof mn !== "string") return false;
-        const brTokens = mn.toLowerCase().split(/[\s,/]+/).filter(Boolean);
-        return seatTokens.some(st => brTokens.some(bt => bt.includes(st) || st.includes(bt)));
+    if (!allBr || allBr.length === 0) continue;
+
+    // If width filtering: check own series width match
+    if (sid === seriesId && targetWidth) {
+      const widthFiltered = allBr.filter((b: any) => {
+        const bw = (b.properties as any)?.width;
+        return !bw || bw === targetWidth;
       });
-      if (byModel) return byModel as unknown as ProductRow;
-
-      // Fallback: model_name is null
-      const defaultBr = allBr.find((b: any) => !(b.properties as any)?.model_name);
-      if (defaultBr) return defaultBr as unknown as ProductRow;
-
-      // Last resort: any
-      return allBr[0] as unknown as ProductRow;
+      if (widthFiltered.length === 0) continue; // width mismatch, try parent
+      return matchBackrestByModel(widthFiltered, seatModelName);
     }
-    return null;
+
+    return matchBackrestByModel(allBr, seatModelName);
   }
 
-  // No seat model_name — get default (model_name null) or any
-  const { data: allBr } = await supabase
+  return null;
+}
+
+function matchBackrestByModel(
+  backrests: any[],
+  seatModelName: string | null
+): ProductRow | null {
+  if (seatModelName) {
+    const seatTokens = seatModelName.toLowerCase().split(/[\s,/]+/).filter(Boolean);
+
+    const byModel = backrests.find((b: any) => {
+      const mn = (b.properties as any)?.model_name;
+      if (!mn || typeof mn !== "string") return false;
+      const brTokens = mn.toLowerCase().split(/[\s,/]+/).filter(Boolean);
+      return seatTokens.some(st => brTokens.some(bt => bt.includes(st) || st.includes(bt)));
+    });
+    if (byModel) return byModel as unknown as ProductRow;
+  }
+
+  const defaultBr = backrests.find((b: any) => !(b.properties as any)?.model_name);
+  return (defaultBr ?? backrests[0]) as unknown as ProductRow;
+}
+
+// ---------------------------------------------------------------------------
+// Chaise lookup (model_name matching, like backrest)
+// ---------------------------------------------------------------------------
+
+async function resolveChaiseProduct(
+  seriesId: string,
+  seatModelName: string | null
+): Promise<ProductRow | null> {
+  const { data: allChaise } = await supabase
     .from("products")
-    .select(baseSelect)
-    .eq("code", code)
-    .eq("category", "backrest")
-    .eq("series_id", seriesId);
+    .select(PRODUCT_SELECT)
+    .eq("category", "chaise")
+    .eq("series_id", seriesId)
+    .eq("active", true);
 
-  if (!allBr || allBr.length === 0) return null;
+  if (!allChaise || allChaise.length === 0) return null;
 
-  const defaultBr = allBr.find((b: any) => !(b.properties as any)?.model_name);
-  return (defaultBr ?? allBr[0]) as unknown as ProductRow;
+  if (seatModelName) {
+    const seatTokens = seatModelName.toLowerCase().split(/[\s,/]+/).filter(Boolean);
+
+    const byModel = allChaise.find((c: any) => {
+      const mn = (c.properties as any)?.model_name;
+      if (!mn || typeof mn !== "string") return false;
+      const chTokens = mn.toLowerCase().split(/[\s,/]+/).filter(Boolean);
+      return seatTokens.some(st => chTokens.some(ct => ct.includes(st) || st.includes(ct)));
+    });
+    if (byModel) return byModel as unknown as ProductRow;
+  }
+
+  return allChaise[0] as unknown as ProductRow;
 }
 
 // ---------------------------------------------------------------------------
@@ -208,15 +265,17 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
 
   const seriesP = seriesProduct as unknown as ProductRow | null;
   const seriesId = seriesP?.id ?? null;
+  const parentSeriesId = prop(seriesP, "parent_series_id", null) as string | null;
+  const targetWidth = parsed.width ? parseInt(parsed.width, 10) : undefined;
   const seriesData = {
     code: parsed.series,
     name: seriesP?.name ?? "Nieznana",
     collection: prop(seriesP, "collection", "?"),
   };
 
-  // ---- 2. Resolve seat ----
+  // ---- 2. Resolve seat (with parent fallback for width mismatch) ----
   const seatResolved = seriesId
-    ? await resolveSeatProduct(parsed.seat.rawSegment, parsed.seat.finish, seriesId)
+    ? await resolveSeatProduct(parsed.seat.rawSegment, parsed.seat.finish, seriesId, parentSeriesId, targetWidth)
     : { product: null, finish: parsed.seat.finish };
 
   const seatProduct = seatResolved.product;
@@ -229,9 +288,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     : (seatResolved.finish || seatDefaultFinish);
   const seatModelName = prop(seatProduct, "model_name", null) as string | null;
 
-  // ---- 3. Resolve backrest ----
+  // ---- 3. Resolve backrest (with parent fallback) ----
   const backrestProduct = seriesId && parsed.backrest.code
-    ? await resolveBackrestProduct(parsed.backrest.code, seriesId, seatModelName)
+    ? await resolveBackrestProduct(parsed.backrest.code, seriesId, seatModelName, parentSeriesId, targetWidth)
     : null;
 
   // ---- 4. Parallel fetch: fabric, side, chest, automat, leg, pillow, jasiek, walek, finishes, extras, pufaSeat, sewingVariants ----
@@ -244,10 +303,18 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     // fabric (global)
     supabase.from("products").select(PRODUCT_SELECT)
       .eq("code", parsed.fabric.code).eq("category", "fabric").maybeSingle(),
-    // side (series-scoped)
+    // side (series-scoped, with parent fallback)
     seriesId && parsed.side.code
-      ? supabase.from("products").select(PRODUCT_SELECT)
-          .eq("code", parsed.side.code).eq("category", "side").eq("series_id", seriesId).maybeSingle()
+      ? (async () => {
+          const { data: own } = await supabase.from("products").select(PRODUCT_SELECT)
+            .eq("code", parsed.side.code).eq("category", "side").eq("series_id", seriesId).maybeSingle();
+          if (own) return { data: own };
+          if (parentSeriesId) {
+            return supabase.from("products").select(PRODUCT_SELECT)
+              .eq("code", parsed.side.code).eq("category", "side").eq("series_id", parentSeriesId).maybeSingle();
+          }
+          return { data: null };
+        })()
       : Promise.resolve({ data: null }),
     // chest (global)
     parsed.chest
@@ -309,13 +376,13 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
           return { data: null };
         })()
       : Promise.resolve({ data: null }),
-    // sewing variants for backrest
-    seriesId && backrestProduct?.id
+    // sewing variants for backrest (use backrest's own series_id — may differ from N2 if resolved from parent)
+    backrestProduct?.id
       ? supabase.from("product_relations")
           .select("properties")
           .eq("relation_type", "sewing_variant")
           .eq("target_product_id", backrestProduct.id)
-          .eq("series_id", seriesId)
+          .eq("series_id", backrestProduct.series_id ?? seriesId)
           .eq("active", true)
       : Promise.resolve({ data: null }),
   ]);
@@ -363,19 +430,31 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     }
   }
 
-  // ---- Foams: seat + backrest (parallel) ----
-  const [seatFoamsRes, backrestFoamsRes] = await Promise.all([
+  // ---- Chaise resolution (narożnik only, by model_name match with seat) ----
+  const chaiseProduct = seriesId
+    ? await resolveChaiseProduct(seriesId, seatModelName)
+    : null;
+
+  // ---- Foams: seat + backrest + chaise (parallel) ----
+  const [seatFoamsRes, backrestFoamsRes, chaiseFoamsRes] = await Promise.all([
     seatProduct?.id
       ? supabase.from("product_specs")
-          .select("position_number, name, material, height, width, length, quantity, notes")
+          .select("position_number, name, material, height, width, length, quantity, notes, foam_section")
           .eq("product_id", seatProduct.id)
           .eq("spec_type", "foam")
           .order("position_number")
       : Promise.resolve({ data: null }),
     backrestProduct?.id
       ? supabase.from("product_specs")
-          .select("position_number, name, material, height, width, length, quantity, notes")
+          .select("position_number, name, material, height, width, length, quantity, notes, foam_section")
           .eq("product_id", backrestProduct.id)
+          .eq("spec_type", "foam")
+          .order("position_number")
+      : Promise.resolve({ data: null }),
+    chaiseProduct?.id
+      ? supabase.from("product_specs")
+          .select("position_number, name, material, height, width, length, quantity, notes, foam_section")
+          .eq("product_id", chaiseProduct.id)
           .eq("spec_type", "foam")
           .order("position_number")
       : Promise.resolve({ data: null }),
@@ -395,6 +474,19 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   const backrestFoams: ProductFoamItem[] = (backrestFoamsRes.data ?? []).map(mapFoam);
+
+  // ---- Chaise foams: split by foam_section ----
+  const allChaiseFoams = (chaiseFoamsRes.data ?? []) as any[];
+  const chaiseSeatFoams: ProductFoamItem[] = [];
+  const chaiseBackrestFoams: ProductFoamItem[] = [];
+  for (const f of allChaiseFoams) {
+    const section = f.foam_section ?? "seat";
+    if (section === "backrest") {
+      chaiseBackrestFoams.push(mapFoam(f));
+    } else {
+      chaiseSeatFoams.push(mapFoam(f));
+    }
+  }
 
   // ---- FABRIC ----
   const fabricColors = productColors(fabricProduct);
@@ -605,9 +697,26 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     specialNotes.push(`UWAGA: ${seatFrameModification}`);
   }
 
+  // ---- CHAISE ----
+  let chaiseDecoded: DecodedSKU["chaise"] = undefined;
+  if (chaiseProduct) {
+    chaiseDecoded = {
+      code: chaiseProduct.code,
+      name: chaiseProduct.name,
+      modelName: prop(chaiseProduct, "model_name", undefined) as string | undefined,
+      frame: prop(chaiseProduct, "frame", "?"),
+      springType: prop(chaiseProduct, "spring_type", undefined) as string | undefined,
+      backrestHasSprings: prop(chaiseProduct, "backrest_has_springs", false) as boolean,
+      seatFoams: chaiseSeatFoams.length > 0 ? chaiseSeatFoams : undefined,
+      backrestFoams: chaiseBackrestFoams.length > 0 ? chaiseBackrestFoams : undefined,
+    };
+  }
+
   // ---- Build result ----
   return {
     series: seriesData,
+    width: parsed.width || undefined,
+    orientation: parsed.orientation || undefined,
     fabric: {
       code: parsed.fabric.code,
       name: fabricProduct?.name ?? "Nieznana",
@@ -661,6 +770,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     pillow: pillowDecoded,
     jaski: jaskiDecoded,
     walek: walekDecoded,
+    chaise: chaiseDecoded,
     extras: extrasDecoded,
     legHeights: { sofa_chest: sofaChestLeg, sofa_seat: sofaSeatLeg },
     pufaSeat: pufaSeatDecoded,

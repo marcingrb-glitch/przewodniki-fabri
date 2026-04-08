@@ -12,6 +12,8 @@ export interface Order {
 
 export interface ParsedSKU {
   series: string;
+  width?: string;
+  orientation?: "L" | "P";
   fabric: { code: string; color: string };
   seat: { rawSegment: string; finish?: string };
   side: { code: string; finish: string };
@@ -45,6 +47,8 @@ export interface ProductFoamItem {
 
 export interface DecodedSKU {
   series: { code: string; name: string; collection: string };
+  width?: string;
+  orientation?: string;
   fabric: { code: string; name: string; color: string; colorName: string; group: number };
   seat: { code: string; type: string; modelName?: string; finish: string; finishName: string; frame: string; foam: string; front: string; midStrip: boolean; springType?: string; frameModification?: string; foams?: ProductFoamItem[] };
   side: { code: string; name: string; modelName?: string; frame: string; finish: string; finishName: string };
@@ -55,6 +59,16 @@ export interface DecodedSKU {
   pillow?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
   jaski?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
   walek?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
+  chaise?: {
+    code: string;
+    name: string;
+    modelName?: string;
+    frame: string;
+    springType?: string;
+    backrestHasSprings: boolean;
+    seatFoams?: ProductFoamItem[];
+    backrestFoams?: ProductFoamItem[];
+  };
   extras: { code: string; name: string; type: string }[];
   legHeights: {
     sofa_chest: { leg: string; height: number; count: number } | null;
