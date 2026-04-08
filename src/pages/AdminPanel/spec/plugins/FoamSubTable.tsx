@@ -175,6 +175,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           >
             <option value="base">base</option>
             <option value="front">front</option>
+            <option value="side">boczna</option>
           </select>
         )}
       </TableCell>
