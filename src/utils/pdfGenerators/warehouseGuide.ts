@@ -309,17 +309,16 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
 
       // Special notes right after first SIEDZISKO table (Kod/Stelaż), before foams
       if (section.title === "SIEDZISKO" && ti === 0 && decoded.specialNotes && decoded.specialNotes.length > 0) {
-        y += 2;
         for (const note of decoded.specialNotes) {
           doc.setFillColor(255, 255, 200);
           doc.setDrawColor(200, 150, 0);
           doc.setLineWidth(0.5);
-          doc.rect(marginLeft, y - 5, pageWidth - 2 * marginLeft, 10, "FD");
+          doc.rect(marginLeft, y - 4, pageWidth - 2 * marginLeft, 8, "FD");
           doc.setFont("Roboto", "bold");
-          doc.setFontSize(10);
+          doc.setFontSize(9);
           doc.setTextColor(0, 0, 0);
           doc.text(note, marginLeft + 3, y + 1);
-          y += 7;
+          y += 4;
         }
       }
     }
