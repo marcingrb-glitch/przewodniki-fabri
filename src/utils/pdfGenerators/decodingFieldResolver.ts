@@ -115,6 +115,9 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
  * Check if the condition field is truthy in decoded data.
  */
 export function checkDecodedCondition(decoded: DecodedSKU, conditionField: string): boolean {
+  if (conditionField === "has_special_notes") {
+    return (decoded.specialNotes ?? []).length > 0;
+  }
   if (conditionField === "extras_pufa_fotel") {
     const hasPufa = decoded.extras.some(e => e.type === "pufa");
     const hasFotel = decoded.extras.some(e => e.type === "fotel");

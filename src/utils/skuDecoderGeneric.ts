@@ -222,7 +222,11 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const seatProduct = seatResolved.product;
   const seatCode = seatProduct?.code ?? parsed.seat.rawSegment;
   const seatDefaultFinish = seatProduct?.default_finish ?? "A";
-  const seatFinish = seatResolved.finish || seatDefaultFinish;
+  // Enforce allowed_finishes — if parsed finish is invalid, use default
+  const seatAllowedFinishes = seatProduct?.allowed_finishes;
+  const seatFinish = (seatAllowedFinishes && seatResolved.finish && !seatAllowedFinishes.includes(seatResolved.finish))
+    ? seatDefaultFinish
+    : (seatResolved.finish || seatDefaultFinish);
   const seatModelName = prop(seatProduct, "model_name", null) as string | null;
 
   // ---- 3. Resolve backrest ----
@@ -585,6 +589,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     fotelSKU = `FT-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.side.code}${parsed.side.finish}${jaskiPart}-${parsed.legs.code}${parsed.legs.color || ""}`;
   }
 
+  // ---- SPECIAL NOTES (conditional business rules) ----
+  const specialNotes: string[] = [];
+  if (seatCode === "SD01N" && parsed.side.code === "B9" && sideFinish === "B") {
+    specialNotes.push("UWAGA: SD01N + B9B — przygotować listwę z płyty do opiankowania");
+  }
+
   // ---- Build result ----
   return {
     series: seriesData,
@@ -648,5 +658,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     fotelLegs: fotelLegsDecoded,
     pufaSKU,
     fotelSKU,
+    specialNotes: specialNotes.length > 0 ? specialNotes : undefined,
   };
 }
