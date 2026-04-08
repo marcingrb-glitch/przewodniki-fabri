@@ -9,9 +9,9 @@ WHERE segment_name = 'seat'
 INSERT INTO label_templates (product_type, label_name, component, display_fields, quantity, sort_order, is_conditional, condition_field, series_id)
 VALUES (
   'sofa',
-  'LISTWA — opiankowanie',
+  'Siedzisko',
   'listwa',
-  '[["seat.code_finish", "side.code_finish"]]'::jsonb,
+  '[["listwa.label"]]'::jsonb,
   1,
   99,
   true,
