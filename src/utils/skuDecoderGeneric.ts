@@ -411,11 +411,15 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const seatType = prop(seatProduct, "seat_type", "");
   const seatSpringType = prop(seatProduct, "spring_type", "");
   let seatFrameModification = prop(seatProduct, "frame_modification", "") as string;
-  // SD01N + B9B: dodatkowa listwa Vienna przykręcana
-  if (seatCode === "SD01N" && parsed.side.code === "B9" && (parsed.side.finish || sideDefaultFinish) === "B") {
-    seatFrameModification = seatFrameModification
-      ? `${seatFrameModification} + Listwa Vienna przykręcana`
-      : "Listwa Vienna przykręcana";
+  // SD01N: conditional frame_modification (e.g. listwa only with B9B)
+  // DB stores "Listwa Vienna przykręcana (tylko z B9B)" — strip condition for documents
+  if (seatCode === "SD01N" && seatFrameModification) {
+    if (parsed.side.code === "B9" && (parsed.side.finish || sideDefaultFinish) === "B") {
+      const cleanText = seatFrameModification.replace(/\s*\(tylko.*?\)\s*$/i, "").trim();
+      seatFrameModification = cleanText;
+    } else {
+      seatFrameModification = "";
+    }
   }
 
   // ---- BACKREST ----
@@ -595,10 +599,10 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     fotelSKU = `FT-${parsed.series}-${parsed.fabric.code}${parsed.fabric.color}-${seatCode}-${parsed.side.code}${parsed.side.finish}${jaskiPart}-${parsed.legs.code}${parsed.legs.color || ""}`;
   }
 
-  // ---- SPECIAL NOTES (conditional business rules) ----
+  // ---- SPECIAL NOTES (conditional business rules, text from DB) ----
   const specialNotes: string[] = [];
-  if (seatCode === "SD01N" && parsed.side.code === "B9" && sideFinish === "B") {
-    specialNotes.push("UWAGA: SD01N + B9B — przygotować listwę z płyty do opiankowania");
+  if (seatFrameModification) {
+    specialNotes.push(`UWAGA: ${seatFrameModification}`);
   }
 
   // ---- Build result ----
