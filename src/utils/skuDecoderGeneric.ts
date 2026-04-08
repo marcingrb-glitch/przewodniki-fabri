@@ -400,6 +400,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const fabricColors = productColors(fabricProduct);
   const colorName = fabricColors[parsed.fabric.color] || parsed.fabric.color;
 
+  // ---- SIDE ----
+  const sideName = sideProduct?.name ?? "Nieznany";
+  const sideFrame = prop(sideProduct, "frame", "?");
+  const sideDefaultFinish = sideProduct?.default_finish ?? "";
+  const sideFinish = parsed.side.finish || sideDefaultFinish;
+
   // ---- SEAT ----
   const seatFinishName = FINISHES[seatFinish] || seatFinish;
   const seatType = prop(seatProduct, "seat_type", "");
@@ -411,12 +417,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? `${seatFrameModification} + Listwa Vienna przykręcana`
       : "Listwa Vienna przykręcana";
   }
-
-  // ---- SIDE ----
-  const sideName = sideProduct?.name ?? "Nieznany";
-  const sideFrame = prop(sideProduct, "frame", "?");
-  const sideDefaultFinish = sideProduct?.default_finish ?? "";
-  const sideFinish = parsed.side.finish || sideDefaultFinish;
 
   // ---- BACKREST ----
   const backrestFrame = prop(backrestProduct, "frame", "?");
