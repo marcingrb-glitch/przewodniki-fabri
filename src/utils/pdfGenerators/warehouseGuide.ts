@@ -306,21 +306,21 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
       }
 
       y = addTable(doc, y, table.headers, table.rows, undefined, 0, gs.font_size_table, gs.table_row_height);
-    }
 
-    // Special notes right after SIEDZISKO section
-    if (section.title === "SIEDZISKO" && decoded.specialNotes && decoded.specialNotes.length > 0) {
-      y += 4;
-      for (const note of decoded.specialNotes) {
-        doc.setFillColor(255, 255, 200);
-        doc.setDrawColor(200, 150, 0);
-        doc.setLineWidth(0.5);
-        doc.rect(marginLeft, y - 5, pageWidth - 2 * marginLeft, 10, "FD");
-        doc.setFont("Roboto", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text(note, marginLeft + 3, y + 1);
-        y += 12;
+      // Special notes right after first SIEDZISKO table (Kod/Stelaż), before foams
+      if (section.title === "SIEDZISKO" && ti === 0 && decoded.specialNotes && decoded.specialNotes.length > 0) {
+        y += 4;
+        for (const note of decoded.specialNotes) {
+          doc.setFillColor(255, 255, 200);
+          doc.setDrawColor(200, 150, 0);
+          doc.setLineWidth(0.5);
+          doc.rect(marginLeft, y - 5, pageWidth - 2 * marginLeft, 10, "FD");
+          doc.setFont("Roboto", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.text(note, marginLeft + 3, y + 1);
+          y += 12;
+        }
       }
     }
   }
