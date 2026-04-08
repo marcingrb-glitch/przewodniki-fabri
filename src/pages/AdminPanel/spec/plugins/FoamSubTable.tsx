@@ -72,14 +72,16 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
     else { toast.success("Zapisano"); queryClient.invalidateQueries({ queryKey }); }
   };
 
-  const addFoam = async () => {
-    const maxPos = foams.reduce((m: number, f: any) => Math.max(m, f.position_number ?? 0), 0);
+  const addFoam = async (section: string = "seat") => {
+    const sectionFoams = foams.filter((f: any) => (f.foam_section ?? "seat") === section);
+    const maxPos = sectionFoams.reduce((m: number, f: any) => Math.max(m, f.position_number ?? 0), 0);
     const { error } = await supabase.from("product_specs").insert({
       product_id: productId,
       spec_type: "foam",
       position_number: maxPos + 1,
       quantity: 1,
       foam_role: "base",
+      foam_section: section,
     });
     if (error) toast.error("Błąd dodawania pianki");
     else { toast.success("Dodano piankę"); queryClient.invalidateQueries({ queryKey }); }
@@ -89,29 +91,18 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
     const { error } = await supabase.from("product_specs").delete().eq("id", foamId);
     if (error) { toast.error("Błąd usuwania"); return; }
 
-    // Renumber remaining foams sequentially
+    // Renumber remaining foams sequentially per section
+    const deletedFoam = foams.find((f: any) => f.id === foamId);
+    const section = deletedFoam?.foam_section ?? "seat";
     const remaining = foams
-      .filter((f: any) => f.id !== foamId)
+      .filter((f: any) => f.id !== foamId && (f.foam_section ?? "seat") === section)
       .sort((a: any, b: any) => (a.position_number ?? 0) - (b.position_number ?? 0));
 
-    if (category === "chaise") {
-      const seatFoams = remaining.filter((f: any) => (f.position_number ?? 0) < 10);
-      const backrestFoams = remaining.filter((f: any) => (f.position_number ?? 0) >= 10);
-      await Promise.all([
-        ...seatFoams.map((f: any, i: number) =>
-          supabase.from("product_specs").update({ position_number: i + 1 }).eq("id", f.id)
-        ),
-        ...backrestFoams.map((f: any, i: number) =>
-          supabase.from("product_specs").update({ position_number: 10 + i }).eq("id", f.id)
-        ),
-      ]);
-    } else {
-      await Promise.all(
-        remaining.map((f: any, i: number) =>
-          supabase.from("product_specs").update({ position_number: i + 1 }).eq("id", f.id)
-        )
-      );
-    }
+    await Promise.all(
+      remaining.map((f: any, i: number) =>
+        supabase.from("product_specs").update({ position_number: i + 1 }).eq("id", f.id)
+      )
+    );
 
     toast.success("Usunięto piankę");
     queryClient.invalidateQueries({ queryKey });
@@ -130,6 +121,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
       material: foam.material,
       quantity: foam.quantity,
       foam_role: foam.foam_role ?? "base",
+      foam_section: foam.foam_section ?? "seat",
       notes: foam.notes,
     }));
     const { error } = await supabase.from("product_specs").insert(inserts);
@@ -298,8 +290,8 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
           </TableHeader>
           <TableBody>
             {category === "chaise" ? (() => {
-              const seatFoams = displayFoams.filter((f: any) => (f.position_number ?? 0) < 10);
-              const backrestFoams = displayFoams.filter((f: any) => (f.position_number ?? 0) >= 10);
+              const seatFoams = displayFoams.filter((f: any) => (f.foam_section ?? "seat") === "seat");
+              const backrestFoams = displayFoams.filter((f: any) => (f.foam_section ?? "seat") === "backrest");
               return (
                 <>
                   {seatFoams.length > 0 && (
@@ -323,9 +315,20 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
 
       {!isFallback && (
         <div className="flex items-center gap-2 mt-2">
-          <Button variant="outline" size="sm" onClick={addFoam}>
-            <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
-          </Button>
+          {category === "chaise" ? (
+            <>
+              <Button variant="outline" size="sm" onClick={() => addFoam("seat")}>
+                <Plus className="mr-1 h-3 w-3" /> Dodaj piankę siedziskową
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => addFoam("backrest")}>
+                <Plus className="mr-1 h-3 w-3" /> Dodaj piankę oparcia
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => addFoam()}>
+              <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
+            </Button>
+          )}
           {isDzielone && (
             <AlertDialog>
               <AlertDialogTrigger asChild>

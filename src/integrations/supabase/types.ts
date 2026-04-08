@@ -451,6 +451,7 @@ export type Database = {
         Row: {
           created_at: string
           foam_role: string | null
+          foam_section: string
           height: number | null
           id: string
           length: number | null
@@ -468,6 +469,7 @@ export type Database = {
         Insert: {
           created_at?: string
           foam_role?: string | null
+          foam_section?: string
           height?: number | null
           id?: string
           length?: number | null
@@ -485,6 +487,7 @@ export type Database = {
         Update: {
           created_at?: string
           foam_role?: string | null
+          foam_section?: string
           height?: number | null
           id?: string
           length?: number | null
