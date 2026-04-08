@@ -87,8 +87,34 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
 
   const deleteFoam = async (foamId: string) => {
     const { error } = await supabase.from("product_specs").delete().eq("id", foamId);
-    if (error) toast.error("Błąd usuwania");
-    else { toast.success("Usunięto piankę"); queryClient.invalidateQueries({ queryKey }); }
+    if (error) { toast.error("Błąd usuwania"); return; }
+
+    // Renumber remaining foams sequentially
+    const remaining = foams
+      .filter((f: any) => f.id !== foamId)
+      .sort((a: any, b: any) => (a.position_number ?? 0) - (b.position_number ?? 0));
+
+    if (category === "chaise") {
+      const seatFoams = remaining.filter((f: any) => (f.position_number ?? 0) < 10);
+      const backrestFoams = remaining.filter((f: any) => (f.position_number ?? 0) >= 10);
+      await Promise.all([
+        ...seatFoams.map((f: any, i: number) =>
+          supabase.from("product_specs").update({ position_number: i + 1 }).eq("id", f.id)
+        ),
+        ...backrestFoams.map((f: any, i: number) =>
+          supabase.from("product_specs").update({ position_number: 10 + i }).eq("id", f.id)
+        ),
+      ]);
+    } else {
+      await Promise.all(
+        remaining.map((f: any, i: number) =>
+          supabase.from("product_specs").update({ position_number: i + 1 }).eq("id", f.id)
+        )
+      );
+    }
+
+    toast.success("Usunięto piankę");
+    queryClient.invalidateQueries({ queryKey });
   };
 
   const handleEnableCustomFoams = async () => {
