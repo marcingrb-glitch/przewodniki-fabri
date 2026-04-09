@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,14 +31,20 @@ interface Series {
   id: string;
   code: string;
   name: string;
+  product_type_id: string | null;
 }
 
-const PRODUCT_TYPES = ["sofa", "naroznik", "pufa", "fotel"] as const;
+const ALL_PRODUCT_TYPES = ["sofa", "naroznik", "pufa", "fotel"] as const;
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
   sofa: "SOFA",
   naroznik: "NAROŻNIK",
   pufa: "PUFA",
   fotel: "FOTEL",
+};
+// Which product types are relevant per series product type
+const TYPES_BY_PRODUCT_TYPE: Record<string, string[]> = {
+  sofa: ["sofa", "pufa", "fotel"],
+  naroznik: ["naroznik"],
 };
 
 export default function LabelTemplates() {
@@ -63,11 +69,35 @@ export default function LabelTemplates() {
   const { data: seriesList = [] } = useQuery({
     queryKey: ["series-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, code, name").eq("category", "series").eq("active", true).order("code");
+      const { data, error } = await supabase.from("products").select("id, code, name, product_type_id").eq("category", "series").eq("active", true).order("code");
       if (error) throw error;
       return data as Series[];
     },
   });
+
+  const { data: productTypesList = [] } = useQuery({
+    queryKey: ["product-types-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("product_types").select("id, code");
+      return data ?? [];
+    },
+  });
+
+  // Determine visible tabs based on selected series' product type
+  const visibleTypes = (() => {
+    if (selectedSeries === "all") return ALL_PRODUCT_TYPES as unknown as string[];
+    const series = seriesList.find(s => s.id === selectedSeries);
+    if (!series?.product_type_id) return ALL_PRODUCT_TYPES as unknown as string[];
+    const ptCode = productTypesList.find(pt => pt.id === series.product_type_id)?.code;
+    return ptCode && TYPES_BY_PRODUCT_TYPE[ptCode] ? TYPES_BY_PRODUCT_TYPE[ptCode] : ALL_PRODUCT_TYPES as unknown as string[];
+  })();
+
+  // Auto-switch to first visible tab when current tab becomes hidden
+  useEffect(() => {
+    if (visibleTypes.length > 0 && !visibleTypes.includes(activeTab)) {
+      setActiveTab(visibleTypes[0]);
+    }
+  }, [visibleTypes, activeTab]);
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: string; value: unknown }) => {
@@ -245,7 +275,7 @@ export default function LabelTemplates() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          {PRODUCT_TYPES.map((type) => (
+          {visibleTypes.map((type) => (
             <TabsTrigger key={type} value={type}>
               {PRODUCT_TYPE_LABELS[type]}
               <Badge variant="secondary" className="ml-2 text-xs">
@@ -259,7 +289,7 @@ export default function LabelTemplates() {
           ))}
         </TabsList>
 
-        {PRODUCT_TYPES.map((type) => (
+        {visibleTypes.map((type) => (
           <TabsContent key={type} value={type} className="mt-4">
             {isLoading ? (
               <p className="text-muted-foreground text-sm">Ładowanie...</p>
