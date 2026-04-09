@@ -33,9 +33,10 @@ interface Series {
   name: string;
 }
 
-const PRODUCT_TYPES = ["sofa", "pufa", "fotel"] as const;
+const PRODUCT_TYPES = ["sofa", "naroznik", "pufa", "fotel"] as const;
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
   sofa: "SOFA",
+  naroznik: "NAROŻNIK",
   pufa: "PUFA",
   fotel: "FOTEL",
 };

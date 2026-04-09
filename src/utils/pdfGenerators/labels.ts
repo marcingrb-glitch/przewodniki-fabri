@@ -144,7 +144,7 @@ function buildLabelLines(
 
 export async function generateLabelsPDF(
   decoded: DecodedSKU,
-  productType: "sofa" | "pufa" | "fotel"
+  productType: "sofa" | "naroznik" | "pufa" | "fotel"
 ): Promise<Blob> {
   const [templates, settings] = await Promise.all([
     fetchTemplates(productType, decoded.series.code),
@@ -179,7 +179,8 @@ export async function generateLabelsPDF(
 
 // Legacy wrappers for backward compatibility
 export async function generateSofaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {
-  return generateLabelsPDF(decoded, "sofa");
+  const type = decoded.chaise ? "naroznik" : "sofa";
+  return generateLabelsPDF(decoded, type);
 }
 
 export async function generatePufaLabelsPDF(decoded: DecodedSKU): Promise<Blob> {

@@ -94,6 +94,15 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "legs.color", label: "Kolor (kod)", source: "products.colors (leg)" },
     { value: "legs.colorName", label: "Kolor (nazwa)", source: "products.colors (leg)" },
   ],
+  chaise: [
+    { value: "chaise.code", label: "Kod szezlonga", source: "products (chaise)" },
+    { value: "chaise.name", label: "Nazwa", source: "products (chaise)" },
+    { value: "chaise.modelName", label: "Model", source: "products.properties.model_name (chaise)" },
+    { value: "chaise.frame", label: "Stelaż", source: "products.properties.frame (chaise)" },
+    { value: "chaise.springType", label: "Sprężyna", source: "products.properties.spring_type (chaise)" },
+    { value: "chaise.seatFoams_summary", label: "Pianki siedziskowe", source: "product_specs (foam, seat)" },
+    { value: "chaise.backrestFoams_summary", label: "Pianki oparcia", source: "product_specs (foam, backrest)" },
+  ],
   custom: [],
 };
 
