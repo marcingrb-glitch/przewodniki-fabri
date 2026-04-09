@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,17 +40,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permissions, setPermissions] = useState<UserPermissions>(defaultPermissions);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Track which userId we've already fetched/are fetching to avoid duplicate calls
+  const fetchedRef = React.useRef<string | null>(null);
+
   useEffect(() => {
+    // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setTimeout(() => {
+          // Only fetch if we haven't already fetched for this user
+          if (fetchedRef.current !== session.user.id) {
+            fetchedRef.current = session.user.id;
             fetchProfileAndRole(session.user.id);
-          }, 0);
+          }
         } else {
+          fetchedRef.current = null;
           setProfile(null);
           setRole("worker");
           setPermissions(defaultPermissions);
@@ -59,11 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfileAndRole(session.user.id);
+        if (fetchedRef.current !== session.user.id) {
+          fetchedRef.current = session.user.id;
+          fetchProfileAndRole(session.user.id);
+        }
       } else {
         setIsLoading(false);
       }
@@ -80,9 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.from("user_permissions").select("can_view_cheatsheets, can_view_specs").eq("user_id", userId).maybeSingle(),
       ]);
 
-      console.log("[Auth] Profile result:", profileResult.data, profileResult.error?.message);
-      console.log("[Auth] Role result:", roleResult.data, roleResult.error?.message);
-      console.log("[Auth] Perms result:", permResult.data, permResult.error?.message);
 
       if (profileResult.data) {
         setProfile(profileResult.data as Profile);
@@ -104,6 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    fetchedRef.current = null;
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
