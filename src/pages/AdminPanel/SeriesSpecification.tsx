@@ -201,7 +201,7 @@ export default function SeriesSpecification() {
           <TabsContent value="chaise">
             <div className="space-y-4">
               <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-                Stelaż szezlonga: 124.2 × 79 × 26 cm (wszystkie modele). Oparcie szezlonga bez sprężyn.
+                Stelaż siedziska i oparcia definiowany per szezlong. Oparcie szezlonga bez sprężyn.
               </div>
               <GenericSpecSection
                 seriesProductId={seriesProduct.id}

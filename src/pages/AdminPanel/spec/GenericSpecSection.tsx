@@ -272,7 +272,11 @@ export default function GenericSpecSection({ seriesProductId, category, config }
             <div className="flex gap-4 flex-wrap">
               <span>Model: <strong>{product.model_name ?? "—"}</strong></span>
               <span>Sprężyna: <strong>{product.spring_type ?? "—"}</strong></span>
-              <span>Stelaż: {product.frame ?? "—"}</span>
+              <span>Stelaż siedziska: {product.frame ?? "—"}</span>
+              <span>Stelaż oparcia: {product.backrest_frame ?? "—"}</span>
+              {product.frame_modification && (
+                <span className="text-orange-600 font-medium">Modyfikacja: {product.frame_modification}</span>
+              )}
             </div>
           )}
           {product.allowed_finishes && (
