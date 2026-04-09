@@ -91,9 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.from("user_permissions").select("can_view_cheatsheets, can_view_specs").eq("user_id", userId).maybeSingle(),
       ]);
 
-      console.log("[Auth] Profile result:", profileResult.data, profileResult.error?.message);
-      console.log("[Auth] Role result:", roleResult.data, roleResult.error?.message);
-      console.log("[Auth] Perms result:", permResult.data, permResult.error?.message);
 
       if (profileResult.data) {
         setProfile(profileResult.data as Profile);
