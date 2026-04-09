@@ -44,7 +44,7 @@ const PRODUCT_TYPE_LABELS: Record<string, string> = {
 // Which product types are relevant per series product type
 const TYPES_BY_PRODUCT_TYPE: Record<string, string[]> = {
   sofa: ["sofa", "pufa", "fotel"],
-  naroznik: ["naroznik"],
+  naroznik: ["naroznik", "pufa"],
 };
 
 export default function LabelTemplates() {
