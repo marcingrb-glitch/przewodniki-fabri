@@ -726,6 +726,8 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       name: chaiseProduct.name,
       modelName: prop(chaiseProduct, "model_name", undefined) as string | undefined,
       frame: prop(chaiseProduct, "frame", "?"),
+      frameModification: prop(chaiseProduct, "frame_modification", undefined) as string | undefined,
+      backrestFrame: prop(chaiseProduct, "backrest_frame", undefined) as string | undefined,
       springType: prop(chaiseProduct, "spring_type", undefined) as string | undefined,
       backrestHasSprings: prop(chaiseProduct, "backrest_has_springs", false) as boolean,
       seatFoams: chaiseSeatFoams.length > 0 ? chaiseSeatFoams : undefined,

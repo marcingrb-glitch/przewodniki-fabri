@@ -64,6 +64,8 @@ export interface DecodedSKU {
     name: string;
     modelName?: string;
     frame: string;
+    frameModification?: string;
+    backrestFrame?: string;
     springType?: string;
     backrestHasSprings: boolean;
     seatFoams?: ProductFoamItem[];

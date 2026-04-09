@@ -383,13 +383,23 @@ export async function generateProductionGuidePDF(
     y = renderSectionAt(doc, {
       title: "SZEZLONG",
       code: decoded.chaise.code,
-      headers: ["Model", "Stelaż", "Sprężyna"],
+      headers: ["Model", "Stelaż siedziska", "Stelaż oparcia", "Sprężyna"],
       rows: [[
         decoded.chaise.modelName || decoded.chaise.name,
         decoded.chaise.frame || "-",
+        decoded.chaise.backrestFrame || "-",
         decoded.chaise.springType || "-",
       ]],
     }, colLeftX, y, fullW, fs, rh, sp);
+
+    if (decoded.chaise.frameModification) {
+      y += 2;
+      doc.setFontSize(fs - 1);
+      doc.setFont("NotoSans", "bold");
+      doc.text(`UWAGA: ${decoded.chaise.frameModification}`, colLeftX, y);
+      doc.setFont("NotoSans", "normal");
+      y += rh;
+    }
 
     if (decoded.chaise.seatFoams && decoded.chaise.seatFoams.length > 0) {
       y += 2;

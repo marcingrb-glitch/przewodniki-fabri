@@ -193,10 +193,11 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
     const chaiseSection: SectionBlock = {
       title: "SZEZLONG",
       tables: [{
-        headers: ["Kod", "Stelaż", "Sprężyna"],
+        headers: ["Kod", "Stelaż siedziska", "Stelaż oparcia", "Sprężyna"],
         rows: [[
           decoded.chaise.code,
           decoded.chaise.frame || "-",
+          decoded.chaise.backrestFrame || "-",
           decoded.chaise.springType || "-",
         ]],
       }],

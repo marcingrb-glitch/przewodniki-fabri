@@ -129,18 +129,22 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
     title: "Szezlongi",
     labelSingular: "Szezlong",
     propertyKeys: [
-      "model_name", "frame", "spring_type", "backrest_has_springs",
+      "model_name", "frame", "frame_modification", "backrest_frame", "spring_type", "backrest_has_springs",
     ],
     columns: [
       { key: "code", label: "Kod" },
       { key: "model_name", label: "Model" },
+      { key: "frame", label: "Stelaż siedziska" },
+      { key: "backrest_frame", label: "Stelaż oparcia" },
       { key: "spring_type", label: "Sprężyna" },
     ],
     fields: [
       { name: "code", label: "Kod", type: "text", required: true },
       { name: "name", label: "Nazwa", type: "text", required: true },
       { name: "model_name", label: "Model", type: "text" },
-      { name: "frame", label: "Stelaż", type: "text" },
+      { name: "frame", label: "Stelaż siedziska", type: "text" },
+      { name: "frame_modification", label: "Modyfikacja stelaża", type: "text" },
+      { name: "backrest_frame", label: "Stelaż oparcia", type: "text" },
       { name: "spring_type", label: "Sprężyna", type: "text" },
       { name: "backrest_has_springs", label: "Sprężyny w oparciu", type: "boolean" },
       { name: "allowed_finishes", label: "Wykończenia", type: "multi-select", options: [

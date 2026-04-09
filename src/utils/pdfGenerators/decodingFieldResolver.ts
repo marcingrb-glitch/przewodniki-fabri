@@ -84,6 +84,8 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "chaise.name": return decoded.chaise?.name || "-";
     case "chaise.modelName": return decoded.chaise?.modelName || "-";
     case "chaise.frame": return decoded.chaise?.frame || "-";
+    case "chaise.frameModification": return decoded.chaise?.frameModification || "-";
+    case "chaise.backrestFrame": return decoded.chaise?.backrestFrame || "-";
     case "chaise.springType": return decoded.chaise?.springType || "-";
     case "chaise.backrestHasSprings": return decoded.chaise?.backrestHasSprings ? "TAK" : "NIE";
     case "chaise.seatFoams_summary": {
