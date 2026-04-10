@@ -379,44 +379,17 @@ export async function generateProductionGuidePDF(
 
   // ── Chaise section (narożnik only) ──
   if (decoded.chaise) {
-    y += sectionGap;
     y = renderSectionAt(doc, {
       title: "SZEZLONG",
       code: decoded.chaise.code,
-      headers: ["Typ", "Wykończenie"],
+      headers: ["Siedzisko", "Wykończenie", "Oparcie", "Wykończenie"],
       rows: [[
         decoded.seat.type || decoded.seat.modelName || "-",
         decoded.seat.finishName,
+        decoded.seat.type || decoded.seat.modelName || "-",
+        decoded.backrest.finishName,
       ]],
     }, colLeftX, y, fullW, fs, rh, sp);
-
-    if (decoded.chaise.frameModification) {
-      y += 2;
-      doc.setFontSize(fs - 1);
-      doc.setFont("NotoSans", "bold");
-      doc.text(`UWAGA: ${decoded.chaise.frameModification}`, colLeftX, y);
-      doc.setFont("NotoSans", "normal");
-      y += rh;
-    }
-  }
-
-  // Special notes at the bottom of the page
-  if (decoded.specialNotes && decoded.specialNotes.length > 0) {
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const marginLeft = 15;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let noteY = pageHeight - 20;
-    for (const note of decoded.specialNotes) {
-      doc.setFillColor(255, 255, 200);
-      doc.setDrawColor(200, 150, 0);
-      doc.setLineWidth(0.5);
-      doc.rect(marginLeft, noteY - 5, pageWidth - 2 * marginLeft, 10, "FD");
-      doc.setFont("Roboto", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text(note, marginLeft + 3, noteY + 1);
-      noteY -= 14;
-    }
   }
 
   return toBlob(doc);
