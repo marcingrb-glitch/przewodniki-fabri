@@ -342,6 +342,12 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
                     section.title === "OPARCIE" ? "Pianki oparcia:" : "";
       }
       if (foamLabel) {
+        // Keep label with its table — if label + header + 1 row don't fit, break page first
+        const minRequired = 5 + 3 + TABLE_HEADER_HEIGHT + TABLE_ROW_HEIGHT;
+        if (y + minRequired > pageHeight - marginBottom) {
+          doc.addPage();
+          y = marginTop;
+        }
         y += 5;
         doc.setFont("Roboto", "bold");
         doc.setFontSize(9);
