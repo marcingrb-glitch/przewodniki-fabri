@@ -47,7 +47,8 @@ function foamsToRows(foams?: ProductFoamItem[]): string[][] {
 
 interface SectionBlock {
   title: string;
-  tables: { headers: string[]; rows: string[][] }[];
+  tables: { headers: string[]; rows: string[][]; label?: string }[];
+  note?: string;
 }
 
 /**
@@ -190,21 +191,27 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
 
   // SZEZLONG — conditional (narożnik)
   if (decoded.chaise) {
+    const chaiseHeaders = ["Kod", "Stelaż siedziska", "Stelaż oparcia", "Sprężyna"];
+    const chaiseRow = [
+      decoded.chaise.code,
+      decoded.chaise.frame || "-",
+      decoded.chaise.backrestFrame || "-",
+      decoded.chaise.springType || "-",
+    ];
+    if (decoded.chaise.frameModification) {
+      chaiseHeaders.push("Modyfikacja");
+      chaiseRow.push(decoded.chaise.frameModification);
+    }
+
     const chaiseSection: SectionBlock = {
       title: "SZEZLONG",
-      tables: [{
-        headers: ["Kod", "Stelaż siedziska", "Stelaż oparcia", "Sprężyna"],
-        rows: [[
-          decoded.chaise.code,
-          decoded.chaise.frame || "-",
-          decoded.chaise.backrestFrame || "-",
-          decoded.chaise.springType || "-",
-        ]],
-      }],
+      tables: [{ headers: chaiseHeaders, rows: [chaiseRow] }],
+      note: decoded.chaise.frameModification ? `UWAGA: ${decoded.chaise.frameModification}` : undefined,
     };
     const chaiseSeatFoamRows = foamsToRows(decoded.chaise.seatFoams);
     if (chaiseSeatFoamRows.length > 0) {
       chaiseSection.tables.push({
+        label: "Pianki siedziska:",
         headers: ["Nazwa", "Wymiary", "Materiał", "Ilość"],
         rows: chaiseSeatFoamRows,
       });
@@ -212,7 +219,8 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
     const chaiseBackrestFoamRows = foamsToRows(decoded.chaise.backrestFoams);
     if (chaiseBackrestFoamRows.length > 0) {
       chaiseSection.tables.push({
-        headers: ["Oparcie szezl.", "Wymiary", "Materiał", "Ilość"],
+        label: "Pianki oparcia szezlonga:",
+        headers: ["Nazwa", "Wymiary", "Materiał", "Ilość"],
         rows: chaiseBackrestFoamRows,
       });
     }
@@ -326,16 +334,19 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
     for (let ti = 0; ti < section.tables.length; ti++) {
       const table = section.tables[ti];
 
-      if (ti === 1) {
-        const foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
-                          section.title === "OPARCIE" ? "Pianki oparcia:" : "";
-        if (foamLabel) {
-          y += 5;
-          doc.setFont("Roboto", "bold");
-          doc.setFontSize(9);
-          doc.text(foamLabel, marginLeft + 2, y);
-          y += 3;
-        }
+      // Table-level label (set on the table itself, e.g. "Pianki siedziska:")
+      // OR legacy hardcoded label for SIEDZISKO/OPARCIE's 2nd table
+      let foamLabel = table.label || "";
+      if (!foamLabel && ti === 1) {
+        foamLabel = section.title === "SIEDZISKO" ? "Pianki siedziska:" :
+                    section.title === "OPARCIE" ? "Pianki oparcia:" : "";
+      }
+      if (foamLabel) {
+        y += 5;
+        doc.setFont("Roboto", "bold");
+        doc.setFontSize(9);
+        doc.text(foamLabel, marginLeft + 2, y);
+        y += 3;
       }
 
       y = addTable(doc, y, table.headers, table.rows, undefined, 0, gs.font_size_table, gs.table_row_height);
@@ -354,6 +365,20 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
           doc.text(note, marginLeft + 3, y + 5.5);
           y += 10;
         }
+      }
+
+      // Section-level note right after first table (e.g. SZEZLONG frame modification)
+      if (ti === 0 && section.note) {
+        y += 2;
+        doc.setFillColor(255, 255, 200);
+        doc.setDrawColor(200, 150, 0);
+        doc.setLineWidth(0.5);
+        doc.rect(marginLeft, y, pageWidth - 2 * marginLeft, 8, "FD");
+        doc.setFont("Roboto", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        doc.text(section.note, marginLeft + 3, y + 5.5);
+        y += 10;
       }
     }
   }
