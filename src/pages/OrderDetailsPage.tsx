@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
+import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2, Maximize2, Save } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2, Maximize2, Save, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { DecodedSKU } from "@/types";
@@ -32,6 +34,7 @@ const OrderDetailsPage = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
   const [previewFileName, setPreviewFileName] = useState("");
@@ -41,6 +44,7 @@ const OrderDetailsPage = () => {
   const [fabricUsage, setFabricUsage] = useState<number | null>(null);
   const [savedFabricUsage, setSavedFabricUsage] = useState<number | null>(null);
   const [savingFabric, setSavingFabric] = useState(false);
+  const [redecoding, setRedecoding] = useState(false);
 
   const stateDecoded = (location.state as { decoded?: DecodedSKU })?.decoded;
 
@@ -71,6 +75,35 @@ const OrderDetailsPage = () => {
       setSavedFabricUsage((order as any).fabric_usage_mb ?? null);
     }
   }, [order]);
+
+  const handleRedecode = useCallback(async () => {
+    if (!order) return;
+    setRedecoding(true);
+    try {
+      const seriesCode = (order.sku || "").trim().toUpperCase().split("-")[0] || "";
+      const skuAliases = await fetchSkuAliases(seriesCode);
+      const parsed = await parseSKUGeneric(order.sku, skuAliases);
+      const fresh = await decodeSKU(parsed);
+      fresh.orderNumber = order.order_number;
+      fresh.orderDate = order.order_date ? format(new Date(order.order_date), "dd.MM.yyyy") : "";
+      fresh.rawSKU = order.sku;
+
+      const { error } = await supabase
+        .from("orders")
+        .update({ decoded_data: fresh as any })
+        .eq("id", order.id);
+      if (error) throw error;
+
+      toast.success("✅ Zdekodowano ponownie");
+      await queryClient.invalidateQueries({ queryKey: ["order", id] });
+      // Clear stateDecoded by reloading route state-free
+      navigate(`/order/${id}`, { replace: true, state: {} });
+    } catch (err: any) {
+      toast.error(`❌ ${err.message || "Błąd re-dekodowania"}`);
+    } finally {
+      setRedecoding(false);
+    }
+  }, [order, queryClient, id, navigate]);
 
   const handleSaveFabricUsage = useCallback(async () => {
     if (!order) return;
@@ -159,8 +192,21 @@ const OrderDetailsPage = () => {
                 ZAMÓWIENIE: {orderNumber}
                 {order?.shopify_order_name && ` | ${order.shopify_order_name}`}
               </CardTitle>
-              <div className="mt-2 rounded bg-muted px-3 py-2 inline-block">
-                <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="rounded bg-muted px-3 py-2 inline-block">
+                  <code className="font-mono text-lg font-bold tracking-wide">{decoded.rawSKU || order?.sku}</code>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={redecoding || !order}
+                  onClick={handleRedecode}
+                  title="Zdekoduj SKU ponownie (odświeża dane z bazy)"
+                >
+                  {redecoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Odśwież dekodowanie
+                </Button>
               </div>
               <p className="text-base text-muted-foreground font-medium mt-1">Data: {decoded.orderDate || (order?.order_date ? new Date(order.order_date).toLocaleDateString("pl-PL") : "")}</p>
               {decoded.fabricOverride && (
