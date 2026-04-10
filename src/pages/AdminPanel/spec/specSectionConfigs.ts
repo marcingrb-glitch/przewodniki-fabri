@@ -129,7 +129,7 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
     title: "Szezlongi",
     labelSingular: "Szezlong",
     propertyKeys: [
-      "model_name", "frame", "frame_modification", "backrest_frame", "spring_type", "backrest_has_springs",
+      "model_name", "frame", "frame_modification", "backrest_frame", "spring_type", "backrest_has_springs", "copies_from",
     ],
     columns: [
       { key: "code", label: "Kod" },

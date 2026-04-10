@@ -13,9 +13,11 @@ interface FoamSubTableProps {
   productCode: string;
   category: string;
   seriesProductId: string;
+  readOnly?: boolean;
+  readOnlyReason?: string;
 }
 
-export default function FoamSubTable({ productId, productCode, category, seriesProductId }: FoamSubTableProps) {
+export default function FoamSubTable({ productId, productCode, category, seriesProductId, readOnly = false, readOnlyReason }: FoamSubTableProps) {
   const queryClient = useQueryClient();
   const queryKey = ["product-specs-foam", productId];
 
@@ -61,6 +63,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
   const displayFoams = foams.length > 0 ? foams : fallbackFoams;
   const isFallback = foams.length === 0 && fallbackFoams.length > 0;
   const isDzielone = !!baseCode;
+  const isReadOnly = isFallback || readOnly;
 
   const updateFoam = async (foamId: string, field: string, value: string) => {
     const numFields = ["height", "width", "length", "quantity", "position_number"];
@@ -148,6 +151,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
   };
 
   if (displayFoams.length === 0 && !isFallback) {
+    if (readOnly) return null;
     return (
       <Button variant="outline" size="sm" onClick={() => addFoam()}>
         <Plus className="mr-1 h-3 w-3" /> Dodaj piankę
@@ -259,9 +263,14 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
             (Pianki jak {baseCode} + pasek środkowy)
           </span>
         )}
+        {readOnly && readOnlyReason && (
+          <span className="font-normal text-muted-foreground ml-2">
+            ({readOnlyReason})
+          </span>
+        )}
       </h4>
 
-      {isFallback && (
+      {isFallback && !readOnly && (
         <div className="flex items-center gap-2 mb-3">
           <Checkbox
             id={`custom-foams-${productId}`}
@@ -298,23 +307,23 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
                   {seatFoams.length > 0 && (
                     <>
                       <TableRow><TableCell colSpan={10} className="bg-muted/50 font-semibold text-xs py-1">Pianki siedziskowe</TableCell></TableRow>
-                      {seatFoams.map((foam: any) => renderFoamRow(foam, isFallback))}
+                      {seatFoams.map((foam: any) => renderFoamRow(foam, isReadOnly))}
                     </>
                   )}
                   {backrestFoams.length > 0 && (
                     <>
                       <TableRow><TableCell colSpan={10} className="bg-muted/50 font-semibold text-xs py-1">Pianki oparcia szezlonga</TableCell></TableRow>
-                      {backrestFoams.map((foam: any) => renderFoamRow(foam, isFallback))}
+                      {backrestFoams.map((foam: any) => renderFoamRow(foam, isReadOnly))}
                     </>
                   )}
                 </>
               );
-            })() : displayFoams.map((foam: any) => renderFoamRow(foam, isFallback))}
+            })() : displayFoams.map((foam: any) => renderFoamRow(foam, isReadOnly))}
           </TableBody>
         </Table>
       </div>
 
-      {!isFallback && (
+      {!isFallback && !readOnly && (
         <div className="flex items-center gap-2 mt-2">
           {category === "chaise" ? (
             <>

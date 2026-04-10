@@ -208,6 +208,62 @@ export default function GenericSpecSection({ seriesProductId, category, config }
     else { toast.success(`✅ ${config.labelSingular} usunięty`); queryClient.invalidateQueries({ queryKey }); }
   }, [config, queryClient, queryKey]);
 
+  // "Kopia modelu" — copy properties + foams from another chaise, or clear the link
+  const handleCopyFrom = useCallback(async (product: any, sourceCode: string | null) => {
+    if (sourceCode) {
+      const source = products.find((p: any) => p.code === sourceCode);
+      if (!source) { toast.error("Nie znaleziono źródła"); return; }
+
+      const newProps = {
+        ...(product.properties ?? {}),
+        frame: source.frame ?? null,
+        backrest_frame: source.backrest_frame ?? null,
+        frame_modification: source.frame_modification ?? null,
+        spring_type: source.spring_type ?? null,
+        backrest_has_springs: source.backrest_has_springs ?? false,
+        copies_from: sourceCode,
+      };
+
+      const { error: updErr } = await supabase.from("products")
+        .update({ properties: newProps, updated_at: new Date().toISOString() })
+        .eq("id", product.id);
+      if (updErr) { toast.error("Błąd zapisu produktu"); return; }
+
+      const { error: delErr } = await supabase.from("product_specs")
+        .delete()
+        .eq("product_id", product.id)
+        .eq("spec_type", "foam");
+      if (delErr) { toast.error("Błąd usuwania pianek"); return; }
+
+      const { data: sourceFoams } = await supabase.from("product_specs")
+        .select("*")
+        .eq("product_id", source.id)
+        .eq("spec_type", "foam");
+
+      if (sourceFoams && sourceFoams.length > 0) {
+        const copies = sourceFoams.map((f: any) => {
+          const { id, product_id, created_at, updated_at, ...rest } = f;
+          return { ...rest, product_id: product.id };
+        });
+        const { error: insErr } = await supabase.from("product_specs").insert(copies);
+        if (insErr) { toast.error("Błąd kopiowania pianek"); return; }
+      }
+
+      toast.success(`Skopiowano dane z ${source.model_name || sourceCode}`);
+    } else {
+      const newProps = { ...(product.properties ?? {}) };
+      delete newProps.copies_from;
+      const { error } = await supabase.from("products")
+        .update({ properties: newProps, updated_at: new Date().toISOString() })
+        .eq("id", product.id);
+      if (error) { toast.error("Błąd zapisu"); return; }
+      toast.success("Tryb własnych danych");
+    }
+
+    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ["product-specs-foam", product.id] });
+  }, [products, queryClient, queryKey]);
+
   // Open edit form — for backrests, convert model_name string to array
   const openEditForm = (item: any) => {
     if (category === "backrest" && typeof item.model_name === "string") {
@@ -269,14 +325,38 @@ export default function GenericSpecSection({ seriesProductId, category, config }
             </div>
           )}
           {category === "chaise" && (
-            <div className="flex gap-4 flex-wrap">
-              <span>Model: <strong>{product.model_name ?? "—"}</strong></span>
-              <span>Sprężyna: <strong>{product.spring_type ?? "—"}</strong></span>
-              <span>Stelaż siedziska: {product.frame ?? "—"}</span>
-              <span>Stelaż oparcia: {product.backrest_frame ?? "—"}</span>
-              {product.frame_modification && (
-                <span className="text-orange-600 font-medium">Modyfikacja: {product.frame_modification}</span>
-              )}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span>Kopia modelu:</span>
+                <select
+                  value={product.copies_from ?? ""}
+                  onChange={(e) => handleCopyFrom(product, e.target.value || null)}
+                  className="h-7 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">— brak (własne dane) —</option>
+                  {products
+                    .filter((p: any) => p.id !== product.id)
+                    .map((p: any) => (
+                      <option key={p.id} value={p.code}>
+                        {p.model_name || p.code}
+                      </option>
+                    ))}
+                </select>
+                {product.copies_from && (
+                  <span className="text-xs text-blue-600 font-medium">
+                    ← dane identyczne jak {products.find((p: any) => p.code === product.copies_from)?.model_name ?? product.copies_from}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-4 flex-wrap">
+                <span>Model: <strong>{product.model_name ?? "—"}</strong></span>
+                <span>Sprężyna: <strong>{product.spring_type ?? "—"}</strong></span>
+                <span>Stelaż siedziska: {product.frame ?? "—"}</span>
+                <span>Stelaż oparcia: {product.backrest_frame ?? "—"}</span>
+                {product.frame_modification && (
+                  <span className="text-orange-600 font-medium">Modyfikacja: {product.frame_modification}</span>
+                )}
+              </div>
             </div>
           )}
           {product.allowed_finishes && (
@@ -336,7 +416,14 @@ export default function GenericSpecSection({ seriesProductId, category, config }
 
         {/* Plugin: FoamSubTable */}
         {config.withFoams && (
-          <FoamSubTable productId={product.id} productCode={product.code} category={category} seriesProductId={seriesProductId} />
+          <FoamSubTable
+            productId={product.id}
+            productCode={product.code}
+            category={category}
+            seriesProductId={seriesProductId}
+            readOnly={category === "chaise" && !!product.copies_from}
+            readOnlyReason={product.copies_from ? `kopia z ${products.find((p: any) => p.code === product.copies_from)?.model_name ?? product.copies_from}` : undefined}
+          />
         )}
 
         {/* Plugin: SewingVariants (backrest only) */}
