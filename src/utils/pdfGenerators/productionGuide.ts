@@ -383,12 +383,10 @@ export async function generateProductionGuidePDF(
     y = renderSectionAt(doc, {
       title: "SZEZLONG",
       code: decoded.chaise.code,
-      headers: ["Model", "Stelaż siedziska", "Stelaż oparcia", "Sprężyna"],
+      headers: ["Typ", "Wykończenie"],
       rows: [[
-        decoded.chaise.modelName || decoded.chaise.name,
-        decoded.chaise.frame || "-",
-        decoded.chaise.backrestFrame || "-",
-        decoded.chaise.springType || "-",
+        decoded.seat.type || decoded.seat.modelName || "-",
+        decoded.seat.finishName,
       ]],
     }, colLeftX, y, fullW, fs, rh, sp);
 
@@ -399,32 +397,6 @@ export async function generateProductionGuidePDF(
       doc.text(`UWAGA: ${decoded.chaise.frameModification}`, colLeftX, y);
       doc.setFont("NotoSans", "normal");
       y += rh;
-    }
-
-    if (decoded.chaise.seatFoams && decoded.chaise.seatFoams.length > 0) {
-      y += 2;
-      const foamRows = decoded.chaise.seatFoams.map(f => {
-        const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
-        return [f.name, dims, f.material, String(f.quantity)];
-      });
-      y = renderSectionAt(doc, {
-        title: "PIANKI SZEZLONGA",
-        headers: ["Nazwa", "Wymiary", "Materiał", "Szt"],
-        rows: foamRows,
-      }, colLeftX, y, fullW, fs, rh, sp);
-    }
-
-    if (decoded.chaise.backrestFoams && decoded.chaise.backrestFoams.length > 0) {
-      y += 2;
-      const brFoamRows = decoded.chaise.backrestFoams.map(f => {
-        const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
-        return [f.name, dims, f.material, String(f.quantity)];
-      });
-      y = renderSectionAt(doc, {
-        title: "OPARCIE SZEZLONGA",
-        headers: ["Nazwa", "Wymiary", "Materiał", "Szt"],
-        rows: brFoamRows,
-      }, colLeftX, y, fullW, fs, rh, sp);
     }
   }
 

@@ -563,8 +563,9 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       return true;
     });
 
-    if (matchingVariant?.properties?.description) {
-      sewingVariantDescription = matchingVariant.properties.description;
+    const variantProps = matchingVariant?.properties as any;
+    if (variantProps?.sewing_description || variantProps?.description) {
+      sewingVariantDescription = variantProps.sewing_description || variantProps.description;
     }
   }
 
