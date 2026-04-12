@@ -23,6 +23,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "seat.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
     { value: "seat.midStrip", label: "Środkowy pasek", source: "products.properties.center_strip (seat)" },
     { value: "seat.springType", label: "Sprężyna", source: "products.properties.spring_type (seat)" },
+    { value: "width", label: "Szerokość (cm)", source: "z SKU" },
     { value: "automat.code", label: "Kod automatu", source: "products (automat)" },
     { value: "automat.name", label: "Automat", source: "products (automat)" },
     { value: "automat.type", label: "Typ", source: "products.properties.type (automat)" },
@@ -93,6 +94,20 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "legs.material", label: "Materiał", source: "products.properties.material (leg)" },
     { value: "legs.color", label: "Kolor (kod)", source: "products.colors (leg)" },
     { value: "legs.colorName", label: "Kolor (nazwa)", source: "products.colors (leg)" },
+  ],
+  chaise_seat: [
+    { value: "chaise.frame", label: "Stelaż siedziska", source: "products.properties.frame (chaise)" },
+    { value: "chaise.frameModification", label: "Modyfikacja stelaża", source: "products.properties.frame_modification (chaise)" },
+    { value: "chaise.springType", label: "Sprężyna", source: "products.properties.spring_type (chaise)" },
+    { value: "chaise.seatFoams_summary", label: "Pianki siedziskowe", source: "product_specs (foam, seat)" },
+  ],
+  chaise_backrest: [
+    { value: "chaise.backrestFrame", label: "Stelaż oparcia", source: "products.properties.backrest_frame (chaise)" },
+    { value: "chaise.backrestHasSprings", label: "Sprężyna oparcia", source: "products.properties.backrest_has_springs (chaise)" },
+    { value: "chaise.backrestFoams_summary", label: "Pianki oparcia", source: "product_specs (foam, backrest)" },
+  ],
+  leg_chaise: [
+    { value: "legHeights.chaise_info", label: "Nóżki szezlonga", source: "= sofa_seat (zawsze takie same)" },
   ],
   chaise: [
     { value: "chaise.code", label: "Kod szezlonga", source: "products (chaise)" },

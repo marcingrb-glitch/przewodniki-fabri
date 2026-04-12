@@ -281,13 +281,16 @@ const OrderDetailsPage = () => {
                     {decoded.jaski && <InfoRow label="Jaśki" value={`${decoded.jaski.code} - ${decoded.jaski.name}`} />}
                     {decoded.walek && <InfoRow label="Wałek" value={`${decoded.walek.code} - ${decoded.walek.name}`} />}
                     <div className="mt-3 border-t pt-3">
-                      <p className="font-semibold mb-1">Nóżki sofy:</p>
+                      <p className="font-semibold mb-1">{decoded.chaise ? "Nóżki narożnika:" : "Nóżki sofy:"}</p>
                       {decoded.legHeights.sofa_chest
                         ? <InfoRow label="Pod skrzynią" value={`${decoded.legHeights.sofa_chest.leg} H ${decoded.legHeights.sofa_chest.height}cm (${decoded.legHeights.sofa_chest.count} szt)`} />
                         : <InfoRow label="Pod skrzynią" value="BRAK" />}
                       {decoded.legHeights.sofa_seat
                         ? <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
                         : <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />}
+                      {decoded.chaise && decoded.legHeights.sofa_seat && (
+                        <InfoRow label="Pod szezlongiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
+                      )}
                     </div>
                   </div>
                   {variantImageUrl && (

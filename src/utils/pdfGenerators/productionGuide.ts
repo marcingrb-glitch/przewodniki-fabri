@@ -331,8 +331,15 @@ export async function generateProductionGuidePDF(
     ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm`
     : null;
 
-  const legHeaders = seatLegHeader ? [chestLegHeader, seatLegHeader] : [chestLegHeader];
-  const legRow = seatLegValue ? [chestLegValue, seatLegValue] : [chestLegValue];
+  const chaiseLegHeader = decoded.chaise && decoded.legHeights.sofa_seat
+    ? `Pod szezlong (${decoded.legHeights.sofa_seat.count} szt)`
+    : null;
+  const chaiseLegValue = decoded.chaise && decoded.legHeights.sofa_seat
+    ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm`
+    : null;
+
+  const legHeaders = [chestLegHeader, ...(seatLegHeader ? [seatLegHeader] : []), ...(chaiseLegHeader ? [chaiseLegHeader] : [])];
+  const legRow = [chestLegValue, ...(seatLegValue ? [seatLegValue] : []), ...(chaiseLegValue ? [chaiseLegValue] : [])];
 
   yR = renderSectionAt(doc, {
     title: "NÓŻKI",

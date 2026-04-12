@@ -61,6 +61,10 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
       const sl = decoded.legHeights.sofa_seat;
       return sl ? `${sl.leg} H ${sl.height}cm (${sl.count} szt)` : "BRAK";
     }
+    case "legHeights.chaise_info": {
+      const cl = decoded.legHeights.sofa_seat;
+      return cl ? `${cl.leg} H ${cl.height}cm (${cl.count} szt)` : "BRAK";
+    }
 
     case "pillow.code": return decoded.pillow?.code || "-";
     case "pillow.name": return decoded.pillow ? decoded.pillow.name.replace(/^Poduszka\s+/i, "") : "-";
