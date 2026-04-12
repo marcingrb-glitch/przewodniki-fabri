@@ -359,21 +359,26 @@ export async function generateProductionGuidePDF(
 
   const hasJaski = !!decoded.jaski;
   const hasWalek = !!decoded.walek;
-  if (hasJaski || hasWalek) {
-    const title = [hasJaski ? "JAŚKI" : "", hasWalek ? "WAŁEK" : ""].filter(Boolean).join(" / ");
-    const code = [
-      hasJaski ? decoded.jaski!.code : "",
-      hasWalek ? decoded.walek!.code : "",
-    ].filter(Boolean).join(" / ");
-    const rows: string[][] = [];
-    if (hasJaski) rows.push([decoded.jaski!.name, decoded.jaski!.finishName]);
-    if (hasWalek) rows.push([decoded.walek!.name, decoded.walek!.finishName]);
-
+  if (hasJaski && hasWalek) {
     y = renderSectionAt(doc, {
-      title,
-      code,
+      title: "JAŚKI / WAŁEK",
+      code: `${decoded.jaski!.code} / ${decoded.walek!.code}`,
+      headers: ["Jasiek", "Wykończenie", "Wałek", "Wykończenie"],
+      rows: [[decoded.jaski!.name, decoded.jaski!.finishName, decoded.walek!.name, decoded.walek!.finishName]],
+    }, colLeftX, y, fullW, fs, rh, sp);
+  } else if (hasJaski) {
+    y = renderSectionAt(doc, {
+      title: "JAŚKI",
+      code: decoded.jaski!.code,
       headers: ["Nazwa", "Wykończenie"],
-      rows,
+      rows: [[decoded.jaski!.name, decoded.jaski!.finishName]],
+    }, colLeftX, y, fullW, fs, rh, sp);
+  } else if (hasWalek) {
+    y = renderSectionAt(doc, {
+      title: "WAŁEK",
+      code: decoded.walek!.code,
+      headers: ["Nazwa", "Wykończenie"],
+      rows: [[decoded.walek!.name, decoded.walek!.finishName]],
     }, colLeftX, y, fullW, fs, rh, sp);
   }
 
