@@ -44,6 +44,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "backrest.finish", label: "Wykończenie (kod)", source: "z SKU → finishes" },
     { value: "backrest.finishName", label: "Wykończenie (nazwa)", source: "z SKU → finishes" },
     { value: "backrest.springType", label: "Sprężyna", source: "products.properties.spring_type (backrest)" },
+    { value: "width", label: "Szerokość (cm)", source: "z SKU" },
   ],
   chest: [
     { value: "chest.code", label: "Kod skrzyni", source: "products (chest)" },

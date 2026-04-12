@@ -76,6 +76,25 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "pillow.finish": "Wykończenie (kod)",
   "pillow.finishName": "Wykończenie (nazwa)",
 
+  // Chaise
+  "chaise.code": "Kod szezlonga",
+  "chaise.name": "Nazwa",
+  "chaise.modelName": "Model",
+  "chaise.frame": "Stelaż siedziska",
+  "chaise.frameModification": "Modyfikacja stelaża",
+  "chaise.backrestFrame": "Stelaż oparcia",
+  "chaise.springType": "Sprężyna",
+  "chaise.backrestHasSprings": "Sprężyna oparcia",
+  "chaise.seatFoams_summary": "Pianki siedziskowe",
+  "chaise.backrestFoams_summary": "Pianki oparcia",
+
+  // Chaise legs
+  "legHeights.chaise_info": "Nóżki szezlonga",
+
+  // Width / orientation
+  "width": "Szerokość",
+  "orientation": "Strona",
+
   // Legs (common)
   "legs.code": "Noga",
   "legs.name": "Noga",
