@@ -120,12 +120,15 @@ function drawProductionHeader(
   doc.setFont("Roboto", "bold");
   const orientationLabel = decoded.orientation === "L" ? " (Lewy)" : decoded.orientation === "P" ? " (Prawy)" : "";
   const widthLabel = decoded.width ? ` ${decoded.width}cm` : "";
-  doc.text(`${decoded.series.code} — ${decoded.series.collection || decoded.series.name}${widthLabel}${orientationLabel}`, marginLeft, y);
-  y += 6;
+  const seriesText = `${decoded.series.code} — ${decoded.series.collection || decoded.series.name}${widthLabel}${orientationLabel}`;
+  doc.text(seriesText, marginLeft, y);
 
-  doc.setFontSize(9);
+  // SKU on the same line, right-aligned
+  doc.setFontSize(8);
   doc.setFont("Roboto", "normal");
-  doc.text(`SKU: ${decoded.rawSKU || ""}`, marginLeft, y);
+  const skuText = decoded.rawSKU || "";
+  const skuWidth = doc.getTextWidth(skuText);
+  doc.text(skuText, right - skuWidth, y);
   y += 5;
 
   doc.setDrawColor(0, 0, 0);
@@ -264,7 +267,7 @@ export async function generateProductionGuidePDF(
   const colLeftX = 15;
   const colRightX = 108;
   const colW = 87;
-  const sectionGap = 8;
+  const sectionGap = 5;
 
   // LEFT COLUMN
   let yL = y;
@@ -384,6 +387,7 @@ export async function generateProductionGuidePDF(
 
   // ── Chaise section (narożnik only) ──
   if (decoded.chaise) {
+    y += 2;
     y = renderSectionAt(doc, {
       title: "SZEZLONG",
       code: decoded.chaise.code,
