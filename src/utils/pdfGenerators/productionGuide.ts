@@ -387,7 +387,7 @@ export async function generateProductionGuidePDF(
 
   // ── Chaise section (narożnik only) ──
   if (decoded.chaise) {
-    y += 2;
+    y += sectionGap;
     y = renderSectionAt(doc, {
       title: "SZEZLONG",
       code: decoded.chaise.code,
