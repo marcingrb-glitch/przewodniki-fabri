@@ -267,7 +267,6 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   const seriesId = seriesP?.id ?? null;
   const parentSeriesId = prop(seriesP, "parent_series_id", null) as string | null;
   const targetWidth = parsed.width ? parseInt(parsed.width, 10) : undefined;
-  console.log("[Decoder] parsed.width:", parsed.width, "targetWidth:", targetWidth);
   const seriesData = {
     code: parsed.series,
     name: seriesP?.name ?? "Nieznana",
@@ -322,14 +321,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       ? (async () => {
           const { data: all } = await supabase.from("products").select(PRODUCT_SELECT)
             .eq("code", parsed.chest).eq("category", "chest");
-          console.log("[Decoder] chest query result:", all?.length, "items", all?.map((c: any) => ({ name: c.name, width: c.properties?.width })));
           if (!all || all.length === 0) return { data: null };
           if (all.length === 1) return { data: all[0] };
           // Multiple chests with same code — pick by width
           if (targetWidth) {
             const byWidth = all.find((c: any) => {
               const cw = (c.properties as any)?.width;
-              console.log("[Decoder] chest compare:", cw, typeof cw, "vs", targetWidth, typeof targetWidth, "match:", cw != null && Number(cw) === targetWidth);
               return cw != null && Number(cw) === targetWidth;
             });
             if (byWidth) return { data: byWidth };
