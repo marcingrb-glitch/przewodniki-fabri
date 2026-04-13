@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
     const mimeeqApiKey = Deno.env.get("MIMEEQ_API_KEY");
 
     if (mimeeqApiKey) {
-      const isGenericSku = (sku: string) => /^S\d{1,2}$/.test(sku.trim());
+      const isGenericSku = (sku: string) => !sku.includes("-") || sku.trim().length < 8;
       const itemsWithShortcode = lineItems.filter((item: any) => item.shortcode);
 
       console.log("Items with Mimeeq shortcode:", itemsWithShortcode.length);
