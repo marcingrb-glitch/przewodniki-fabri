@@ -225,22 +225,20 @@ Deno.serve(async (req) => {
 
     console.log("Mapped", lineItems.length, "line items with images");
 
-    // 8. Enrich SKU from Mimeeq API for items with shortcode but no/empty SKU
+    // 8. Fetch full Mimeeq data for ALL items with shortcode (SKU enrichment + config capture)
     const mimeeqApiKey = Deno.env.get("MIMEEQ_API_KEY");
 
     if (mimeeqApiKey) {
       const isGenericSku = (sku: string) => /^S\d{1,2}$/.test(sku.trim());
-      const itemsNeedingSku = lineItems.filter(
-        (item: any) => item.shortcode && (!item.sku || item.sku.trim() === "" || isGenericSku(item.sku))
-      );
+      const itemsWithShortcode = lineItems.filter((item: any) => item.shortcode);
 
-      console.log("Items needing Mimeeq SKU enrichment:", itemsNeedingSku.length);
+      console.log("Items with Mimeeq shortcode:", itemsWithShortcode.length);
 
       await Promise.all(
-        itemsNeedingSku.map(async (item: any) => {
+        itemsWithShortcode.map(async (item: any) => {
           try {
             const mimeeqUrl = `https://mimeeqapi.com/get-product-info?shortCode=${encodeURIComponent(item.shortcode)}`;
-            console.log("Fetching Mimeeq SKU for shortcode:", item.shortcode);
+            console.log("Fetching Mimeeq data for shortcode:", item.shortcode);
 
             const mimeeqRes = await fetch(mimeeqUrl, {
               headers: { "X-API-KEY": mimeeqApiKey },
@@ -248,23 +246,34 @@ Deno.serve(async (req) => {
 
             if (mimeeqRes.ok) {
               const mimeeqData = await mimeeqRes.json();
-              if (mimeeqData.SKU && mimeeqData.SKU.trim() !== "") {
+              console.log(`Mimeeq response for ${item.shortcode}:`, JSON.stringify(mimeeqData));
+
+              // Store full Mimeeq response for debugging and future fallback decoding
+              item.mimeeq_data = mimeeqData;
+
+              // SKU enrichment: only for items that need it
+              const needsSku = !item.sku || item.sku.trim() === "" || isGenericSku(item.sku);
+              if (needsSku && mimeeqData.SKU && mimeeqData.SKU.trim() !== "") {
                 console.log(`Mimeeq SKU for ${item.shortcode}: ${mimeeqData.SKU}`);
                 item.sku = mimeeqData.SKU.trim();
                 item.sku_source = "mimeeq";
-              } else {
-                console.log(`No SKU in Mimeeq response for ${item.shortcode}`);
+              }
+
+              // Image fallback: use Mimeeq image if no Shopify image
+              if (!item.image_url && mimeeqData.image) {
+                item.image_url = mimeeqData.image;
+                console.log(`Using Mimeeq image for ${item.shortcode}`);
               }
             } else {
               console.warn(`Mimeeq API error for ${item.shortcode}:`, mimeeqRes.status);
             }
           } catch (e) {
-            console.warn("Error fetching Mimeeq SKU for", item.shortcode, e);
+            console.warn("Error fetching Mimeeq data for", item.shortcode, e);
           }
         })
       );
     } else {
-      console.log("MIMEEQ_API_KEY not set, skipping SKU enrichment");
+      console.log("MIMEEQ_API_KEY not set, skipping Mimeeq enrichment");
     }
 
     return new Response(

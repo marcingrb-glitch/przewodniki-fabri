@@ -161,6 +161,47 @@ const ShopifyLineItemsSelector = ({
                 </CollapsibleContent>
               </Collapsible>
             )}
+
+            {item.mimeeq_data && (
+              <Collapsible>
+                <CollapsibleTrigger
+                  className="flex items-center gap-1 text-xs text-blue-600 mt-1 ml-7 hover:text-blue-800 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ChevronDown className="h-3 w-3" />
+                  Dane Mimeeq
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 ml-7 p-2 bg-blue-50 rounded text-xs space-y-2">
+                    {item.mimeeq_data.configurationCode && (
+                      <div>
+                        <span className="font-medium text-blue-700">configurationCode:</span>
+                        <span className="ml-1 font-mono break-all">{item.mimeeq_data.configurationCode}</span>
+                      </div>
+                    )}
+                    {item.mimeeq_data.productName && (
+                      <div>
+                        <span className="font-medium text-blue-700">productName:</span>
+                        <span className="ml-1">{item.mimeeq_data.productName}</span>
+                      </div>
+                    )}
+                    {item.mimeeq_data.selectedOptions && Object.keys(item.mimeeq_data.selectedOptions).length > 0 && (
+                      <div>
+                        <span className="font-medium text-blue-700">selectedOptions:</span>
+                        <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pl-2">
+                          {Object.entries(item.mimeeq_data.selectedOptions).map(([key, value]) => (
+                            <div key={key} className="contents">
+                              <span className="font-medium text-blue-600">{key}:</span>
+                              <span className="font-mono">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
         );
       })}

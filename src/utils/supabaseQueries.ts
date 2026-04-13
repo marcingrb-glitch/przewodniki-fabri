@@ -21,6 +21,7 @@ interface OrderInsert {
   visible_to_workers?: boolean;
   variant_image_url?: string;
   mimeeq_shortcode?: string;
+  mimeeq_data?: Record<string, unknown>;
   shopify_order_name?: string;
 }
 
@@ -46,6 +47,7 @@ export async function saveOrder(data: OrderInsert) {
       visible_to_workers: data.visible_to_workers ?? false,
       variant_image_url: data.variant_image_url ?? null,
       mimeeq_shortcode: data.mimeeq_shortcode ?? null,
+      mimeeq_data: data.mimeeq_data ?? null,
       shopify_order_name: data.shopify_order_name ?? null,
     }])
     .select()

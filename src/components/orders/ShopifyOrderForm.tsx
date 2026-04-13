@@ -227,6 +227,7 @@ const ShopifyOrderForm = () => {
           visible_to_workers: isAdmin ? visibleToWorkers : true,
           variant_image_url: variantImageUrl,
           mimeeq_shortcode: mimeeqShortcode,
+          mimeeq_data: item.mimeeq_data ?? undefined,
           shopify_order_name: orderName || undefined,
         });
 
