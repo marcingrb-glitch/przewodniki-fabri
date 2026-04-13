@@ -47,7 +47,7 @@ export async function saveOrder(data: OrderInsert) {
       visible_to_workers: data.visible_to_workers ?? false,
       variant_image_url: data.variant_image_url ?? null,
       mimeeq_shortcode: data.mimeeq_shortcode ?? null,
-      mimeeq_data: data.mimeeq_data ?? null,
+      mimeeq_data: (data.mimeeq_data as any) ?? null,
       shopify_order_name: data.shopify_order_name ?? null,
     }])
     .select()
