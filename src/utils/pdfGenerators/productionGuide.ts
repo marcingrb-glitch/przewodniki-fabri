@@ -332,7 +332,7 @@ export async function generateProductionGuidePDF(
     : null;
 
   const chaiseLegHeader = decoded.chaise && decoded.legHeights.sofa_seat
-    ? `Pod szezlong (${decoded.legHeights.sofa_seat.count} szt)`
+    ? `Pod szezlong (4 szt)`
     : null;
   const chaiseLegValue = decoded.chaise && decoded.legHeights.sofa_seat
     ? `${legLabel} H ${decoded.legHeights.sofa_seat.height}cm`

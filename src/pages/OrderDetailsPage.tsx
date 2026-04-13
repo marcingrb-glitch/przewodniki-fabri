@@ -289,7 +289,7 @@ const OrderDetailsPage = () => {
                         ? <InfoRow label="Pod siedziskiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
                         : <InfoRow label="Pod siedziskiem" value="BRAK (AT2)" />}
                       {decoded.chaise && decoded.legHeights.sofa_seat && (
-                        <InfoRow label="Pod szezlongiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (${decoded.legHeights.sofa_seat.count} szt)`} />
+                        <InfoRow label="Pod szezlongiem" value={`${decoded.legHeights.sofa_seat.leg} H ${decoded.legHeights.sofa_seat.height}cm (4 szt)`} />
                       )}
                     </div>
                   </div>
