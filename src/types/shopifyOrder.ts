@@ -1,3 +1,15 @@
+export interface MimeeqProductInfo {
+  shortCode?: string;
+  configurationCode?: string;
+  productId?: string;
+  productName?: string;
+  collectionId?: string;
+  selectedOptions?: Record<string, unknown>;
+  SKU?: string;
+  image?: string;
+  [key: string]: unknown;
+}
+
 export interface ShopifyLineItem {
   line_item_id: number;
   sku: string;
@@ -9,6 +21,7 @@ export interface ShopifyLineItem {
   shortcode: string | null;
   is_mmq_product: boolean;
   sku_source?: "shopify" | "mimeeq";
+  mimeeq_data?: MimeeqProductInfo;
   properties: Record<string, string>;
   selected: boolean;
   decoded: boolean;

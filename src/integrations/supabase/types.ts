@@ -344,6 +344,7 @@ export type Database = {
           fabric_usage_updated_at: string | null
           fabric_usage_updated_by: string | null
           id: string
+          mimeeq_data: Json | null
           mimeeq_shortcode: string | null
           order_date: string
           order_number: string
@@ -362,6 +363,7 @@ export type Database = {
           fabric_usage_updated_at?: string | null
           fabric_usage_updated_by?: string | null
           id?: string
+          mimeeq_data?: Json | null
           mimeeq_shortcode?: string | null
           order_date?: string
           order_number: string
@@ -380,6 +382,7 @@ export type Database = {
           fabric_usage_updated_at?: string | null
           fabric_usage_updated_by?: string | null
           id?: string
+          mimeeq_data?: Json | null
           mimeeq_shortcode?: string | null
           order_date?: string
           order_number?: string
