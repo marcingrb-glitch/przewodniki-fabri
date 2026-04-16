@@ -309,7 +309,7 @@ export async function generateProductionGuidePDF(
   yR = renderSectionAt(doc, {
     title: "SKRZYNIA + AUTOMAT",
     headers: ["Skrzynia", "Automat"],
-    rows: [[decoded.chest.code, `${decoded.automat.code} - ${decoded.automat.name}`]],
+    rows: [[decoded.chest.name || decoded.chest.code, `${decoded.automat.code} - ${decoded.automat.name}`]],
   }, colRightX, yR, colW, fs, rh, sp);
   yR += sectionGap;
 
