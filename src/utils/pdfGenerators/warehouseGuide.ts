@@ -97,7 +97,7 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
   doc.setFont("Roboto", "bold");
   doc.setFontSize(14);
   const whOrientLabel = decoded.orientation === "L" ? " (Lewy)" : decoded.orientation === "P" ? " (Prawy)" : "";
-  const whWidthLabel = decoded.width ? ` ${decoded.width}cm` : "";
+  const whWidthLabel = decoded.width ? ` (szer. siedz. ${decoded.width}cm)` : "";
   doc.text(`${decoded.series.code} — ${decoded.series.collection}${whWidthLabel}${whOrientLabel}`, marginLeft, y);
   y += 6;
 

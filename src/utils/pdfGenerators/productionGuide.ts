@@ -119,7 +119,7 @@ function drawProductionHeader(
   doc.setFontSize(14);
   doc.setFont("Roboto", "bold");
   const orientationLabel = decoded.orientation === "L" ? " (Lewy)" : decoded.orientation === "P" ? " (Prawy)" : "";
-  const widthLabel = decoded.width ? ` ${decoded.width}cm` : "";
+  const widthLabel = decoded.width ? ` (szer. siedz. ${decoded.width}cm)` : "";
   const seriesText = `${decoded.series.code} — ${decoded.series.collection || decoded.series.name}${widthLabel}${orientationLabel}`;
   doc.text(seriesText, marginLeft, y);
 
