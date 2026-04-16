@@ -38,20 +38,30 @@ async function findSeatInProducts(
   seriesId: string,
   targetWidth?: number
 ): Promise<ProductRow | null> {
-  // Step 1: exact match
+  const pickByWidth = (rows: any[] | null): ProductRow | null => {
+    if (!rows || rows.length === 0) return null;
+    if (targetWidth) {
+      // Prefer exact width match (e.g. width=200)
+      const exact = rows.find(r => (r.properties as any)?.width === targetWidth);
+      if (exact) return exact as unknown as ProductRow;
+      // If caller asked for a specific width and there's only a default row, reject
+      // so the resolver can fall back to parent series
+      return null;
+    }
+    // No targetWidth — prefer row without width (default), else first
+    const noWidth = rows.find(r => (r.properties as any)?.width == null);
+    return (noWidth ?? rows[0]) as unknown as ProductRow;
+  };
+
+  // Step 1: exact match (may return multiple rows for width variants)
   const { data: exact } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("code", code)
     .eq("category", "seat")
-    .eq("series_id", seriesId)
-    .maybeSingle();
-  if (exact) {
-    if (targetWidth && (exact as any).properties?.width && (exact as any).properties.width !== targetWidth) {
-      return null; // width mismatch — let caller fallback to parent
-    }
-    return exact as unknown as ProductRow;
-  }
+    .eq("series_id", seriesId);
+  const pickedExact = pickByWidth(exact as any[] | null);
+  if (pickedExact) return pickedExact;
 
   // Step 2: zero-padded (SD1 → SD01)
   const withZero = code.replace(/^SD(\d)(.*)/, "SD0$1$2");
@@ -61,14 +71,9 @@ async function findSeatInProducts(
       .select(PRODUCT_SELECT)
       .eq("code", withZero)
       .eq("category", "seat")
-      .eq("series_id", seriesId)
-      .maybeSingle();
-    if (padded) {
-      if (targetWidth && (padded as any).properties?.width && (padded as any).properties.width !== targetWidth) {
-        return null;
-      }
-      return padded as unknown as ProductRow;
-    }
+      .eq("series_id", seriesId);
+    const pickedPadded = pickByWidth(padded as any[] | null);
+    if (pickedPadded) return pickedPadded;
   }
 
   return null;
@@ -136,17 +141,20 @@ async function resolveBackrestProduct(
 
     if (!allBr || allBr.length === 0) continue;
 
-    // If width filtering: check own series width match
+    // If width filtering: prefer exact width match, fall back to default (no width)
     if (sid === seriesId && targetWidth) {
-      const widthFiltered = allBr.filter((b: any) => {
-        const bw = (b.properties as any)?.width;
-        return !bw || bw === targetWidth;
-      });
-      if (widthFiltered.length === 0) continue; // width mismatch, try parent
-      return matchBackrestByModel(widthFiltered, seatModelName);
+      const exactWidth = allBr.filter((b: any) => (b.properties as any)?.width === targetWidth);
+      if (exactWidth.length > 0) return matchBackrestByModel(exactWidth, seatModelName);
+
+      const defaultWidth = allBr.filter((b: any) => (b.properties as any)?.width == null);
+      if (defaultWidth.length > 0) return matchBackrestByModel(defaultWidth, seatModelName);
+
+      continue; // no match for this width, try parent series
     }
 
-    return matchBackrestByModel(allBr, seatModelName);
+    // No width filtering — prefer rows without width (defaults)
+    const defaults = allBr.filter((b: any) => (b.properties as any)?.width == null);
+    return matchBackrestByModel(defaults.length > 0 ? defaults : allBr, seatModelName);
   }
 
   return null;
