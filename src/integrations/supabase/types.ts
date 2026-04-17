@@ -300,6 +300,62 @@ export type Database = {
           },
         ]
       }
+      label_templates_v2: {
+        Row: {
+          condition_field: string | null
+          created_at: string
+          header_template: string | null
+          id: string
+          include_in_v3: boolean
+          is_conditional: boolean
+          product_type: string
+          sections: Json
+          series_id: string | null
+          sheet_name: string
+          show_meta_row: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          condition_field?: string | null
+          created_at?: string
+          header_template?: string | null
+          id?: string
+          include_in_v3?: boolean
+          is_conditional?: boolean
+          product_type: string
+          sections?: Json
+          series_id?: string | null
+          sheet_name: string
+          show_meta_row?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          condition_field?: string | null
+          created_at?: string
+          header_template?: string | null
+          id?: string
+          include_in_v3?: boolean
+          is_conditional?: boolean
+          product_type?: string
+          sections?: Json
+          series_id?: string | null
+          sheet_name?: string
+          show_meta_row?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "label_templates_v2_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_files: {
         Row: {
           created_at: string
