@@ -1,0 +1,542 @@
+/**
+ * Etykiety V2 — duże 100×150mm portrait z pełnym briefem dla tapicera.
+ * Szablony w tabeli `label_templates_v2` z sekcjami JSONB (plain/bullet_list/table/diagram_box).
+ *
+ * Patrz plan: .claude/plans/mossy-riding-bear.md
+ */
+import jsPDF from "jspdf";
+import { DecodedSKU } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { createDoc, toBlob } from "@/utils/pdfHelpers";
+import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
+import { formatFieldWithLabel } from "@/utils/fieldLabels";
+
+// ─── Page geometry (mm) ──────────────────────────────────────────────────
+const PAGE_W = 100;
+const PAGE_H = 150;
+const MARGIN_X = 5;
+const MARGIN_TOP = 5;
+const MARGIN_BOTTOM = 5;
+const CONTENT_W = PAGE_W - 2 * MARGIN_X;
+
+// Font sizes
+const HEADER_FONT = 11;
+const META_FONT = 9;
+const SECTION_TITLE_FONT = 10;
+const BODY_FONT = 9;
+const LINE_H = 4.5; // approximate line height at 9pt
+
+// ─── Section shapes (from JSONB) ─────────────────────────────────────────
+export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box";
+
+export interface Section {
+  title?: string;
+  component: string;
+  style: SectionStyle;
+  display_fields?: string[][];
+  fields?: {
+    top?: string;
+    bottom?: string;
+    left?: string;
+    right?: string;
+    center?: string;
+  };
+  box_size_mm?: number;
+  condition_field?: string;
+}
+
+export interface LabelTemplateV2 {
+  id: string;
+  product_type: string;
+  series_id: string | null;
+  sheet_name: string;
+  sort_order: number;
+  is_conditional: boolean;
+  condition_field: string | null;
+  header_template: string | null;
+  show_meta_row: boolean;
+  include_in_v3: boolean;
+  sections: Section[];
+}
+
+// ─── Page geometry export (for V3 generator) ────────────────────────────
+export const V2_PAGE = { width: PAGE_W, height: PAGE_H };
+
+// ─── Fetch ───────────────────────────────────────────────────────────────
+export async function fetchSheets(
+  productType: string,
+  seriesCode?: string
+): Promise<LabelTemplateV2[]> {
+  let seriesId: string | null = null;
+  if (seriesCode) {
+    const { data } = await supabase
+      .from("products")
+      .select("id")
+      .eq("category", "series")
+      .eq("code", seriesCode)
+      .maybeSingle();
+    seriesId = data?.id ?? null;
+  }
+
+  // Series-specific first, then fall back to global (series_id IS NULL)
+  const client = supabase.from("label_templates_v2" as never) as any;
+  const results: LabelTemplateV2[] = [];
+
+  if (seriesId) {
+    const { data } = await client
+      .select("*")
+      .eq("product_type", productType)
+      .eq("series_id", seriesId)
+      .order("sort_order");
+    if (data && data.length > 0) results.push(...(data as LabelTemplateV2[]));
+  }
+
+  // Also add global templates (series_id IS NULL) — warunkowe sheety typu "Pufa do sofy"
+  const { data: globalData } = await client
+    .select("*")
+    .eq("product_type", productType)
+    .is("series_id", null)
+    .order("sort_order");
+  if (globalData && globalData.length > 0) {
+    results.push(...(globalData as LabelTemplateV2[]));
+  }
+
+  return results;
+}
+
+// ─── Header/meta rendering ───────────────────────────────────────────────
+function renderHeader(
+  doc: jsPDF,
+  sheet: LabelTemplateV2,
+  decoded: DecodedSKU,
+  y: number
+): number {
+  const template = sheet.header_template || "{sheet_name}        {series.code} · {series.name}";
+  const rendered = template
+    .replace("{sheet_name}", sheet.sheet_name)
+    .replace("{series.code}", decoded.series.code || "")
+    .replace("{series.name}", decoded.series.name || "")
+    .replace("{series.collection}", decoded.series.collection || "")
+    .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
+
+  doc.setFont("Roboto", "bold");
+  doc.setFontSize(HEADER_FONT);
+  doc.setTextColor(0, 0, 0);
+  doc.text(rendered, MARGIN_X, y + HEADER_FONT * 0.35, { baseline: "alphabetic" });
+
+  return y + HEADER_FONT * 0.55 + 1;
+}
+
+function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
+  const orderPart = decoded.orderNumber ? `Zam. #${decoded.orderNumber}` : "";
+  const widthPart = decoded.width ? `${decoded.width} cm` : "";
+  const line = [orderPart, widthPart].filter(Boolean).join("     ");
+  if (!line) return y;
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(META_FONT);
+  doc.text(line, MARGIN_X, y + META_FONT * 0.35, { baseline: "alphabetic" });
+
+  // Divider under meta row
+  const divY = y + META_FONT * 0.55 + 1;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.line(MARGIN_X, divY, PAGE_W - MARGIN_X, divY);
+
+  return divY + 2;
+}
+
+// ─── Section renderers ───────────────────────────────────────────────────
+function renderSectionTitle(doc: jsPDF, title: string, y: number): number {
+  doc.setFont("Roboto", "bold");
+  doc.setFontSize(SECTION_TITLE_FONT);
+  doc.text(`▸ ${title}`, MARGIN_X, y + SECTION_TITLE_FONT * 0.35, { baseline: "alphabetic" });
+  return y + SECTION_TITLE_FONT * 0.55 + 0.5;
+}
+
+function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  let cursorY = y;
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(BODY_FONT);
+
+  const rows = section.display_fields ?? [];
+  for (const row of rows) {
+    const parts = row
+      .map((f) => {
+        const val = resolveDecodedField(f, decoded);
+        if (val === "-" || val === "") return null;
+        return formatFieldWithLabel(f, val);
+      })
+      .filter(Boolean) as string[];
+    if (parts.length === 0) continue;
+
+    const line = parts.join("  ");
+    const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
+    for (const w of wrapped) {
+      doc.text(`  ${w}`, MARGIN_X, cursorY + LINE_H * 0.7);
+      cursorY += LINE_H;
+    }
+  }
+  return cursorY + 1;
+}
+
+function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  let cursorY = y;
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(BODY_FONT);
+
+  // Each field can return multi-line content (e.g. foams). Split by \n and bullet each.
+  const rows = section.display_fields ?? [];
+  const bullets: string[] = [];
+  for (const row of rows) {
+    for (const f of row) {
+      const val = resolveDecodedField(f, decoded);
+      if (val === "-" || val === "") continue;
+      for (const line of val.split("\n")) {
+        if (line.trim()) bullets.push(line.trim());
+      }
+    }
+  }
+
+  for (const b of bullets) {
+    const wrapped = doc.splitTextToSize(b, CONTENT_W - 6);
+    for (let i = 0; i < wrapped.length; i++) {
+      const prefix = i === 0 ? "  • " : "    ";
+      doc.text(prefix + wrapped[i], MARGIN_X, cursorY + LINE_H * 0.7);
+      cursorY += LINE_H;
+    }
+  }
+  return cursorY + 1;
+}
+
+function renderTable(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  // Simple 2-column "label: value" table (reuse plain for MVP)
+  return renderPlain(doc, section, decoded, y);
+}
+
+function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  let cursorY = y;
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+
+  const boxSize = section.box_size_mm ?? 50;
+  const boxX = MARGIN_X + (CONTENT_W - boxSize) / 2;
+  const boxY = cursorY + 6; // margin for top label
+
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.rect(boxX, boxY, boxSize, boxSize);
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(BODY_FONT);
+
+  const fields = section.fields ?? {};
+  const topVal = fields.top ? resolveDecodedField(fields.top, decoded) : "";
+  const bottomVal = fields.bottom ? resolveDecodedField(fields.bottom, decoded) : "";
+  const leftVal = fields.left ? resolveDecodedField(fields.left, decoded) : "";
+  const rightVal = fields.right ? resolveDecodedField(fields.right, decoded) : "";
+  const centerVal = fields.center ? resolveDecodedField(fields.center, decoded) : "";
+
+  // Top (above box, centered)
+  if (topVal && topVal !== "-") {
+    doc.text(topVal, boxX + boxSize / 2, boxY - 2, { align: "center" });
+  }
+  // Bottom (below box, centered)
+  if (bottomVal && bottomVal !== "-") {
+    doc.text(bottomVal, boxX + boxSize / 2, boxY + boxSize + 5, { align: "center" });
+  }
+  // Left (to left of box, right-aligned)
+  if (leftVal && leftVal !== "-") {
+    doc.text(leftVal, boxX - 2, boxY + boxSize / 2, { align: "right", baseline: "middle" });
+  }
+  // Right (to right of box)
+  if (rightVal && rightVal !== "-") {
+    doc.text(rightVal, boxX + boxSize + 2, boxY + boxSize / 2, { align: "left", baseline: "middle" });
+  }
+  // Center (inside box, wrapped)
+  if (centerVal && centerVal !== "-") {
+    doc.setFont("Roboto", "bold");
+    const wrapped = doc.splitTextToSize(centerVal, boxSize - 4);
+    const totalH = wrapped.length * LINE_H;
+    let cy = boxY + boxSize / 2 - totalH / 2 + LINE_H * 0.7;
+    for (const line of wrapped) {
+      doc.text(line, boxX + boxSize / 2, cy, { align: "center" });
+      cy += LINE_H;
+    }
+    doc.setFont("Roboto", "normal");
+  }
+
+  // Return cursor below box (+ margin for bottom label)
+  return boxY + boxSize + 10;
+}
+
+function renderSection(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  // Per-section condition: skip if false
+  if (section.condition_field && !checkDecodedCondition(decoded, section.condition_field)) {
+    return y;
+  }
+
+  // Divider before (except first section — handled by caller check)
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.2);
+  doc.line(MARGIN_X, y - 0.5, PAGE_W - MARGIN_X, y - 0.5);
+
+  switch (section.style) {
+    case "plain":       return renderPlain(doc, section, decoded, y);
+    case "bullet_list": return renderBulletList(doc, section, decoded, y);
+    case "table":       return renderTable(doc, section, decoded, y);
+    case "diagram_box": return renderDiagramBox(doc, section, decoded, y);
+    default:            return renderPlain(doc, section, decoded, y);
+  }
+}
+
+export function shouldShowSheet(decoded: DecodedSKU, sheet: LabelTemplateV2): boolean {
+  if (!sheet.is_conditional || !sheet.condition_field) return true;
+  return checkDecodedCondition(decoded, sheet.condition_field);
+}
+
+// ─── Single-sheet render ─────────────────────────────────────────────────
+export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: DecodedSKU, isFirst: boolean) {
+  if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
+
+  let y = MARGIN_TOP;
+  y = renderHeader(doc, sheet, decoded, y);
+  if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
+
+  const sections = sheet.sections ?? [];
+  for (const section of sections) {
+    if (y > PAGE_H - MARGIN_BOTTOM - 10) break; // overflow guard
+    y = renderSection(doc, section, decoded, y);
+    y += 2; // gap between sections
+  }
+}
+
+// ─── Arkusz rozcięciowy S1 (preset — nie z DB) ───────────────────────────
+// Per user: S1 generuje arkusz z 4 sekcjami do rozcięcia nożyczkami:
+// Boczek LEWY, Boczek PRAWY, Skrzynia, Nogi (komplet siedzisko+skrzynia+pufa).
+// Dane brane 1:1 z V1 label_templates dla komponentów side/chest/leg_seat/leg_chest.
+
+interface V1Template {
+  label_name: string;
+  component: string;
+  display_fields: unknown;
+  quantity: number;
+  sort_order: number;
+}
+
+function normalizeDisplayFields(fields: unknown): string[][] {
+  if (!Array.isArray(fields) || fields.length === 0) return [[]];
+  if (typeof fields[0] === "string") return [fields as string[]];
+  return fields as string[][];
+}
+
+async function fetchV1Templates(
+  productType: string,
+  seriesCode: string,
+  components: string[]
+): Promise<V1Template[]> {
+  const { data: series } = await supabase
+    .from("products")
+    .select("id")
+    .eq("category", "series")
+    .eq("code", seriesCode)
+    .maybeSingle();
+
+  if (!series) return [];
+
+  // Try series-specific first
+  const { data: seriesSpec } = await supabase
+    .from("label_templates")
+    .select("label_name, component, display_fields, quantity, sort_order")
+    .eq("product_type", productType)
+    .eq("series_id", series.id)
+    .in("component", components)
+    .order("sort_order");
+
+  if (seriesSpec && seriesSpec.length > 0) return seriesSpec as V1Template[];
+
+  // Fall back to global
+  const { data: global } = await supabase
+    .from("label_templates")
+    .select("label_name, component, display_fields, quantity, sort_order")
+    .eq("product_type", productType)
+    .is("series_id", null)
+    .in("component", components)
+    .order("sort_order");
+
+  return (global as V1Template[]) || [];
+}
+
+function buildContentLines(tpl: V1Template, decoded: DecodedSKU): string[] {
+  const fieldGroups = normalizeDisplayFields(tpl.display_fields);
+  const lines: string[] = [];
+  for (const row of fieldGroups) {
+    const parts = row
+      .map((f) => {
+        const val = resolveDecodedField(f, decoded);
+        if (val === "-" || val === "") return null;
+        return formatFieldWithLabel(f, val);
+      })
+      .filter(Boolean) as string[];
+    if (parts.length > 0) lines.push(parts.join(" | "));
+  }
+  return lines;
+}
+
+interface CutSection {
+  title: string;
+  lines: string[];
+}
+
+export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst: boolean): Promise<boolean> {
+  // Fetch V1 templates for side/chest/leg_seat/leg_chest
+  const templates = await fetchV1Templates("sofa", "S1", ["side", "chest", "leg_seat", "leg_chest"]);
+  if (templates.length === 0) return false; // nothing to render
+
+  // Group by component
+  const byComp: Record<string, V1Template[]> = {};
+  for (const t of templates) {
+    byComp[t.component] = byComp[t.component] || [];
+    byComp[t.component].push(t);
+  }
+
+  // Build sections (4 × 34mm)
+  const sections: CutSection[] = [];
+
+  // 1. Boczek LEWY
+  const sideTpls = byComp["side"] || [];
+  const sideLines = sideTpls.flatMap((t) => buildContentLines(t, decoded));
+  if (sideTpls.length > 0) {
+    sections.push({ title: "BOCZEK — LEWY", lines: sideLines });
+    sections.push({ title: "BOCZEK — PRAWY", lines: sideLines });
+  }
+
+  // 2. Skrzynia
+  const chestTpls = byComp["chest"] || [];
+  if (chestTpls.length > 0) {
+    const chestLines = chestTpls.flatMap((t) => buildContentLines(t, decoded));
+    sections.push({ title: "SKRZYNIA", lines: chestLines });
+  }
+
+  // 3. Nogi (komplet) — leg_seat + leg_chest + pufaLegs jeśli PF
+  const legLines: string[] = [];
+  const legSeat = decoded.legHeights.sofa_seat;
+  if (legSeat) legLines.push(`Siedzisko: ${legSeat.leg} · ${legSeat.height} cm · ${legSeat.count} szt.`);
+  const legChest = decoded.legHeights.sofa_chest;
+  if (legChest) legLines.push(`Skrzynia:  ${legChest.leg} · ${legChest.height} cm · ${legChest.count} szt.`);
+  if (decoded.pufaLegs) {
+    legLines.push(`Pufa:      ${decoded.pufaLegs.code} · ${decoded.pufaLegs.height} cm · ${decoded.pufaLegs.count} szt.`);
+  }
+  if (legLines.length > 0) {
+    sections.push({ title: "NOGI (komplet)", lines: legLines });
+  }
+
+  if (sections.length === 0) return false;
+
+  // Layout: 4 sections × 34mm + 3 gaps × 2mm + 2×(4mm margin) = 150mm ✅
+  if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
+
+  const sectionH = 34;
+  const gapH = 2;
+  const topMargin = 4;
+  let y = topMargin;
+
+  const orderHeader = `#${decoded.orderNumber || "---"} · ${decoded.series.code}·${decoded.series.name}`;
+
+  for (let i = 0; i < sections.length; i++) {
+    const sec = sections[i];
+
+    // Header: #zam · series (bold, small)
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text(orderHeader, MARGIN_X, y + 3.5);
+
+    // Title
+    doc.setFontSize(10);
+    doc.text(`▸ ${sec.title}`, MARGIN_X, y + 9);
+
+    // Content lines
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(9);
+    let contentY = y + 14;
+    for (const line of sec.lines) {
+      const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
+      for (const w of wrapped) {
+        if (contentY > y + sectionH - 1) break;
+        doc.text(`  ${w}`, MARGIN_X, contentY);
+        contentY += 4;
+      }
+      if (contentY > y + sectionH - 1) break;
+    }
+
+    // Cut-guide between sections (not after last)
+    if (i < sections.length - 1) {
+      doc.setLineDashPattern([1.2, 1], 0);
+      doc.setDrawColor(80);
+      doc.setLineWidth(0.25);
+      const guideY = y + sectionH + gapH / 2;
+      doc.line(MARGIN_X - 2, guideY, PAGE_W - MARGIN_X + 2, guideY);
+      // Small scissors marker on left
+      doc.setFontSize(6);
+      doc.setTextColor(120);
+      doc.text("✂", 1.5, guideY + 1.5);
+      doc.setTextColor(0);
+      // Reset dash pattern
+      doc.setLineDashPattern([], 0);
+    }
+
+    y += sectionH + gapH;
+  }
+
+  return true;
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────
+export async function generateLabelsV2PDF(
+  decoded: DecodedSKU,
+  productType: "sofa" | "naroznik" | "pufa" | "fotel"
+): Promise<Blob> {
+  const sheets = await fetchSheets(productType, decoded.series.code);
+  const visible = sheets.filter((s) => shouldShowSheet(decoded, s));
+
+  const doc = await createDoc("portrait", [PAGE_W, PAGE_H]);
+
+  if (visible.length === 0) {
+    // Fallback page with "brak szablonów V2"
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(HEADER_FONT);
+    doc.text("Brak szablonów etykiet V2", MARGIN_X, MARGIN_TOP + 6);
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(META_FONT);
+    doc.text(`Typ: ${productType}, seria: ${decoded.series.code || "?"}`, MARGIN_X, MARGIN_TOP + 14);
+    return toBlob(doc);
+  }
+
+  let isFirst = true;
+  for (const sheet of visible) {
+    renderSheet(doc, sheet, decoded, isFirst);
+    isFirst = false;
+  }
+
+  // Arkusz rozcięciowy S1 — tylko gdy sofa S1 (per plan, S2/N2 → zostają V1)
+  if (productType === "sofa" && decoded.series.code === "S1") {
+    const rendered = await renderCutSheetS1(doc, decoded, isFirst);
+    if (rendered) isFirst = false;
+  }
+
+  return toBlob(doc);
+}
+
+// Legacy-style wrappers matching V1 entry points
+export async function generateSofaLabelsV2PDF(decoded: DecodedSKU): Promise<Blob> {
+  const type = decoded.chaise ? "naroznik" : "sofa";
+  return generateLabelsV2PDF(decoded, type);
+}
+
+export async function generatePufaLabelsV2PDF(decoded: DecodedSKU): Promise<Blob> {
+  return generateLabelsV2PDF(decoded, "pufa");
+}

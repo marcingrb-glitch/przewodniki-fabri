@@ -17,6 +17,7 @@ import Users from "@/pages/AdminPanel/Users";
 import SkuFormatReference from "@/pages/AdminPanel/SkuFormatReference";
 import SideExceptions from "@/pages/AdminPanel/SideExceptions";
 import LabelTemplates from "@/pages/AdminPanel/LabelTemplates";
+import LabelTemplatesV2 from "@/pages/AdminPanel/LabelTemplatesV2";
 import GuideTemplates from "@/pages/AdminPanel/GuideTemplates";
 import DecodingTemplates from "@/pages/AdminPanel/DecodingTemplates";
 import SeriesSpecification from "@/pages/AdminPanel/SeriesSpecification";
@@ -56,6 +57,7 @@ const App = () => (
                   <Route path="sku-format" element={<ProtectedRoute adminOnly><SkuFormatReference /></ProtectedRoute>} />
                   <Route path="side-exceptions" element={<ProtectedRoute adminOnly><SideExceptions /></ProtectedRoute>} />
                   <Route path="label-templates" element={<ProtectedRoute adminOnly><LabelTemplates /></ProtectedRoute>} />
+                  <Route path="label-templates-v2" element={<ProtectedRoute adminOnly><LabelTemplatesV2 /></ProtectedRoute>} />
                   <Route path="guide-templates" element={<ProtectedRoute adminOnly><GuideTemplates /></ProtectedRoute>} />
                   <Route path="decoding-templates" element={<ProtectedRoute adminOnly><DecodingTemplates /></ProtectedRoute>} />
                   {/* Permission-based routes */}

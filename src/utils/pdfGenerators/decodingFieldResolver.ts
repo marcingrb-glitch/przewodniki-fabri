@@ -51,6 +51,7 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "chest.name": return decoded.chest.name || "-";
     case "chest_automat.label": return `${decoded.chest.code} + ${decoded.automat.code}`;
     case "automat.code_name": return `${decoded.automat.code} - ${decoded.automat.name}`;
+    case "automat.lockBolts": return decoded.automat.lockBolts || "-";
 
     case "legs.code_color": return decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : "-";
     case "legHeights.sofa_chest_info": {

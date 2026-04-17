@@ -54,7 +54,7 @@ export interface DecodedSKU {
   side: { code: string; name: string; modelName?: string; frame: string; finish: string; finishName: string };
   backrest: { code: string; height: string; frame: string; foam: string; top: string; finish: string; finishName: string; springType?: string; foams?: ProductFoamItem[] };
   chest: { code: string; name: string; legHeight: number; legCount: number };
-  automat: { code: string; name: string; type: string; seatLegs: boolean; seatLegHeight: number; seatLegCount: number };
+  automat: { code: string; name: string; type: string; seatLegs: boolean; seatLegHeight: number; seatLegCount: number; lockBolts?: string };
   legs?: { code: string; name: string; material: string; color?: string; colorName?: string };
   pillow?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };
   jaski?: { code: string; name: string; finish: string; finishName: string; constructionType?: string; insertType?: string };

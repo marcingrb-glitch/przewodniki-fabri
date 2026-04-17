@@ -1,6 +1,7 @@
 import { DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createDoc, addTable, toBlob } from "@/utils/pdfHelpers";
+import { getLockBoltPositions } from "@/utils/automatHelpers";
 
 // ─── Settings ────────────────────────────────────────────────────────
 /**
@@ -19,14 +20,6 @@ async function fetchGuideSettings() {
         table_row_height: Number(data.table_row_height) || 8,
       }
     : { font_size_header: 11, font_size_table: 9, table_row_height: 8 };
-}
-
-/**
- * Lock bolt positions — hardcoded rules per series × automat.
- */
-function getLockBoltPositions(seriesCode: string, automatCode: string): string {
-  if (seriesCode === "S1" && automatCode === "AT2") return "Poz. 1 i 3";
-  return "Poz. 1 i 2";
 }
 
 /**
