@@ -79,26 +79,29 @@ export async function fetchSheets(
   }
 
   // Series-specific first, then fall back to global (series_id IS NULL)
-  const client = supabase.from("label_templates_v2" as never) as any;
   const results: LabelTemplateV2[] = [];
 
   if (seriesId) {
-    const { data } = await client
+    const { data } = await supabase
+      .from("label_templates_v2")
       .select("*")
       .eq("product_type", productType)
       .eq("series_id", seriesId)
       .order("sort_order");
-    if (data && data.length > 0) results.push(...(data as LabelTemplateV2[]));
+    if (data && data.length > 0) {
+      results.push(...(data as unknown as LabelTemplateV2[]));
+    }
   }
 
   // Also add global templates (series_id IS NULL) — warunkowe sheety typu "Pufa do sofy"
-  const { data: globalData } = await client
+  const { data: globalData } = await supabase
+    .from("label_templates_v2")
     .select("*")
     .eq("product_type", productType)
     .is("series_id", null)
     .order("sort_order");
   if (globalData && globalData.length > 0) {
-    results.push(...(globalData as LabelTemplateV2[]));
+    results.push(...(globalData as unknown as LabelTemplateV2[]));
   }
 
   return results;

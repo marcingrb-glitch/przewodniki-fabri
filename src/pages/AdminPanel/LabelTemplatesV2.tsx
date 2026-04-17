@@ -64,13 +64,13 @@ export default function LabelTemplatesV2() {
   const { data: sheets = [], isLoading } = useQuery({
     queryKey: ["label-templates-v2"],
     queryFn: async () => {
-      const client = supabase.from("label_templates_v2" as never) as any;
-      const { data, error } = await client
+      const { data, error } = await supabase
+        .from("label_templates_v2")
         .select("*")
         .order("product_type")
         .order("sort_order");
       if (error) throw error;
-      return data as SheetV2[];
+      return (data ?? []) as unknown as SheetV2[];
     },
   });
 
@@ -92,8 +92,8 @@ export default function LabelTemplatesV2() {
 
   const saveMutation = useMutation({
     mutationFn: async (sheet: SheetV2) => {
-      const client = supabase.from("label_templates_v2" as never) as any;
-      const { error } = await client
+      const { error } = await supabase
+        .from("label_templates_v2")
         .update({
           product_type: sheet.product_type,
           series_id: sheet.series_id,
@@ -104,7 +104,7 @@ export default function LabelTemplatesV2() {
           header_template: sheet.header_template,
           show_meta_row: sheet.show_meta_row,
           include_in_v3: sheet.include_in_v3,
-          sections: sheet.sections,
+          sections: sheet.sections as never,
           updated_at: new Date().toISOString(),
         })
         .eq("id", sheet.id);
@@ -120,8 +120,10 @@ export default function LabelTemplatesV2() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const client = supabase.from("label_templates_v2" as never) as any;
-      const { error } = await client.delete().eq("id", id);
+      const { error } = await supabase
+        .from("label_templates_v2")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -133,8 +135,20 @@ export default function LabelTemplatesV2() {
 
   const createMutation = useMutation({
     mutationFn: async (sheet: Omit<SheetV2, "id">) => {
-      const client = supabase.from("label_templates_v2" as never) as any;
-      const { error } = await client.insert(sheet);
+      const { error } = await supabase
+        .from("label_templates_v2")
+        .insert({
+          product_type: sheet.product_type,
+          series_id: sheet.series_id,
+          sheet_name: sheet.sheet_name,
+          sort_order: sheet.sort_order,
+          is_conditional: sheet.is_conditional,
+          condition_field: sheet.condition_field,
+          header_template: sheet.header_template,
+          show_meta_row: sheet.show_meta_row,
+          include_in_v3: sheet.include_in_v3,
+          sections: sheet.sections as never,
+        });
       if (error) throw error;
     },
     onSuccess: () => {
