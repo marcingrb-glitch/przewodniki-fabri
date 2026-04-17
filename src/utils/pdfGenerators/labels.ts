@@ -20,7 +20,7 @@ function seriesLine(decoded: DecodedSKU, leftZoneFields: string[], productType: 
   }).join("|");
 }
 
-interface LabelTemplate {
+export interface LabelTemplate {
   label_name: string;
   component: string;
   display_fields: string[];
@@ -30,7 +30,7 @@ interface LabelTemplate {
   condition_field: string | null;
 }
 
-async function fetchTemplates(
+export async function fetchTemplates(
   productType: string,
   seriesCode?: string
 ): Promise<LabelTemplate[]> {
@@ -67,7 +67,7 @@ async function fetchTemplates(
   return (data as LabelTemplate[]) || [];
 }
 
-async function fetchLabelSettings(): Promise<LabelSettings> {
+export async function fetchLabelSettings(): Promise<LabelSettings> {
   const { data } = await supabase
     .from("label_settings")
     .select("*")
@@ -95,7 +95,7 @@ async function fetchLabelSettings(): Promise<LabelSettings> {
   };
 }
 
-function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
+export function shouldShow(decoded: DecodedSKU, tpl: LabelTemplate): boolean {
   if (!tpl.is_conditional || !tpl.condition_field) return true;
   return checkDecodedCondition(decoded, tpl.condition_field);
 }
@@ -107,7 +107,7 @@ function normalizeDisplayFields(fields: unknown): string[][] {
   return fields as string[][];
 }
 
-function buildLabelLines(
+export function buildLabelLines(
   decoded: DecodedSKU,
   tpl: LabelTemplate,
   productType: string,

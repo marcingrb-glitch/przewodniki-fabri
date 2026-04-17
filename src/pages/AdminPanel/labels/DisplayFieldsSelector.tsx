@@ -58,6 +58,7 @@ export const COMPONENT_FIELDS: Record<string, FieldDef[]> = {
     { value: "automat.code", label: "Kod automatu", source: "products (automat)" },
     { value: "automat.name", label: "Automat", source: "products (automat)" },
     { value: "automat.type", label: "Typ", source: "products.properties.type (automat)" },
+    { value: "automat.lockBolts", label: "Śruby zamkowe", source: "getLockBoltPositions (rules)" },
   ],
   leg_chest: [
     { value: "legHeights.sofa_chest.leg", label: "Noga", source: "products (chest) + products.properties (series)" },

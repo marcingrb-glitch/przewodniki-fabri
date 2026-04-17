@@ -1,6 +1,7 @@
 import { ParsedSKU, DecodedSKU, ProductFoamItem } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFoamsSummary } from "@/utils/foamHelpers";
+import { getLockBoltPositions } from "@/utils/automatHelpers";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -794,6 +795,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
       seatLegs: automatSeatLegs,
       seatLegHeight: automatSeatLegHeight,
       seatLegCount: automatSeatLegCount,
+      lockBolts: parsed.automat ? getLockBoltPositions(seriesData.code, parsed.automat) : undefined,
     },
     legs: legsDecoded,
     pillow: pillowDecoded,

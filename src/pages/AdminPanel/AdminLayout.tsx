@@ -68,7 +68,8 @@ export default function AdminLayout() {
     ? [
         { to: "/admin/sku-format", label: "Format SKU" },
         { to: "/admin/side-exceptions", label: "Aliasy SKU" },
-        { to: "/admin/label-templates", label: "🏷️ Etykiety" },
+        { to: "/admin/label-templates", label: "🏷️ Etykiety V1 (małe)" },
+        { to: "/admin/label-templates-v2", label: "🏷️ Etykiety V2 (duże)" },
         { to: "/admin/guide-templates", label: "📦 Przewodnik Magazyn" },
         { to: "/admin/decoding-templates", label: "🔧 Przewodnik Produkcja" },
       ]
