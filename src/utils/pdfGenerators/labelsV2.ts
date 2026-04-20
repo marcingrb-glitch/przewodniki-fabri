@@ -27,6 +27,7 @@ const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
 // Font sizes
 const HEADER_FONT = 11;
+const ORDER_NUMBER_FONT = 22; // duży # zamówienia — prawy górny róg każdego arkusza
 const META_FONT = 9;
 const SECTION_TITLE_FONT = 10;
 const BODY_FONT = 9;
@@ -152,23 +153,35 @@ function renderHeader(
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
   if (continued) rendered += " (cd.)";
 
+  // Duży # zamówienia — prawy górny róg (baseline niżej, żeby ładnie z title współdziałał)
+  if (decoded.orderNumber) {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(ORDER_NUMBER_FONT);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`#${decoded.orderNumber}`, PAGE_W - MARGIN_X, y + ORDER_NUMBER_FONT * 0.32, {
+      align: "right",
+      baseline: "alphabetic",
+    });
+  }
+
+  // Tytuł arkusza po lewej (mniejszy) — baseline z gruba wyśrodkowany względem big numer
   doc.setFont("Roboto", "bold");
   doc.setFontSize(HEADER_FONT);
   doc.setTextColor(0, 0, 0);
-  doc.text(rendered, MARGIN_X, y + HEADER_FONT * 0.35, { baseline: "alphabetic" });
+  doc.text(rendered, MARGIN_X, y + ORDER_NUMBER_FONT * 0.32, { baseline: "alphabetic" });
 
-  return y + HEADER_FONT * 0.55 + 1;
+  // Header zajmuje ~10mm (żeby zmieścić big #)
+  return y + ORDER_NUMBER_FONT * 0.45 + 1;
 }
 
 function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
-  const orderPart = decoded.orderNumber ? `Zam. #${decoded.orderNumber}` : "";
+  // # zamówienia jest już w renderHeader (duży, prawy róg). Tu tylko szerokość.
   const widthPart = decoded.width ? `${decoded.width} cm` : "";
-  const line = [orderPart, widthPart].filter(Boolean).join("     ");
-  if (!line) return y;
+  if (!widthPart) return y;
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(META_FONT);
-  doc.text(line, MARGIN_X, y + META_FONT * 0.35, { baseline: "alphabetic" });
+  doc.text(widthPart, MARGIN_X, y + META_FONT * 0.35, { baseline: "alphabetic" });
 
   // Divider under meta row
   const divY = y + META_FONT * 0.55 + 1;
@@ -587,25 +600,33 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
   const topMargin = 4;
   let y = topMargin;
 
-  const orderHeader = `#${decoded.orderNumber || "---"} · ${decoded.series.code}·${decoded.series.name}`;
+  const orderNum = decoded.orderNumber || "---";
+  const seriesSub = `${decoded.series.code}·${decoded.series.name}`;
 
   for (let i = 0; i < sections.length; i++) {
     const sec = sections[i];
 
-    // Header: #zam · series (bold, small)
+    // Duży # zamówienia — prawy górny róg sekcji
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(18);
     doc.setTextColor(0, 0, 0);
-    doc.text(orderHeader, MARGIN_X, y + 3.5);
+    doc.text(`#${orderNum}`, PAGE_W - MARGIN_X, y + 6.5, {
+      align: "right",
+      baseline: "alphabetic",
+    });
 
-    // Title
-    doc.setFontSize(10);
-    doc.text(`▸ ${sec.title}`, MARGIN_X, y + 9);
+    // Seria — małe, po lewej, tego samego baseline co #
+    doc.setFontSize(8);
+    doc.text(seriesSub, MARGIN_X, y + 6.5, { baseline: "alphabetic" });
+
+    // Title — poniżej
+    doc.setFontSize(11);
+    doc.text(`▸ ${sec.title}`, MARGIN_X, y + 13);
 
     // Content lines
     doc.setFont("Roboto", "normal");
     doc.setFontSize(9);
-    let contentY = y + 14;
+    let contentY = y + 18;
     for (const line of sec.lines) {
       const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
       for (const w of wrapped) {
