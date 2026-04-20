@@ -7,9 +7,15 @@
 import jsPDF from "jspdf";
 import { DecodedSKU } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { createDoc, toBlob } from "@/utils/pdfHelpers";
+import { createDoc, addLabel, toBlob } from "@/utils/pdfHelpers";
 import { resolveDecodedField, checkDecodedCondition } from "./decodingFieldResolver";
 import { formatFieldWithLabel } from "@/utils/fieldLabels";
+import {
+  fetchTemplates,
+  fetchLabelSettings,
+  shouldShow,
+  buildLabelLines,
+} from "./labels";
 
 // ─── Page geometry (mm) ──────────────────────────────────────────────────
 const PAGE_W = 100;
@@ -93,7 +99,7 @@ export async function fetchSheets(
     }
   }
 
-  // Also add global templates (series_id IS NULL) — warunkowe sheety typu "Pufa do sofy"
+  // Also add global templates (series_id IS NULL) for the same product_type
   const { data: globalData } = await supabase
     .from("label_templates_v2")
     .select("*")
@@ -104,6 +110,28 @@ export async function fetchSheets(
     results.push(...(globalData as unknown as LabelTemplateV2[]));
   }
 
+  // Pufa = single source of truth. For sofa/naroznik, pull the canonical pufa
+  // sheet (product_type='pufa', series_id=NULL) and attach it as a conditional
+  // sheet (only printed when the order contains a pufa — extras_pufa_fotel).
+  if (productType === "sofa" || productType === "naroznik") {
+    const { data: pufaData } = await supabase
+      .from("label_templates_v2")
+      .select("*")
+      .eq("product_type", "pufa")
+      .is("series_id", null)
+      .order("sort_order");
+    if (pufaData && pufaData.length > 0) {
+      for (const p of pufaData as unknown as LabelTemplateV2[]) {
+        results.push({
+          ...p,
+          is_conditional: true,
+          condition_field: "extras_pufa_fotel",
+          sort_order: 99,
+        });
+      }
+    }
+  }
+
   return results;
 }
 
@@ -112,15 +140,17 @@ function renderHeader(
   doc: jsPDF,
   sheet: LabelTemplateV2,
   decoded: DecodedSKU,
-  y: number
+  y: number,
+  continued = false
 ): number {
   const template = sheet.header_template || "{sheet_name}        {series.code} · {series.name}";
-  const rendered = template
+  let rendered = template
     .replace("{sheet_name}", sheet.sheet_name)
     .replace("{series.code}", decoded.series.code || "")
     .replace("{series.name}", decoded.series.name || "")
     .replace("{series.collection}", decoded.series.collection || "")
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
+  if (continued) rendered += " (cd.)";
 
   doc.setFont("Roboto", "bold");
   doc.setFontSize(HEADER_FONT);
@@ -301,6 +331,62 @@ export function shouldShowSheet(decoded: DecodedSKU, sheet: LabelTemplateV2): bo
   return checkDecodedCondition(decoded, sheet.condition_field);
 }
 
+// ─── Pre-measure section height (for page-break decisions) ───────────────
+// Mirrors the renderers but only measures. `splitTextToSize` is a pure
+// layout call and doesn't draw. Returns height in mm the section will need.
+function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): number {
+  if (section.condition_field && !checkDecodedCondition(decoded, section.condition_field)) {
+    return 0;
+  }
+
+  const TITLE_H = SECTION_TITLE_FONT * 0.55 + 0.5;
+  let h = section.title ? TITLE_H : 0;
+
+  if (section.style === "diagram_box") {
+    const boxSize = section.box_size_mm ?? 50;
+    return h + 6 + boxSize + 10; // top margin + box + bottom label margin
+  }
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(BODY_FONT);
+
+  const rows = section.display_fields ?? [];
+
+  if (section.style === "bullet_list") {
+    const bullets: string[] = [];
+    for (const row of rows) {
+      for (const f of row) {
+        const val = resolveDecodedField(f, decoded);
+        if (val === "-" || val === "") continue;
+        for (const line of val.split("\n")) {
+          if (line.trim()) bullets.push(line.trim());
+        }
+      }
+    }
+    for (const b of bullets) {
+      const wrapped = doc.splitTextToSize(b, CONTENT_W - 6);
+      h += wrapped.length * LINE_H;
+    }
+    return h + 1;
+  }
+
+  // plain / table (table currently aliased to plain)
+  for (const row of rows) {
+    const parts = row
+      .map((f) => {
+        const val = resolveDecodedField(f, decoded);
+        if (val === "-" || val === "") return null;
+        return formatFieldWithLabel(f, val);
+      })
+      .filter(Boolean) as string[];
+    if (parts.length === 0) continue;
+    const line = parts.join("  ");
+    const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
+    h += wrapped.length * LINE_H;
+  }
+  return h + 1;
+}
+
 // ─── Single-sheet render ─────────────────────────────────────────────────
 export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: DecodedSKU, isFirst: boolean) {
   if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
@@ -308,10 +394,25 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
   let y = MARGIN_TOP;
   y = renderHeader(doc, sheet, decoded, y);
   if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
+  const contentStartY = y;
 
   const sections = sheet.sections ?? [];
   for (const section of sections) {
-    if (y > PAGE_H - MARGIN_BOTTOM - 10) break; // overflow guard
+    const needed = measureSection(doc, section, decoded);
+    if (needed === 0) continue; // conditional-skipped
+
+    const available = PAGE_H - MARGIN_BOTTOM - y;
+
+    // Page-break when: section doesn't fit AND we've rendered at least one
+    // section on the current page (avoid infinite loop if section alone is
+    // larger than a full page — render anyway, jsPDF won't clip).
+    if (needed > available && y > contentStartY + 1) {
+      doc.addPage([PAGE_W, PAGE_H], "portrait");
+      y = MARGIN_TOP;
+      y = renderHeader(doc, sheet, decoded, y, /* continued */ true);
+      if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
+    }
+
     y = renderSection(doc, section, decoded, y);
     y += 2; // gap between sections
   }
@@ -498,26 +599,53 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
   return true;
 }
 
+// ─── V1 fallback for non-S1 series ───────────────────────────────────────
+// S2/N2 don't have cut-sheet V2 templates (no side/leg labels in their product
+// rules) but they still need a chest label. V2 solo for S2/N2 delegates to V1
+// for component="chest" and returns the 100×30mm label as a separate small PDF.
+async function renderV1ChestSmall(
+  decoded: DecodedSKU,
+  productType: string
+): Promise<Blob | null> {
+  const [templates, settings] = await Promise.all([
+    fetchTemplates(productType, decoded.series.code),
+    fetchLabelSettings(),
+  ]);
+
+  const chestTemplates = templates.filter(
+    (t) => t.component === "chest" && shouldShow(decoded, t)
+  );
+  if (chestTemplates.length === 0) return null;
+
+  const doc = await createDoc("landscape", [100, 30]);
+
+  let isFirst = true;
+  for (const tpl of chestTemplates) {
+    const lines = buildLabelLines(decoded, tpl, productType, settings);
+    for (let i = 0; i < tpl.quantity; i++) {
+      addLabel(doc, lines, isFirst, settings);
+      isFirst = false;
+    }
+  }
+
+  if (isFirst) return null;
+  return toBlob(doc);
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────
+export interface LabelsV2Result {
+  large: Blob | null; // 100×150mm V2 sheets (or S1 cut sheet)
+  small: Blob | null; // 100×30mm V1 chest fallback (S2/N2 sofa only)
+}
+
 export async function generateLabelsV2PDF(
   decoded: DecodedSKU,
   productType: "sofa" | "naroznik" | "pufa" | "fotel"
-): Promise<Blob> {
+): Promise<LabelsV2Result> {
   const sheets = await fetchSheets(productType, decoded.series.code);
   const visible = sheets.filter((s) => shouldShowSheet(decoded, s));
 
   const doc = await createDoc("portrait", [PAGE_W, PAGE_H]);
-
-  if (visible.length === 0) {
-    // Fallback page with "brak szablonów V2"
-    doc.setFont("Roboto", "bold");
-    doc.setFontSize(HEADER_FONT);
-    doc.text("Brak szablonów etykiet V2", MARGIN_X, MARGIN_TOP + 6);
-    doc.setFont("Roboto", "normal");
-    doc.setFontSize(META_FONT);
-    doc.text(`Typ: ${productType}, seria: ${decoded.series.code || "?"}`, MARGIN_X, MARGIN_TOP + 14);
-    return toBlob(doc);
-  }
 
   let isFirst = true;
   for (const sheet of visible) {
@@ -525,21 +653,43 @@ export async function generateLabelsV2PDF(
     isFirst = false;
   }
 
-  // Arkusz rozcięciowy S1 — tylko gdy sofa S1 (per plan, S2/N2 → zostają V1)
-  if (productType === "sofa" && decoded.series.code === "S1") {
+  // Arkusz rozcięciowy S1 — tylko dla sofa S1 (pokrywa side/chest/leg)
+  const isSofaS1 = productType === "sofa" && decoded.series.code === "S1";
+  if (isSofaS1) {
     const rendered = await renderCutSheetS1(doc, decoded, isFirst);
     if (rendered) isFirst = false;
   }
 
-  return toBlob(doc);
+  let large: Blob | null;
+  if (isFirst) {
+    // Nothing rendered — placeholder page
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(HEADER_FONT);
+    doc.text("Brak szablonów etykiet V2", MARGIN_X, MARGIN_TOP + 6);
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(META_FONT);
+    doc.text(`Typ: ${productType}, seria: ${decoded.series.code || "?"}`, MARGIN_X, MARGIN_TOP + 14);
+    large = toBlob(doc);
+  } else {
+    large = toBlob(doc);
+  }
+
+  // V1 chest fallback for S2/N2 sofa/naroznik (S1 is covered by cut sheet,
+  // pufa/fotel don't need it).
+  let small: Blob | null = null;
+  if (!isSofaS1 && (productType === "sofa" || productType === "naroznik")) {
+    small = await renderV1ChestSmall(decoded, productType);
+  }
+
+  return { large, small };
 }
 
 // Legacy-style wrappers matching V1 entry points
-export async function generateSofaLabelsV2PDF(decoded: DecodedSKU): Promise<Blob> {
+export async function generateSofaLabelsV2PDF(decoded: DecodedSKU): Promise<LabelsV2Result> {
   const type = decoded.chaise ? "naroznik" : "sofa";
   return generateLabelsV2PDF(decoded, type);
 }
 
-export async function generatePufaLabelsV2PDF(decoded: DecodedSKU): Promise<Blob> {
+export async function generatePufaLabelsV2PDF(decoded: DecodedSKU): Promise<LabelsV2Result> {
   return generateLabelsV2PDF(decoded, "pufa");
 }
