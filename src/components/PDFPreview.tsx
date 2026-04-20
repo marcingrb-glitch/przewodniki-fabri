@@ -15,19 +15,18 @@ interface PDFPreviewProps {
 }
 
 const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
-  const [dataUri, setDataUri] = useState<string>("");
+  // Blob: URL — szybsze i obsługiwane przez iframe PDF viewer
+  // (data: URI bywa blokowane przez Chrome w iframe).
+  const [blobUrl, setBlobUrl] = useState<string>("");
 
   useEffect(() => {
     if (!pdfBlob) {
-      setDataUri("");
+      setBlobUrl("");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setDataUri(reader.result as string);
-    };
-    reader.readAsDataURL(pdfBlob);
+    const url = URL.createObjectURL(pdfBlob);
+    setBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
   }, [pdfBlob]);
 
   if (!pdfBlob) return null;
@@ -42,9 +41,9 @@ const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
           <DialogDescription>Podgląd wygenerowanego dokumentu PDF</DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-hidden">
-          {dataUri ? (
+          {blobUrl ? (
             <iframe
-              src={dataUri}
+              src={`${blobUrl}#toolbar=1&view=FitH`}
               title={title}
               className="w-full h-full rounded border"
               style={{ minHeight: 0 }}
@@ -52,6 +51,12 @@ const PDFPreview = ({ pdfBlob, title, fileName, onClose }: PDFPreviewProps) => {
           ) : (
             <Skeleton className="w-full h-full rounded" />
           )}
+        </div>
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+          <span>Nie widać podglądu? Otwórz w nowej karcie:</span>
+          <a href={blobUrl} target="_blank" rel="noopener" className="underline">
+            open pdf ↗
+          </a>
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>
