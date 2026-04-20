@@ -70,6 +70,7 @@ export default function AdminLayout() {
         { to: "/admin/side-exceptions", label: "Aliasy SKU" },
         { to: "/admin/label-templates", label: "🏷️ Etykiety V1 (małe)" },
         { to: "/admin/label-templates-v2", label: "🏷️ Etykiety V2 (duże)" },
+        { to: "/admin/header-variables", label: "📖 Zmienne nagłówka" },
         { to: "/admin/guide-templates", label: "📦 Przewodnik Magazyn" },
         { to: "/admin/decoding-templates", label: "🔧 Przewodnik Produkcja" },
       ]
