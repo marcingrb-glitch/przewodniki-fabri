@@ -144,6 +144,30 @@ function renderHeader(
   y: number,
   continued = false
 ): number {
+  let cursorY = y;
+
+  // ─ Linia 1: duży #orderNumber, dedykowany wiersz (żeby nie nachodził na tytuł) ─
+  if (decoded.orderNumber) {
+    // Auto-fit — jeśli za szeroki dla stron 100mm, zmniejsz font.
+    doc.setFont("Roboto", "bold");
+    let size = ORDER_NUMBER_FONT;
+    const text = `#${decoded.orderNumber}`;
+    const maxWidth = CONTENT_W - 1;
+    doc.setFontSize(size);
+    while (doc.getTextWidth(text) > maxWidth && size > 12) {
+      size -= 1;
+      doc.setFontSize(size);
+    }
+    doc.setTextColor(0, 0, 0);
+    const baselineY = cursorY + size * 0.32;
+    doc.text(text, PAGE_W - MARGIN_X, baselineY, {
+      align: "right",
+      baseline: "alphabetic",
+    });
+    cursorY = baselineY + 1.5;
+  }
+
+  // ─ Linia 2: sheet_name + series (normalny header) ─
   const template = sheet.header_template || "{sheet_name}        {series.code} · {series.name}";
   let rendered = template
     .replace("{sheet_name}", sheet.sheet_name)
@@ -153,25 +177,12 @@ function renderHeader(
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
   if (continued) rendered += " (cd.)";
 
-  // Duży # zamówienia — prawy górny róg (baseline niżej, żeby ładnie z title współdziałał)
-  if (decoded.orderNumber) {
-    doc.setFont("Roboto", "bold");
-    doc.setFontSize(ORDER_NUMBER_FONT);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`#${decoded.orderNumber}`, PAGE_W - MARGIN_X, y + ORDER_NUMBER_FONT * 0.32, {
-      align: "right",
-      baseline: "alphabetic",
-    });
-  }
-
-  // Tytuł arkusza po lewej (mniejszy) — baseline z gruba wyśrodkowany względem big numer
   doc.setFont("Roboto", "bold");
   doc.setFontSize(HEADER_FONT);
   doc.setTextColor(0, 0, 0);
-  doc.text(rendered, MARGIN_X, y + ORDER_NUMBER_FONT * 0.32, { baseline: "alphabetic" });
+  doc.text(rendered, MARGIN_X, cursorY + HEADER_FONT * 0.35, { baseline: "alphabetic" });
 
-  // Header zajmuje ~10mm (żeby zmieścić big #)
-  return y + ORDER_NUMBER_FONT * 0.45 + 1;
+  return cursorY + HEADER_FONT * 0.55 + 1;
 }
 
 function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
