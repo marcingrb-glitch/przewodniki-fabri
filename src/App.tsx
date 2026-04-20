@@ -11,6 +11,7 @@ import LoginPage from "@/pages/LoginPage";
 import NewOrderPage from "@/pages/NewOrderPage";
 import OrderDetailsPage from "@/pages/OrderDetailsPage";
 import OrderHistoryPage from "@/pages/OrderHistoryPage";
+import LabelsLab from "@/pages/LabelsLab";
 import AdminLayout from "@/pages/AdminPanel/AdminLayout";
 import ProductListPage from "@/pages/AdminPanel/ProductListPage";
 import Users from "@/pages/AdminPanel/Users";
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/" element={<NewOrderPage />} />
                 <Route path="/order/:id" element={<OrderDetailsPage />} />
                 <Route path="/history" element={<OrderHistoryPage />} />
+                <Route path="/labels-lab" element={<LabelsLab />} />
                 <Route path="/admin" element={<AdminLayout />}>
                   {/* Global product categories */}
                   <Route path="fabrics" element={<ProtectedRoute adminOnly><ProductListPage category="fabric" /></ProtectedRoute>} />
