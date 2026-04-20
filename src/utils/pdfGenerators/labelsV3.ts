@@ -52,6 +52,11 @@ function collectCoveredComponents(v2Sheets: LabelTemplateV2[]): Set<string> {
     covered.add("chaise_backrest");
     covered.add("leg_chaise");
   }
+  // legs_list section uses component="legs" — pokrywa V1 leg_seat + leg_chest
+  if (covered.has("legs")) {
+    covered.add("leg_seat");
+    covered.add("leg_chest");
+  }
   return covered;
 }
 
@@ -87,10 +92,9 @@ async function renderLargeV2(
     cutSheetRendered = await renderCutSheetS1(doc, decoded, isFirst);
     if (cutSheetRendered) {
       // Components on cut sheet are "covered" — don't duplicate in small V1
+      // (legs przeniesione do OPARCIE → leg_seat/leg_chest pokrywa collectCoveredComponents)
       covered.add("side");
       covered.add("chest");
-      covered.add("leg_seat");
-      covered.add("leg_chest");
       isFirst = false;
     }
   }

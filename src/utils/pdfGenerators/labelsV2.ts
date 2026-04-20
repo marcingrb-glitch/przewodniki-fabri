@@ -33,7 +33,7 @@ const BODY_FONT = 9;
 const LINE_H = 4.5; // approximate line height at 9pt
 
 // ─── Section shapes (from JSONB) ─────────────────────────────────────────
-export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box";
+export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box" | "legs_list";
 
 export interface Section {
   title?: string;
@@ -306,22 +306,65 @@ function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   return boxY + boxSize + 10;
 }
 
+// Legs list — komplet nóżek (siedzisko + skrzynia + pufa) z linią odcięcia
+// przed sekcją. Dane z decoded.legHeights + decoded.pufaLegs (ignoruje display_fields).
+function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  // Prominent cut-line divider (distinct from section's thin gray divider).
+  doc.setLineDashPattern([1.2, 1], 0);
+  doc.setDrawColor(80);
+  doc.setLineWidth(0.25);
+  const guideY = y + 2;
+  doc.line(MARGIN_X - 2, guideY, PAGE_W - MARGIN_X + 2, guideY);
+  doc.setFontSize(6);
+  doc.setTextColor(120);
+  doc.text("\u2702", 1.5, guideY + 1.5);
+  doc.setTextColor(0);
+  doc.setLineDashPattern([], 0);
+
+  let cursorY = y + 6;
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(BODY_FONT);
+
+  const lines: string[] = [];
+  const legSeat = decoded.legHeights?.sofa_seat;
+  if (legSeat) lines.push(`Siedzisko: ${legSeat.leg} · ${legSeat.height} cm · ${legSeat.count} szt.`);
+  const legChest = decoded.legHeights?.sofa_chest;
+  if (legChest) lines.push(`Skrzynia:  ${legChest.leg} · ${legChest.height} cm · ${legChest.count} szt.`);
+  if (decoded.pufaLegs) {
+    lines.push(`Pufa:      ${decoded.pufaLegs.code} · ${decoded.pufaLegs.height} cm · ${decoded.pufaLegs.count} szt.`);
+  }
+
+  for (const line of lines) {
+    const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
+    for (const w of wrapped) {
+      doc.text(`  ${w}`, MARGIN_X, cursorY + LINE_H * 0.7);
+      cursorY += LINE_H;
+    }
+  }
+  return cursorY + 1;
+}
+
 function renderSection(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   // Per-section condition: skip if false
   if (section.condition_field && !checkDecodedCondition(decoded, section.condition_field)) {
     return y;
   }
 
-  // Divider before (except first section — handled by caller check)
-  doc.setDrawColor(180);
-  doc.setLineWidth(0.2);
-  doc.line(MARGIN_X, y - 0.5, PAGE_W - MARGIN_X, y - 0.5);
+  // legs_list rysuje własną linię odcięcia — pomijamy standardowy szary dzielnik
+  if (section.style !== "legs_list") {
+    doc.setDrawColor(180);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN_X, y - 0.5, PAGE_W - MARGIN_X, y - 0.5);
+  }
 
   switch (section.style) {
     case "plain":       return renderPlain(doc, section, decoded, y);
     case "bullet_list": return renderBulletList(doc, section, decoded, y);
     case "table":       return renderTable(doc, section, decoded, y);
     case "diagram_box": return renderDiagramBox(doc, section, decoded, y);
+    case "legs_list":   return renderLegsList(doc, section, decoded, y);
     default:            return renderPlain(doc, section, decoded, y);
   }
 }
@@ -345,6 +388,15 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
   if (section.style === "diagram_box") {
     const boxSize = section.box_size_mm ?? 50;
     return h + 6 + boxSize + 10; // top margin + box + bottom label margin
+  }
+
+  if (section.style === "legs_list") {
+    let n = 0;
+    if (decoded.legHeights?.sofa_seat) n++;
+    if (decoded.legHeights?.sofa_chest) n++;
+    if (decoded.pufaLegs) n++;
+    // 6mm cut-line padding + title + N lines + 1mm tail
+    return 6 + h + n * LINE_H + 1;
   }
 
   doc.setFont("Roboto", "normal");
@@ -496,8 +548,8 @@ interface CutSection {
 }
 
 export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst: boolean): Promise<boolean> {
-  // Fetch V1 templates for side/chest/leg_seat/leg_chest
-  const templates = await fetchV1Templates("sofa", "S1", ["side", "chest", "leg_seat", "leg_chest"]);
+  // Fetch V1 templates for side/chest (nogi przeniesione do OPARCIE jako legs_list)
+  const templates = await fetchV1Templates("sofa", "S1", ["side", "chest"]);
   if (templates.length === 0) return false; // nothing to render
 
   // Group by component
@@ -507,10 +559,10 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
     byComp[t.component].push(t);
   }
 
-  // Build sections (4 × 34mm)
+  // Build sections (3 × ~46mm, powiększone po usunięciu NOGI)
   const sections: CutSection[] = [];
 
-  // 1. Boczek LEWY
+  // 1. Boczek LEWY + PRAWY
   const sideTpls = byComp["side"] || [];
   const sideLines = sideTpls.flatMap((t) => buildContentLines(t, decoded));
   if (sideTpls.length > 0) {
@@ -525,25 +577,12 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
     sections.push({ title: "SKRZYNIA", lines: chestLines });
   }
 
-  // 3. Nogi (komplet) — leg_seat + leg_chest + pufaLegs jeśli PF
-  const legLines: string[] = [];
-  const legSeat = decoded.legHeights.sofa_seat;
-  if (legSeat) legLines.push(`Siedzisko: ${legSeat.leg} · ${legSeat.height} cm · ${legSeat.count} szt.`);
-  const legChest = decoded.legHeights.sofa_chest;
-  if (legChest) legLines.push(`Skrzynia:  ${legChest.leg} · ${legChest.height} cm · ${legChest.count} szt.`);
-  if (decoded.pufaLegs) {
-    legLines.push(`Pufa:      ${decoded.pufaLegs.code} · ${decoded.pufaLegs.height} cm · ${decoded.pufaLegs.count} szt.`);
-  }
-  if (legLines.length > 0) {
-    sections.push({ title: "NOGI (komplet)", lines: legLines });
-  }
-
   if (sections.length === 0) return false;
 
-  // Layout: 4 sections × 34mm + 3 gaps × 2mm + 2×(4mm margin) = 150mm ✅
+  // Layout: 3 sections × 46mm + 2 gaps × 2mm + topMargin 8mm = 150mm ✅
   if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
 
-  const sectionH = 34;
+  const sectionH = 46;
   const gapH = 2;
   const topMargin = 4;
   let y = topMargin;

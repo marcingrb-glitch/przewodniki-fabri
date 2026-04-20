@@ -27,9 +27,8 @@ import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateWarehouseGuidePDF } from "@/utils/pdfGenerators/warehouseGuide";
 import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
 import { generateSofaLabelsV2PDF, generatePufaLabelsV2PDF, type LabelsV2Result } from "@/utils/pdfGenerators/labelsV2";
-import { generateSofaLabelsV3PDF, generatePufaLabelsV3PDF, generateFotelLabelsV3PDF, type LabelsV3Result } from "@/utils/pdfGenerators/labelsV3";
 
-type LabelsPairResult = LabelsV2Result | LabelsV3Result;
+type LabelsPairResult = LabelsV2Result;
 import { generateProductionGuidePDF, generatePufaProductionGuidePDF, generateFotelProductionGuidePDF } from "@/utils/pdfGenerators/productionGuide";
 import { uploadAndSaveOrderFile } from "@/utils/storage";
 import PDFPreview from "@/components/PDFPreview";
@@ -183,7 +182,7 @@ const OrderDetailsPage = () => {
     </Button>
   );
 
-  // Pair helpers: V2/V3 zwracają {large,small}. Preview pokazuje large (fallback small),
+  // Pair helpers: V2 zwraca {large,small}. Preview pokazuje large (fallback small),
   // download zapisuje osobne pliki _large/_small (osobne drukarki: 100×150 i 100×30).
   const previewPair = (result: LabelsPairResult, title: string, fileName: string) => {
     const blob = result.large || result.small;
@@ -191,7 +190,7 @@ const OrderDetailsPage = () => {
     preview(blob, title, fileName);
   };
 
-  const downloadPair = async (result: LabelsPairResult, baseName: string, variant: "v2" | "v3") => {
+  const downloadPair = async (result: LabelsPairResult, baseName: string, variant: "v2") => {
     if (!result.large && !result.small) {
       toast.error(`${variant.toUpperCase()}: brak szablonów — nic do pobrania`);
       return;
@@ -341,8 +340,6 @@ const OrderDetailsPage = () => {
             <ActionBtn icon={Tag} label="Pobierz etykiety V1" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
             <ActionBtn icon={Eye} label="Podgląd V2 (duże)" loadKey="sofa-labels-v2-preview" onClick={async () => previewPair(await generateSofaLabelsV2PDF(decoded), "Etykiety V2 Sofy", `sofa_etykiety_v2_${orderNumber}.pdf`)} />
             <ActionBtn icon={Tag} label="Pobierz V2 (duże)" loadKey="sofa-labels-v2-dl" onClick={async () => downloadPair(await generateSofaLabelsV2PDF(decoded), `sofa_etykiety_${orderNumber}`, "v2")} />
-            <ActionBtn icon={Eye} label="Podgląd V3 (hybrid)" loadKey="sofa-labels-v3-preview" onClick={async () => previewPair(await generateSofaLabelsV3PDF(decoded), "Etykiety V3 Sofy", `sofa_etykiety_v3_${orderNumber}.pdf`)} />
-            <ActionBtn icon={Tag} label="Pobierz V3 (hybrid)" loadKey="sofa-labels-v3-dl" onClick={async () => downloadPair(await generateSofaLabelsV3PDF(decoded), `sofa_etykiety_${orderNumber}`, "v3")} />
             <ActionBtn icon={Eye} label="Przewodnik Produkcja" loadKey="sofa-decode-preview" onClick={async () => preview(await generateProductionGuidePDF(decoded, variantImageUrl || undefined), "Przewodnik Produkcja", `przewodnik_produkcja_sofa_${orderNumber}.pdf`)} />
             <ActionBtn icon={Download} label="Pobierz Przew. Produkcja" loadKey="sofa-decode-dl" onClick={async () => downloadAndSave(await generateProductionGuidePDF(decoded, variantImageUrl || undefined), `przewodnik_produkcja_sofa_${orderNumber}.pdf`, "production_sofa")} />
           </div>
@@ -380,8 +377,6 @@ const OrderDetailsPage = () => {
               <ActionBtn icon={Tag} label="Pobierz etykiety V1" loadKey="pufa-labels-dl" onClick={async () => downloadAndSave(await generatePufaLabelsPDF(decoded), `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")} />
               <ActionBtn icon={Eye} label="Podgląd V2 (duża)" loadKey="pufa-labels-v2-preview" onClick={async () => previewPair(await generatePufaLabelsV2PDF(decoded), "Etykiety V2 Pufy", `pufa_etykiety_v2_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz V2 (duża)" loadKey="pufa-labels-v2-dl" onClick={async () => downloadPair(await generatePufaLabelsV2PDF(decoded), `pufa_etykiety_${orderNumber}`, "v2")} />
-              <ActionBtn icon={Eye} label="Podgląd V3 (hybrid)" loadKey="pufa-labels-v3-preview" onClick={async () => previewPair(await generatePufaLabelsV3PDF(decoded), "Etykiety V3 Pufy", `pufa_etykiety_v3_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Tag} label="Pobierz V3 (hybrid)" loadKey="pufa-labels-v3-dl" onClick={async () => downloadPair(await generatePufaLabelsV3PDF(decoded), `pufa_etykiety_${orderNumber}`, "v3")} />
               <ActionBtn icon={Eye} label="Przewodnik Produkcja pufy" loadKey="pufa-decode-preview" onClick={async () => preview(await generatePufaProductionGuidePDF(decoded), "Przewodnik Produkcja pufy", `przewodnik_produkcja_pufa_${orderNumber}.pdf`)} />
               <ActionBtn icon={Download} label="Pobierz Przew. Produkcja pufy" loadKey="pufa-decode-dl" onClick={async () => downloadAndSave(await generatePufaProductionGuidePDF(decoded), `przewodnik_produkcja_pufa_${orderNumber}.pdf`, "production_pufa")} />
             </div>
@@ -414,8 +409,6 @@ const OrderDetailsPage = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet V1" loadKey="fotel-labels-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety V1 Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety V1" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
-              <ActionBtn icon={Eye} label="Podgląd V3 (hybrid)" loadKey="fotel-labels-v3-preview" onClick={async () => previewPair(await generateFotelLabelsV3PDF(decoded), "Etykiety V3 Fotela", `fotel_etykiety_v3_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Tag} label="Pobierz V3 (hybrid)" loadKey="fotel-labels-v3-dl" onClick={async () => downloadPair(await generateFotelLabelsV3PDF(decoded), `fotel_etykiety_${orderNumber}`, "v3")} />
               <ActionBtn icon={Eye} label="Przewodnik Produkcja fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelProductionGuidePDF(decoded), "Przewodnik Produkcja fotela", `przewodnik_produkcja_fotel_${orderNumber}.pdf`)} />
               <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelProductionGuidePDF(decoded), `przewodnik_produkcja_fotel_${orderNumber}.pdf`, "production_fotel")} />
             </div>
