@@ -1,8 +1,8 @@
 /**
  * Admin panel — Etykiety V2 (duże 100×150mm, generator labelsV2.ts).
  *
- * MVP: tabela + JSON editor dla `sections` (rich editor w przyszłej iteracji).
- * Sekcje są seedowane w migracji `20260416_03_label_templates_v2.sql`.
+ * Rich editor dla `sections` — SheetSectionsEditor (drag-reorder przez strzałki,
+ * ComponentSelector, style select, per-line field picker, diagram_box editor).
  */
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit, Copy } from "lucide-react";
 import { toast } from "sonner";
+import SheetSectionsEditor from "./labels/SheetSectionsEditor";
+import type { Section } from "@/utils/pdfGenerators/labelsV2";
 
 interface SheetV2 {
   id: string;
@@ -48,8 +49,9 @@ const PRODUCT_TYPE_LABELS: Record<string, string> = {
   fotel: "Fotel",
 };
 
+const NO_CONDITION = "__none__";
 const CONDITION_FIELDS: { value: string; label: string }[] = [
-  { value: "", label: "(brak)" },
+  { value: NO_CONDITION, label: "(brak)" },
   { value: "has_special_notes", label: "Tylko gdy są uwagi specjalne" },
   { value: "has_chaise", label: "Tylko gdy jest szezlong" },
   { value: "extras_pufa_fotel", label: "Tylko z pufą lub fotelem" },
@@ -321,19 +323,13 @@ function EditSheetDialog({
   isPending: boolean;
 }) {
   const [draft, setDraft] = useState<SheetV2>(sheet);
-  const [sectionsJson, setSectionsJson] = useState(() =>
-    JSON.stringify(sheet.sections ?? [], null, 2)
-  );
-  const [jsonError, setJsonError] = useState<string | null>(null);
+  const initialSections: Section[] = Array.isArray(sheet.sections)
+    ? (sheet.sections as Section[])
+    : [];
+  const [sections, setSections] = useState<Section[]>(initialSections);
 
   const handleSave = () => {
-    try {
-      const parsed = JSON.parse(sectionsJson);
-      if (!Array.isArray(parsed)) throw new Error("sections must be an array");
-      onSave({ ...draft, sections: parsed });
-    } catch (e: any) {
-      setJsonError(`JSON błąd: ${e.message || e}`);
-    }
+    onSave({ ...draft, sections });
   };
 
   return (
@@ -405,32 +401,23 @@ function EditSheetDialog({
             <div className="col-span-2">
               <Label>Warunek (condition_field)</Label>
               <Select
-                value={draft.condition_field ?? ""}
-                onValueChange={(v) => setDraft({ ...draft, condition_field: v || null })}
+                value={draft.condition_field ?? NO_CONDITION}
+                onValueChange={(v) => setDraft({ ...draft, condition_field: v === NO_CONDITION ? null : v })}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CONDITION_FIELDS.map((c) => <SelectItem key={c.value} value={c.value || "__none__"}>{c.label}</SelectItem>)}
+                  {CONDITION_FIELDS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           )}
         </div>
 
-        <div>
-          <Label>Sekcje (JSON)</Label>
-          <p className="text-xs text-muted-foreground mb-2">
-            Tablica obiektów. Każda sekcja: <code className="text-[10px]">{"{ title?, component, style, display_fields[][], fields?, box_size_mm?, condition_field? }"}</code>.
-            Style: <code>plain</code>, <code>bullet_list</code>, <code>table</code>, <code>diagram_box</code>.
-          </p>
-          <Textarea
-            value={sectionsJson}
-            onChange={(e) => { setSectionsJson(e.target.value); setJsonError(null); }}
-            className="font-mono text-xs min-h-[200px]"
-            rows={15}
-          />
-          {jsonError && <p className="text-xs text-destructive mt-1">{jsonError}</p>}
-        </div>
+        <SheetSectionsEditor
+          sections={sections}
+          productType={draft.product_type}
+          onChange={setSections}
+        />
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Anuluj</Button>
