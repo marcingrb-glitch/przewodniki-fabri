@@ -27,7 +27,7 @@ const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
 // Font sizes
 const HEADER_FONT = 11;
-const ORDER_NUMBER_FONT = 22; // duży # zamówienia — prawy górny róg każdego arkusza
+const ORDER_NUMBER_FONT = 29; // duży # zamówienia — prawy górny róg każdego arkusza
 const META_FONT = 9;
 const SECTION_TITLE_FONT = 10;
 const BODY_FONT = 9;
@@ -151,10 +151,10 @@ function renderHeader(
     // Auto-fit — jeśli za szeroki dla stron 100mm, zmniejsz font.
     doc.setFont("Roboto", "bold");
     let size = ORDER_NUMBER_FONT;
-    const text = `#${decoded.orderNumber}`;
+    const text = `${decoded.orderNumber}`;
     const maxWidth = CONTENT_W - 1;
     doc.setFontSize(size);
-    while (doc.getTextWidth(text) > maxWidth && size > 12) {
+    while (doc.getTextWidth(text) > maxWidth && size > 15) {
       size -= 1;
       doc.setFontSize(size);
     }
@@ -617,11 +617,11 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
   for (let i = 0; i < sections.length; i++) {
     const sec = sections[i];
 
-    // Duży # zamówienia — prawy górny róg sekcji
+    // Duży numer zamówienia — prawy górny róg sekcji
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(18);
+    doc.setFontSize(23);
     doc.setTextColor(0, 0, 0);
-    doc.text(`#${orderNum}`, PAGE_W - MARGIN_X, y + 6.5, {
+    doc.text(`${orderNum}`, PAGE_W - MARGIN_X, y + 7.5, {
       align: "right",
       baseline: "alphabetic",
     });
