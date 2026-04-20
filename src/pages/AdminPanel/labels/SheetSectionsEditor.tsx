@@ -16,6 +16,7 @@ const STYLE_OPTIONS: { value: SectionStyle; label: string }[] = [
   { value: "bullet_list", label: "Punkty (bullety)" },
   { value: "table", label: "Tabela" },
   { value: "diagram_box", label: "Diagram (kwadrat + etykiety)" },
+  { value: "legs_list", label: "Nogi (lista + linia odcięcia)" },
 ];
 
 const NO_CONDITION = "__none__";
@@ -169,6 +170,11 @@ export default function SheetSectionsEditor({ sections, productType, onChange }:
 
             {section.style === "diagram_box" ? (
               <DiagramBoxEditor section={section} onChange={(patch) => update(idx, patch)} />
+            ) : section.style === "legs_list" ? (
+              <p className="text-xs text-muted-foreground px-2 py-3">
+                Dane pobierane automatycznie z dekodowanego SKU
+                (siedzisko · skrzynia · pufa — jeśli PF). Linia odcięcia rysowana przed sekcją.
+              </p>
             ) : (
               <LinesEditor
                 component={section.component}
