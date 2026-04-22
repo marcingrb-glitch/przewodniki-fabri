@@ -18,16 +18,29 @@ export function formatFoamsSummary(foams?: ProductFoamItem[], legacyFoam?: strin
 
 /**
  * Format foams as detailed lines for extended display.
- * Format: [ilość]× [wys]×[szer]×[dł] [materiał]
+ * Format: [name]: [wys]×[szer]×[dł] [materiał] | [qty] szt.
+ *
+ * Reguła: jeśli nazwa pianki kończy się kodem SKU-like (np. "Półwałek SD04",
+ * "Półwałek SD02N") — pomijamy wymiary i materiał (to gotowy komponent).
+ * Wyświetlamy samą nazwę.
  */
+const PREFABRICATED_SUFFIX = /\b[A-Z]+\d+[A-Z]*$/;
+
 export function formatFoamsDetailed(foams?: ProductFoamItem[]): string[] {
   if (!foams || foams.length === 0) return [];
-  
+
   return foams.map(f => {
+    const name = f.name?.trim() ?? "";
+    const qtySuffix = (f.quantity ?? 1) > 1 ? ` | ${f.quantity} szt.` : "";
+
+    // Pre-fabricated component (nazwa kończy się kodem SKU) → bez wymiarów
+    if (name && PREFABRICATED_SUFFIX.test(name)) {
+      return `${name}${qtySuffix}`;
+    }
+
     const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
     const mat = f.material ? ` ${f.material}` : "";
-    const name = f.name ? `${f.name}: ` : "";
-    const qtySuffix = (f.quantity ?? 1) > 1 ? ` | ${f.quantity} szt.` : "";
-    return `${name}${dims}${mat}${qtySuffix}`;
+    const prefix = name ? `${name}: ` : "";
+    return `${prefix}${dims}${mat}${qtySuffix}`;
   });
 }
