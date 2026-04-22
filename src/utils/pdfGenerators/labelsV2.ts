@@ -408,44 +408,52 @@ function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   const rightRaw = fields.right ? resolveDecodedField(fields.right, decoded) : "";
   const centerRaw = fields.center ? resolveDecodedField(fields.center, decoded) : "";
 
-  // Center (środek): pierwszy wymiar (wysokość pianki głównej) lub nazwa jeśli tekst.
-  // Sides (boki): najmniejszy wymiar (grubość półwałka) lub nazwa półwałka jeśli tekst.
-  const leftVal = smallestDimIfDim(leftRaw);
-  const rightVal = smallestDimIfDim(rightRaw);
-  const centerVal = firstDimIfDim(centerRaw);
+  // Raw wartości z DB — admin decyduje jaki tekst wpisze w properties
+  // (np. "SD04" albo "1" albo "17 x 63 x 1" — cokolwiek chce widzieć na etykiecie).
+  const leftVal = leftRaw;
+  const rightVal = rightRaw;
+  const centerVal = centerRaw;
 
   // Labele (top/bottom — opisy) — większa czcionka niż standardowy body
   const LABEL_SIZE = 13;
   const DIM_SIZE = 18; // duże wymiary na bokach / wewnątrz
 
-  // Top (above box, centered)
+  const topBottomMaxW = CONTENT_W - 2;
+  const sideMaxW = (CONTENT_W - boxSize) / 2 - 1;
+
+  // Top
   if (topVal && topVal !== "-") {
+    const sz = fitFontSize(doc, topVal, topBottomMaxW, { max: LABEL_SIZE, min: 8 });
     doc.setFont("Roboto", "normal");
-    doc.setFontSize(LABEL_SIZE);
+    doc.setFontSize(sz);
     doc.text(topVal, boxX + boxSize / 2, boxY - 2, { align: "center" });
   }
-  // Bottom (below box, centered)
+  // Bottom
   if (bottomVal && bottomVal !== "-") {
+    const sz = fitFontSize(doc, bottomVal, topBottomMaxW, { max: LABEL_SIZE, min: 8 });
     doc.setFont("Roboto", "normal");
-    doc.setFontSize(LABEL_SIZE);
-    doc.text(bottomVal, boxX + boxSize / 2, boxY + boxSize + LABEL_SIZE * 0.5, { align: "center" });
+    doc.setFontSize(sz);
+    doc.text(bottomVal, boxX + boxSize / 2, boxY + boxSize + sz * 0.5, { align: "center" });
   }
-  // Left (po lewej od boksa) — duża liczba wysokości
+  // Left
   if (leftVal && leftVal !== "-") {
+    const sz = fitFontSize(doc, leftVal, sideMaxW, { max: DIM_SIZE, min: 8, bold: true });
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(DIM_SIZE);
+    doc.setFontSize(sz);
     doc.text(leftVal, boxX - 2, boxY + boxSize / 2, { align: "right", baseline: "middle" });
   }
-  // Right (po prawej od boksa)
+  // Right
   if (rightVal && rightVal !== "-") {
+    const sz = fitFontSize(doc, rightVal, sideMaxW, { max: DIM_SIZE, min: 8, bold: true });
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(DIM_SIZE);
+    doc.setFontSize(sz);
     doc.text(rightVal, boxX + boxSize + 2, boxY + boxSize / 2, { align: "left", baseline: "middle" });
   }
-  // Center (w boksie) — duża wytłuszczona liczba
+  // Center
   if (centerVal && centerVal !== "-") {
+    const sz = fitFontSize(doc, centerVal, boxSize - 4, { max: DIM_SIZE + 4, min: 8, bold: true });
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(DIM_SIZE + 4);
+    doc.setFontSize(sz);
     doc.text(centerVal, boxX + boxSize / 2, boxY + boxSize / 2, { align: "center", baseline: "middle" });
   }
 
