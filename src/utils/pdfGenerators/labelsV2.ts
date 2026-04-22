@@ -144,30 +144,8 @@ function renderHeader(
   y: number,
   continued = false
 ): number {
-  let cursorY = y;
-
-  // ─ Linia 1: duży #orderNumber, dedykowany wiersz (żeby nie nachodził na tytuł) ─
-  if (decoded.orderNumber) {
-    // Auto-fit — jeśli za szeroki dla stron 100mm, zmniejsz font.
-    doc.setFont("Roboto", "bold");
-    let size = ORDER_NUMBER_FONT;
-    const text = `${decoded.orderNumber}`;
-    const maxWidth = CONTENT_W - 1;
-    doc.setFontSize(size);
-    while (doc.getTextWidth(text) > maxWidth && size > 15) {
-      size -= 1;
-      doc.setFontSize(size);
-    }
-    doc.setTextColor(0, 0, 0);
-    const baselineY = cursorY + size * 0.32;
-    doc.text(text, PAGE_W - MARGIN_X, baselineY, {
-      align: "right",
-      baseline: "alphabetic",
-    });
-    cursorY = baselineY + 1.5;
-  }
-
-  // ─ Linia 2: sheet_name + series (normalny header) ─
+  // Jeden wiersz: LEFT = rozwinięty header_template, RIGHT = duży #orderNumber.
+  // Baseline wyrównany do większej czcionki (order#), żeby nic się nie nachodziło.
   const template = sheet.header_template || "{sheet_name}        {series.code} · {series.name}";
   let rendered = template
     .replace("{sheet_name}", sheet.sheet_name)
@@ -177,12 +155,40 @@ function renderHeader(
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
   if (continued) rendered += " (cd.)";
 
-  doc.setFont("Roboto", "bold");
-  doc.setFontSize(HEADER_FONT);
-  doc.setTextColor(0, 0, 0);
-  doc.text(rendered, MARGIN_X, cursorY + HEADER_FONT * 0.35, { baseline: "alphabetic" });
+  // RIGHT: order# z auto-fitem
+  let orderSize = ORDER_NUMBER_FONT;
+  let orderWidth = 0;
+  if (decoded.orderNumber) {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(orderSize);
+    const text = `${decoded.orderNumber}`;
+    // Zostaw miejsce na tekst LEFT — max ~65% szerokości dla order#
+    const maxWidth = CONTENT_W * 0.55;
+    while (doc.getTextWidth(text) > maxWidth && orderSize > 15) {
+      orderSize -= 1;
+      doc.setFontSize(orderSize);
+    }
+    orderWidth = doc.getTextWidth(text);
+    doc.setTextColor(0, 0, 0);
+    doc.text(text, PAGE_W - MARGIN_X, y + orderSize * 0.32, {
+      align: "right",
+      baseline: "alphabetic",
+    });
+  }
 
-  return cursorY + HEADER_FONT * 0.55 + 1;
+  // LEFT: header_template (skala zależna od wolnej szerokości)
+  doc.setFont("Roboto", "bold");
+  let headerSize = HEADER_FONT;
+  doc.setFontSize(headerSize);
+  const availableLeft = CONTENT_W - orderWidth - 3;
+  while (doc.getTextWidth(rendered) > availableLeft && headerSize > 7) {
+    headerSize -= 0.5;
+    doc.setFontSize(headerSize);
+  }
+  doc.text(rendered, MARGIN_X, y + orderSize * 0.32, { baseline: "alphabetic" });
+
+  // Header zajmuje wysokość = big order + padding
+  return y + orderSize * 0.45 + 1;
 }
 
 function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
@@ -246,15 +252,19 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(BODY_FONT);
 
-  // Each field can return multi-line content (e.g. foams). Split by \n and bullet each.
+  // Each field can return multi-line content (e.g. foams — już z labelami w każdej linii).
+  // Dla wartości 1-liniowych dodajemy prefix "Label: value" (np. "Środkowy pasek: TAK").
   const rows = section.display_fields ?? [];
   const bullets: string[] = [];
   for (const row of rows) {
     for (const f of row) {
       const val = resolveDecodedField(f, decoded);
       if (val === "-" || val === "") continue;
-      for (const line of val.split("\n")) {
-        if (line.trim()) bullets.push(line.trim());
+      const lines = val.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length === 1) {
+        bullets.push(formatFieldWithLabel(f, lines[0]));
+      } else {
+        for (const line of lines) bullets.push(line);
       }
     }
   }
