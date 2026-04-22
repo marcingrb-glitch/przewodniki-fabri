@@ -852,6 +852,11 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
 
     const headerBottom = y + oSize * 0.45 + 1;
 
+    // Czarna gruba linia pod headerem (jak w głównych etykietach V2)
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN_X, headerBottom, PAGE_W - MARGIN_X, headerBottom);
+
     // Dostępna wysokość dla title + content
     const sectionBottom = y + sectionH;
     const contentAvail = sectionBottom - headerBottom - 2;
