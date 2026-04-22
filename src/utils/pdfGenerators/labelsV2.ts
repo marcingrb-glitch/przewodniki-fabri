@@ -236,10 +236,10 @@ function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
   doc.setFontSize(META_FONT);
   doc.text(widthPart, MARGIN_X, y + META_FONT * 0.35, { baseline: "alphabetic" });
 
-  // Divider under meta row
+  // Delikatny separator pod meta row (jak między sekcjami, nie gruby czarny)
   const divY = y + META_FONT * 0.55 + 1;
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.3);
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.2);
   doc.line(MARGIN_X, divY, PAGE_W - MARGIN_X, divY);
 
   return divY + 2;
