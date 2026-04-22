@@ -450,28 +450,35 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
     .trim();
   const orderText = decoded.orderNumber ? `${decoded.orderNumber}` : "";
 
-  // RIGHT: order# (bold, większy)
-  const MINI_ORDER_SIZE = 18;
-  const MINI_TEMPLATE_SIZE = 11;
+  // Ten sam rozmiar co główny header u góry arkusza (pasek po odcięciu ma własną, pełną tożsamość)
+  let orderSize = ORDER_NUMBER_FONT;
   let orderWidth = 0;
   if (orderText) {
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(MINI_ORDER_SIZE);
+    doc.setFontSize(orderSize);
+    const maxWidth = CONTENT_W * 0.55;
+    while (doc.getTextWidth(orderText) > maxWidth && orderSize > 15) {
+      orderSize -= 1;
+      doc.setFontSize(orderSize);
+    }
     orderWidth = doc.getTextWidth(orderText);
-    doc.text(orderText, PAGE_W - MARGIN_X, cursorY + MINI_ORDER_SIZE * 0.32, {
+    doc.text(orderText, PAGE_W - MARGIN_X, cursorY + orderSize * 0.32, {
       align: "right",
       baseline: "alphabetic",
     });
   }
-  // LEFT: template (mniejszy, ten sam baseline)
   if (headerText) {
     const availableLeft = CONTENT_W - orderWidth - 3;
-    const tSize = fitFontSize(doc, headerText, availableLeft, { max: MINI_TEMPLATE_SIZE, min: 8, bold: true });
+    const tSize = fitFontSize(doc, headerText, availableLeft, {
+      max: HEADER_FONT_MAX,
+      min: HEADER_FONT_MIN,
+      bold: true,
+    });
     doc.setFont("Roboto", "bold");
     doc.setFontSize(tSize);
-    doc.text(headerText, MARGIN_X, cursorY + MINI_ORDER_SIZE * 0.32, { baseline: "alphabetic" });
+    doc.text(headerText, MARGIN_X, cursorY + orderSize * 0.32, { baseline: "alphabetic" });
   }
-  cursorY += MINI_ORDER_SIZE * 0.45 + 2;
+  cursorY += orderSize * 0.45 + 2;
 
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
@@ -558,8 +565,8 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     if (decoded.legHeights?.sofa_chest) n++;
     if (decoded.pufaLegs) n++;
     if (decoded.fotelLegs) n++;
-    // 6mm cut-line + 10mm mini-header (order# + template) + title + N lines + tail
-    return 6 + 10 + h + n * BODY_LINE_H + 1;
+    // 6mm cut-line + ~16mm mini-header (order# + template — duży jak main) + title + N lines + tail
+    return 6 + 16 + h + n * BODY_LINE_H + 1;
   }
 
   const rows = section.display_fields ?? [];
