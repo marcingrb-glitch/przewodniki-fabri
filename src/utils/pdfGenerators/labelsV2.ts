@@ -29,16 +29,23 @@ const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 const HEADER_FONT = 14;
 const ORDER_NUMBER_FONT = 32; // duży # zamówienia — prawy górny róg każdego arkusza
 const META_FONT = 11;
-const SECTION_GAP = 5; // odstęp między sekcjami
+const SECTION_GAP = 5; // odstęp między sekcjami (dynamicznie może się zwiększyć)
 
-// Auto-fit ranges
-const TITLE_MAX = 20;
+// Auto-fit: bazowe i twarde krańce
+const TITLE_DEFAULT_MAX = 20;
+const TITLE_HARD_CAP = 32; // max przy scale up
 const TITLE_MIN = 12;
-const BODY_MAX = 16;
+const BODY_DEFAULT_MAX = 16;
+const BODY_HARD_CAP = 26; // max przy scale up
 const BODY_MIN = 10;
-const LINE_HEIGHT_RATIO = 0.6; // line height = fontSize * ratio (mm ≈ pt * 0.35 → 0.6 daje oddech)
+const LINE_HEIGHT_RATIO = 0.6; // line height = fontSize × ratio
 
-// Kompat: niektóre miejsca używają stałych
+// Dynamiczne maxy (ustawiane per arkusz w renderSheet, żeby maksymalnie wypełnić wysokość)
+let CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
+let CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
+let CURRENT_SECTION_GAP = SECTION_GAP;
+
+// Kompat dla starych callerów
 const SECTION_TITLE_FONT = TITLE_MIN;
 const BODY_FONT = BODY_MIN;
 const LINE_H = BODY_MIN * LINE_HEIGHT_RATIO;
@@ -50,7 +57,7 @@ function fitFontSize(
   doc: jsPDF,
   text: string,
   maxWidth: number,
-  opts: { max: number; min: number; bold?: boolean } = { max: BODY_MAX, min: BODY_MIN }
+  opts: { max: number; min: number; bold?: boolean } = { max: CURRENT_BODY_MAX, min: BODY_MIN }
 ): number {
   doc.setFont("Roboto", opts.bold ? "bold" : "normal");
   let size = opts.max;
@@ -253,7 +260,7 @@ function interpolateTitle(title: string, decoded: DecodedSKU): string {
 function renderSectionTitle(doc: jsPDF, title: string, decoded: DecodedSKU, y: number): number {
   const rendered = interpolateTitle(title, decoded);
   const text = `▸ ${rendered}`;
-  const size = fitFontSize(doc, text, CONTENT_W, { max: TITLE_MAX, min: TITLE_MIN, bold: true });
+  const size = fitFontSize(doc, text, CONTENT_W, { max: CURRENT_TITLE_MAX, min: TITLE_MIN, bold: true });
   doc.setFont("Roboto", "bold");
   doc.setFontSize(size);
   doc.text(text, MARGIN_X, y + size * 0.35, { baseline: "alphabetic" });
@@ -276,7 +283,7 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
     if (parts.length === 0) continue;
 
     const line = `  ${parts.join("  ")}`;
-    const size = fitFontSize(doc, line, CONTENT_W, { max: BODY_MAX, min: BODY_MIN });
+    const size = fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN });
     doc.setFont("Roboto", "normal");
     doc.setFontSize(size);
     const lineH = size * LINE_HEIGHT_RATIO;
@@ -309,7 +316,7 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
 
   for (const b of bullets) {
     const line = `  • ${b}`;
-    const size = fitFontSize(doc, line, CONTENT_W, { max: BODY_MAX, min: BODY_MIN });
+    const size = fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN });
     doc.setFont("Roboto", "normal");
     doc.setFontSize(size);
     const lineH = size * LINE_HEIGHT_RATIO;
@@ -408,7 +415,7 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
 
   for (const line of lines) {
     const t = `  ${line}`;
-    const size = fitFontSize(doc, t, CONTENT_W, { max: BODY_MAX, min: BODY_MIN });
+    const size = fitFontSize(doc, t, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN });
     doc.setFont("Roboto", "normal");
     doc.setFontSize(size);
     const lineH = size * LINE_HEIGHT_RATIO;
@@ -456,8 +463,8 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
 
   // Worst-case measure: przyjmujemy że każda linia renderuje się przy max rozmiarze
   // (auto-fit może zmniejszyć, więc realna wysokość ≤ oszacowanej → bezpieczne).
-  const TITLE_H = TITLE_MAX * LINE_HEIGHT_RATIO + 1;
-  const BODY_LINE_H = BODY_MAX * LINE_HEIGHT_RATIO;
+  const TITLE_H = CURRENT_TITLE_MAX * LINE_HEIGHT_RATIO + 1;
+  const BODY_LINE_H = CURRENT_BODY_MAX * LINE_HEIGHT_RATIO;
   let h = section.title ? TITLE_H : 0;
 
   if (section.style === "diagram_box") {
@@ -502,6 +509,35 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
   return h + count * BODY_LINE_H + 1;
 }
 
+// Szacuje łączną wysokość sekcji dla zadanych maxów — używane do scale-up.
+function estimateSheetHeight(
+  doc: jsPDF,
+  sheet: LabelTemplateV2,
+  decoded: DecodedSKU,
+  titleMax: number,
+  bodyMax: number,
+  gap: number
+): number {
+  const savedT = CURRENT_TITLE_MAX, savedB = CURRENT_BODY_MAX, savedG = CURRENT_SECTION_GAP;
+  CURRENT_TITLE_MAX = titleMax;
+  CURRENT_BODY_MAX = bodyMax;
+  CURRENT_SECTION_GAP = gap;
+  try {
+    const sections = (sheet.sections ?? []).filter((s) => {
+      if (!s.condition_field) return true;
+      return checkDecodedCondition(decoded, s.condition_field);
+    });
+    let total = 0;
+    for (const s of sections) total += measureSection(doc, s, decoded);
+    if (sections.length > 1) total += gap * (sections.length - 1);
+    return total;
+  } finally {
+    CURRENT_TITLE_MAX = savedT;
+    CURRENT_BODY_MAX = savedB;
+    CURRENT_SECTION_GAP = savedG;
+  }
+}
+
 // ─── Single-sheet render ─────────────────────────────────────────────────
 export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: DecodedSKU, isFirst: boolean) {
   if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
@@ -511,17 +547,32 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
   if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
   const contentStartY = y;
 
+  // Scale-up: szacujemy wysokość przy default sizes, jeśli jest miejsce — powiększamy.
+  const available = PAGE_H - MARGIN_BOTTOM - contentStartY;
+  const baseHeight = estimateSheetHeight(doc, sheet, decoded, TITLE_DEFAULT_MAX, BODY_DEFAULT_MAX, SECTION_GAP);
+  if (baseHeight > 0 && baseHeight < available) {
+    // Ile razy możemy powiększyć (cap twardymi limitami fonów i rozsądnym 1.8x)
+    const scaleByBody = BODY_HARD_CAP / BODY_DEFAULT_MAX;
+    const scaleByTitle = TITLE_HARD_CAP / TITLE_DEFAULT_MAX;
+    const scaleByFit = available / baseHeight;
+    const scale = Math.min(scaleByBody, scaleByTitle, scaleByFit, 1.8);
+    CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX * scale;
+    CURRENT_BODY_MAX = BODY_DEFAULT_MAX * scale;
+    CURRENT_SECTION_GAP = SECTION_GAP * Math.min(scale, 1.5); // gap rośnie ale wolniej
+  } else {
+    CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
+    CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
+    CURRENT_SECTION_GAP = SECTION_GAP;
+  }
+
   const sections = sheet.sections ?? [];
   for (const section of sections) {
     const needed = measureSection(doc, section, decoded);
     if (needed === 0) continue; // conditional-skipped
 
-    const available = PAGE_H - MARGIN_BOTTOM - y;
+    const avail = PAGE_H - MARGIN_BOTTOM - y;
 
-    // Page-break when: section doesn't fit AND we've rendered at least one
-    // section on the current page (avoid infinite loop if section alone is
-    // larger than a full page — render anyway, jsPDF won't clip).
-    if (needed > available && y > contentStartY + 1) {
+    if (needed > avail && y > contentStartY + 1) {
       doc.addPage([PAGE_W, PAGE_H], "portrait");
       y = MARGIN_TOP;
       y = renderHeader(doc, sheet, decoded, y, /* continued */ true);
@@ -529,8 +580,13 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
     }
 
     y = renderSection(doc, section, decoded, y);
-    y += SECTION_GAP;
+    y += CURRENT_SECTION_GAP;
   }
+
+  // Reset do defaultów po arkuszu (żeby kolejny arkusz startował czysto)
+  CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
+  CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
+  CURRENT_SECTION_GAP = SECTION_GAP;
 }
 
 // ─── Arkusz rozcięciowy S1 (preset — nie z DB) ───────────────────────────
