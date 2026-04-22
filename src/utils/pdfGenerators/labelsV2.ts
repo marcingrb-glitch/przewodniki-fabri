@@ -408,11 +408,11 @@ function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   const rightRaw = fields.right ? resolveDecodedField(fields.right, decoded) : "";
   const centerRaw = fields.center ? resolveDecodedField(fields.center, decoded) : "";
 
-  // Raw wartości z DB — admin decyduje jaki tekst wpisze w properties
-  // (np. "SD04" albo "1" albo "17 x 63 x 1" — cokolwiek chce widzieć na etykiecie).
-  const leftVal = leftRaw;
-  const rightVal = rightRaw;
-  const centerVal = centerRaw;
+  // Jeśli wartość ma wymiary "NxNxN" → pokaż tylko najmniejszy (grubość).
+  // Jeśli tekst (np. "SD04", "Półwałek") → pokaż tak jak jest.
+  const leftVal = smallestDimIfDim(leftRaw);
+  const rightVal = smallestDimIfDim(rightRaw);
+  const centerVal = smallestDimIfDim(centerRaw);
 
   // Labele (top/bottom — opisy) — większa czcionka niż standardowy body
   const LABEL_SIZE = 13;
