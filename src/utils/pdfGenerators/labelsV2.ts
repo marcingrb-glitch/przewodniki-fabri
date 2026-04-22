@@ -150,28 +150,7 @@ export async function fetchSheets(
     results.push(...(globalData as unknown as LabelTemplateV2[]));
   }
 
-  // Pufa = single source of truth. For sofa/naroznik, pull the canonical pufa
-  // sheet (product_type='pufa', series_id=NULL) and attach it as a conditional
-  // sheet (only printed when the order contains a pufa — extras_pufa_fotel).
-  if (productType === "sofa" || productType === "naroznik") {
-    const { data: pufaData } = await supabase
-      .from("label_templates_v2")
-      .select("*")
-      .eq("product_type", "pufa")
-      .is("series_id", null)
-      .order("sort_order");
-    if (pufaData && pufaData.length > 0) {
-      for (const p of pufaData as unknown as LabelTemplateV2[]) {
-        results.push({
-          ...p,
-          is_conditional: true,
-          condition_field: "extras_pufa_fotel",
-          sort_order: 99,
-        });
-      }
-    }
-  }
-
+  // Pufa ma osobny generator (generatePufaLabelsV2PDF) — nie doklejamy do sofy.
   return results;
 }
 
