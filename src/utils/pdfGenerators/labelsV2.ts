@@ -793,12 +793,12 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
   // Build sections (3 × ~46mm, powiększone po usunięciu NOGI)
   const sections: CutSection[] = [];
 
-  // 1. Boczek LEWY + PRAWY
+  // 1. Boczek ×2 (identyczne L/P, więc ten sam tytuł)
   const sideTpls = byComp["side"] || [];
   const sideLines = sideTpls.flatMap((t) => buildContentLines(t, decoded));
   if (sideTpls.length > 0) {
-    sections.push({ title: "BOCZEK — LEWY", lines: sideLines });
-    sections.push({ title: "BOCZEK — PRAWY", lines: sideLines });
+    sections.push({ title: "BOCZEK", lines: sideLines });
+    sections.push({ title: "BOCZEK", lines: sideLines });
   }
 
   // 2. Skrzynia
@@ -852,23 +852,48 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
 
     const headerBottom = y + oSize * 0.45 + 1;
 
-    // Section title — jak w V2 etykietach (▸ TITLE, 16pt bold)
-    doc.setFont("Roboto", "bold");
-    doc.setFontSize(SECTION_TITLE_FONT + 4);
-    doc.text(`▸ ${sec.title}`, MARGIN_X, headerBottom + 6);
+    // Dostępna wysokość dla title + content
+    const sectionBottom = y + sectionH;
+    const contentAvail = sectionBottom - headerBottom - 2;
 
-    // Content lines — 11pt body
-    doc.setFont("Roboto", "normal");
-    doc.setFontSize(11);
-    let contentY = headerBottom + 12;
-    for (const line of sec.lines) {
-      const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
-      for (const w of wrapped) {
-        if (contentY > y + sectionH - 1) break;
-        doc.text(`  ${w}`, MARGIN_X, contentY);
-        contentY += 5;
+    // Oszacuj bazową wysokość: title + linie przy default sizes
+    const baseLines = sec.lines.length;
+    const baseH =
+      TITLE_DEFAULT_MAX * LINE_HEIGHT_RATIO + 1 +
+      baseLines * (BODY_DEFAULT_MAX * LINE_HEIGHT_RATIO);
+    const scale = baseH > 0
+      ? Math.max(0.7, Math.min(1.8, BODY_HARD_CAP / BODY_DEFAULT_MAX, TITLE_HARD_CAP / TITLE_DEFAULT_MAX, contentAvail / baseH))
+      : 1;
+    const titleSize = TITLE_DEFAULT_MAX * scale;
+    const bodySize = BODY_DEFAULT_MAX * scale;
+
+    // Title z auto-fit width (na wypadek długiego tytułu po scale)
+    const titleText = `▸ ${sec.title}`;
+    const tfSize = fitFontSize(doc, titleText, CONTENT_W, { max: titleSize, min: TITLE_MIN, bold: true });
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(tfSize);
+    let contentY = headerBottom + tfSize * LINE_HEIGHT_RATIO;
+    doc.text(titleText, MARGIN_X, contentY);
+    contentY += 2;
+
+    // Content — wspólny min size dla wszystkich linii w sekcji
+    if (sec.lines.length > 0) {
+      let minBodySize = bodySize;
+      for (const line of sec.lines) {
+        const t = `  ${line}`;
+        minBodySize = Math.min(
+          minBodySize,
+          fitFontSize(doc, t, CONTENT_W, { max: bodySize, min: BODY_MIN })
+        );
       }
-      if (contentY > y + sectionH - 1) break;
+      doc.setFont("Roboto", "normal");
+      doc.setFontSize(minBodySize);
+      const lineH = minBodySize * LINE_HEIGHT_RATIO;
+      for (const line of sec.lines) {
+        if (contentY + lineH > sectionBottom) break;
+        doc.text(`  ${line}`, MARGIN_X, contentY + lineH * 0.75);
+        contentY += lineH;
+      }
     }
 
     // Cut-guide between sections (not after last)
