@@ -353,20 +353,8 @@ const OrderDetailsPage = () => {
             <ActionBtn icon={Tag} label="Pobierz etykiety V1" loadKey="sofa-labels-dl" onClick={async () => downloadAndSave(await generateSofaLabelsPDF(decoded), `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")} />
             <ActionBtn icon={Eye} label="Podgląd V2 (duże)" loadKey="sofa-labels-v2-preview" onClick={async () => previewPair(await generateSofaLabelsV2PDF(decoded), "Etykiety V2 Sofy", `sofa_etykiety_v2_${orderNumber}.pdf`)} />
             <ActionBtn icon={Tag} label="Pobierz V2 (duże)" loadKey="sofa-labels-v2-dl" onClick={async () => downloadPair(await generateSofaLabelsV2PDF(decoded), `sofa_etykiety_${orderNumber}`, "v2")} />
-            <ActionBtn icon={Eye} label="Przewodnik Produkcja" loadKey="sofa-decode-preview" onClick={async () => {
-              const sofaBlob = await generateProductionGuidePDF(decoded, variantImageUrl || undefined);
-              if (!hasFotel) { preview(sofaBlob, "Przewodnik Produkcja", `przewodnik_produkcja_${orderNumber}.pdf`); return; }
-              const fotelBlob = await generateFotelProductionGuidePDF(decoded);
-              const merged = await mergePdfBlobs([sofaBlob, fotelBlob]);
-              preview(merged, "Przewodnik Produkcja (sofa + fotel)", `przewodnik_produkcja_${orderNumber}.pdf`);
-            }} />
-            <ActionBtn icon={Download} label="Pobierz Przew. Produkcja" loadKey="sofa-decode-dl" onClick={async () => {
-              const sofaBlob = await generateProductionGuidePDF(decoded, variantImageUrl || undefined);
-              if (!hasFotel) { await downloadAndSave(sofaBlob, `przewodnik_produkcja_${orderNumber}.pdf`, "production_sofa_fotel"); return; }
-              const fotelBlob = await generateFotelProductionGuidePDF(decoded);
-              const merged = await mergePdfBlobs([sofaBlob, fotelBlob]);
-              await downloadAndSave(merged, `przewodnik_produkcja_${orderNumber}.pdf`, "production_sofa_fotel");
-            }} />
+            <ActionBtn icon={Eye} label="Przewodnik Produkcja" loadKey="sofa-decode-preview" onClick={async () => preview(await generateProductionGuidePDF(decoded, variantImageUrl || undefined), "Przewodnik Produkcja", `przewodnik_produkcja_sofa_${orderNumber}.pdf`)} />
+            <ActionBtn icon={Download} label="Pobierz Przew. Produkcja" loadKey="sofa-decode-dl" onClick={async () => downloadAndSave(await generateProductionGuidePDF(decoded, variantImageUrl || undefined), `przewodnik_produkcja_sofa_${orderNumber}.pdf`, "production_sofa")} />
           </div>
         </CardContent>
       </Card>
@@ -436,7 +424,8 @@ const OrderDetailsPage = () => {
               <ActionBtn icon={Tag} label="Pobierz etykiety V1" loadKey="fotel-labels-dl" onClick={async () => downloadAndSave(await generateFotelLabelsPDF(decoded), `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")} />
               <ActionBtn icon={Eye} label="Podgląd V2 (duża)" loadKey="fotel-labels-v2-preview" onClick={async () => previewPair(await generateFotelLabelsV2PDF(decoded), "Etykiety V2 Fotela", `fotel_etykiety_v2_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz V2 (duża)" loadKey="fotel-labels-v2-dl" onClick={async () => downloadPair(await generateFotelLabelsV2PDF(decoded), `fotel_etykiety_${orderNumber}`, "v2")} />
-              {/* Przewodnik produkcja fotela jest scalony z sofą — przycisk nad sekcją SOFA */}
+              <ActionBtn icon={Eye} label="Przewodnik Produkcja fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelProductionGuidePDF(decoded), "Przewodnik Produkcja fotela", `przewodnik_produkcja_fotel_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelProductionGuidePDF(decoded), `przewodnik_produkcja_fotel_${orderNumber}.pdf`, "production_fotel")} />
             </div>
           </CardContent>
         </Card>
@@ -484,24 +473,21 @@ const OrderDetailsPage = () => {
             downloadBlob(mergedBlob, `etykiety_${orderNumber}.pdf`);
             toast.success("✅ Pobrano wszystkie etykiety w 1 PDF");
           }} />
-          <ActionBtn icon={Download} label="Pobierz wszystkie przewodniki (1 PDF)" loadKey="all-guides" onClick={async () => {
-            // Łączymy magazyn + produkcja sofy/pufy/fotela w jeden PDF
-            const blobs: Blob[] = [];
-            blobs.push(await generateWarehouseGuidePDF(decoded));
-            blobs.push(await generateProductionGuidePDF(decoded, variantImageUrl || undefined));
-            if (hasPufa) blobs.push(await generatePufaProductionGuidePDF(decoded));
-            if (hasFotel) blobs.push(await generateFotelProductionGuidePDF(decoded));
-            const merged = await PDFDocument.create();
-            for (const blob of blobs) {
-              const bytes = new Uint8Array(await blob.arrayBuffer());
-              const src = await PDFDocument.load(bytes);
-              const pages = await merged.copyPages(src, src.getPageIndices());
-              pages.forEach((p) => merged.addPage(p));
+          <ActionBtn icon={Download} label="Pobierz przewodniki produkcji" loadKey="all-guides" onClick={async () => {
+            // 1. Sofa — zawsze osobny dokument
+            const sofaBlob = await generateProductionGuidePDF(decoded, variantImageUrl || undefined);
+            downloadBlob(sofaBlob, `przewodnik_produkcja_sofa_${orderNumber}.pdf`);
+
+            // 2. Pufa + fotel — jeden dokument jeśli któreś obecne
+            if (hasPufa || hasFotel) {
+              const extras: Blob[] = [];
+              if (hasPufa) extras.push(await generatePufaProductionGuidePDF(decoded));
+              if (hasFotel) extras.push(await generateFotelProductionGuidePDF(decoded));
+              const combined = extras.length === 1 ? extras[0] : await mergePdfBlobs(extras);
+              const name = hasPufa && hasFotel ? "pufa_fotel" : hasPufa ? "pufa" : "fotel";
+              downloadBlob(combined, `przewodnik_produkcja_${name}_${orderNumber}.pdf`);
             }
-            const mergedBytes = await merged.save();
-            const mergedBlob = new Blob([new Uint8Array(mergedBytes)], { type: "application/pdf" });
-            downloadBlob(mergedBlob, `przewodniki_${orderNumber}.pdf`);
-            toast.success("✅ Pobrano wszystkie przewodniki w 1 PDF");
+            toast.success("✅ Pobrano przewodniki produkcji");
           }} />
           <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
             const zip = new JSZip();
