@@ -253,6 +253,12 @@ function interpolateTitle(title: string, decoded: DecodedSKU): string {
   return title.replace(/\{([^}]+)\}/g, (_, key) => {
     // Zmienne z sufiksem jednostki
     if (key === "width") return decoded.width ? `${decoded.width} cm` : "";
+    if (key === "backrest.height") {
+      const h = decoded.backrest?.height;
+      if (!h) return "";
+      // Jeśli już zawiera "cm" to nie dublujemy
+      return /cm/i.test(h) ? h : `${h} cm`;
+    }
     // Predefiniowane (kompat)
     if (key === "series.code") return decoded.series.code || "";
     if (key === "series.name") return decoded.series.name || "";
