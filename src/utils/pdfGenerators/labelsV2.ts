@@ -181,9 +181,8 @@ function renderHeader(
   y: number,
   continued = false
 ): number {
-  // Linia 1: duży order# (right-aligned, cała szerokość dla siebie).
-  // Linia 2: rozwinięty header_template (np. "SOFA Viena [S1]"), większy font
-  //          bo zajmuje całą szerokość.
+  // Jeden wiersz: LEFT = rozwinięty header_template ("SOFA Viena [S1]"),
+  // RIGHT = duży #orderNumber. Oba dzielą się szerokością.
   const template = sheet.header_template || "{sheet_name}        {series.code} · {series.name}";
   let rendered = template
     .replace("{sheet_name}", sheet.sheet_name)
@@ -193,28 +192,29 @@ function renderHeader(
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
   if (continued) rendered += " (cd.)";
 
-  let cursorY = y;
-
-  // Linia 1: order# right
+  // RIGHT: order# — max ~55% szerokości
   let orderSize = ORDER_NUMBER_FONT;
+  let orderWidth = 0;
   if (decoded.orderNumber) {
     doc.setFont("Roboto", "bold");
     doc.setFontSize(orderSize);
     const text = `${decoded.orderNumber}`;
-    while (doc.getTextWidth(text) > CONTENT_W - 1 && orderSize > 15) {
+    const maxWidth = CONTENT_W * 0.55;
+    while (doc.getTextWidth(text) > maxWidth && orderSize > 15) {
       orderSize -= 1;
       doc.setFontSize(orderSize);
     }
+    orderWidth = doc.getTextWidth(text);
     doc.setTextColor(0, 0, 0);
-    doc.text(text, PAGE_W - MARGIN_X, cursorY + orderSize * 0.32, {
+    doc.text(text, PAGE_W - MARGIN_X, y + orderSize * 0.32, {
       align: "right",
       baseline: "alphabetic",
     });
-    cursorY += orderSize * LINE_HEIGHT_RATIO;
   }
 
-  // Linia 2: header_template na całą szerokość, auto-fit
-  const headerSize = fitFontSize(doc, rendered, CONTENT_W - 1, {
+  // LEFT: header_template w pozostałej szerokości, auto-fit
+  const availableLeft = CONTENT_W - orderWidth - 3;
+  const headerSize = fitFontSize(doc, rendered, availableLeft, {
     max: HEADER_FONT_MAX,
     min: HEADER_FONT_MIN,
     bold: true,
@@ -222,10 +222,9 @@ function renderHeader(
   doc.setFont("Roboto", "bold");
   doc.setFontSize(headerSize);
   doc.setTextColor(0, 0, 0);
-  doc.text(rendered, MARGIN_X, cursorY + headerSize * 0.32, { baseline: "alphabetic" });
-  cursorY += headerSize * LINE_HEIGHT_RATIO + 1;
+  doc.text(rendered, MARGIN_X, y + orderSize * 0.32, { baseline: "alphabetic" });
 
-  return cursorY;
+  return y + orderSize * 0.45 + 1;
 }
 
 function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
