@@ -365,59 +365,77 @@ function renderTable(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
   return renderPlain(doc, section, decoded, y);
 }
 
+// Jeśli wartość wygląda jak wymiary "NxNxN" / "N x N x N" — wyciągnij pierwszy wymiar.
+// Bo dla pufy etykieta pokazuje np. "17 x 63 x 1" a do produkcji trzeba tylko wysokość "17".
+function firstDimIfDim(val: string): string {
+  if (!val) return val;
+  if (/\d+(\.\d+)?\s*[x×]\s*\d+/i.test(val)) {
+    const m = val.match(/^\s*(\d+(?:\.\d+)?)/);
+    if (m) return m[1];
+  }
+  return val;
+}
+
 function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   let cursorY = y;
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
-  const boxSize = section.box_size_mm ?? 50;
+  const boxSize = section.box_size_mm ?? 40; // default mniejszy (było 50)
   const boxX = MARGIN_X + (CONTENT_W - boxSize) / 2;
-  const boxY = cursorY + 6; // margin for top label
+  const boxY = cursorY + 8; // margin for top label
 
   doc.setDrawColor(0);
   doc.setLineWidth(0.5);
   doc.rect(boxX, boxY, boxSize, boxSize);
 
-  doc.setFont("Roboto", "normal");
-  doc.setFontSize(BODY_FONT);
-
   const fields = section.fields ?? {};
   const topVal = fields.top ? resolveDecodedField(fields.top, decoded) : "";
   const bottomVal = fields.bottom ? resolveDecodedField(fields.bottom, decoded) : "";
-  const leftVal = fields.left ? resolveDecodedField(fields.left, decoded) : "";
-  const rightVal = fields.right ? resolveDecodedField(fields.right, decoded) : "";
-  const centerVal = fields.center ? resolveDecodedField(fields.center, decoded) : "";
+  const leftRaw = fields.left ? resolveDecodedField(fields.left, decoded) : "";
+  const rightRaw = fields.right ? resolveDecodedField(fields.right, decoded) : "";
+  const centerRaw = fields.center ? resolveDecodedField(fields.center, decoded) : "";
+
+  // Dla wymiarów bierzemy tylko pierwszą liczbę (tylko dla wartości wyglądających na wymiary)
+  const leftVal = firstDimIfDim(leftRaw);
+  const rightVal = firstDimIfDim(rightRaw);
+  const centerVal = firstDimIfDim(centerRaw);
+
+  // Labele (top/bottom — opisy) — większa czcionka niż standardowy body
+  const LABEL_SIZE = 13;
+  const DIM_SIZE = 18; // duże wymiary na bokach / wewnątrz
 
   // Top (above box, centered)
   if (topVal && topVal !== "-") {
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(LABEL_SIZE);
     doc.text(topVal, boxX + boxSize / 2, boxY - 2, { align: "center" });
   }
   // Bottom (below box, centered)
   if (bottomVal && bottomVal !== "-") {
-    doc.text(bottomVal, boxX + boxSize / 2, boxY + boxSize + 5, { align: "center" });
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(LABEL_SIZE);
+    doc.text(bottomVal, boxX + boxSize / 2, boxY + boxSize + LABEL_SIZE * 0.5, { align: "center" });
   }
-  // Left (to left of box, right-aligned)
+  // Left (po lewej od boksa) — duża liczba wysokości
   if (leftVal && leftVal !== "-") {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(DIM_SIZE);
     doc.text(leftVal, boxX - 2, boxY + boxSize / 2, { align: "right", baseline: "middle" });
   }
-  // Right (to right of box)
+  // Right (po prawej od boksa)
   if (rightVal && rightVal !== "-") {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(DIM_SIZE);
     doc.text(rightVal, boxX + boxSize + 2, boxY + boxSize / 2, { align: "left", baseline: "middle" });
   }
-  // Center (inside box, wrapped)
+  // Center (w boksie) — duża wytłuszczona liczba
   if (centerVal && centerVal !== "-") {
     doc.setFont("Roboto", "bold");
-    const wrapped = doc.splitTextToSize(centerVal, boxSize - 4);
-    const totalH = wrapped.length * LINE_H;
-    let cy = boxY + boxSize / 2 - totalH / 2 + LINE_H * 0.7;
-    for (const line of wrapped) {
-      doc.text(line, boxX + boxSize / 2, cy, { align: "center" });
-      cy += LINE_H;
-    }
-    doc.setFont("Roboto", "normal");
+    doc.setFontSize(DIM_SIZE + 4);
+    doc.text(centerVal, boxX + boxSize / 2, boxY + boxSize / 2, { align: "center", baseline: "middle" });
   }
 
-  // Return cursor below box (+ margin for bottom label)
-  return boxY + boxSize + 10;
+  return boxY + boxSize + LABEL_SIZE + 2;
 }
 
 // Legs list — komplet nóżek (siedzisko + skrzynia + pufa + fotel) z linią odcięcia
