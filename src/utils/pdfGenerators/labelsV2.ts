@@ -539,6 +539,8 @@ function estimateSheetHeight(
 }
 
 // ─── Single-sheet render ─────────────────────────────────────────────────
+// Zasada: każdy arkusz NA JEDNĄ STRONĘ. Skalujemy w górę, żeby wypełnić
+// wysokość; w dół, żeby się zmieścić. Limity dolne: BODY_MIN/TITLE_MIN.
 export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: DecodedSKU, isFirst: boolean) {
   if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
 
@@ -546,47 +548,45 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
   y = renderHeader(doc, sheet, decoded, y);
   if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
   const contentStartY = y;
-
-  // Scale-up: szacujemy wysokość przy default sizes, jeśli jest miejsce — powiększamy.
   const available = PAGE_H - MARGIN_BOTTOM - contentStartY;
-  const baseHeight = estimateSheetHeight(doc, sheet, decoded, TITLE_DEFAULT_MAX, BODY_DEFAULT_MAX, SECTION_GAP);
-  if (baseHeight > 0 && baseHeight < available) {
-    // Ile razy możemy powiększyć (cap twardymi limitami fonów i rozsądnym 1.8x)
-    const scaleByBody = BODY_HARD_CAP / BODY_DEFAULT_MAX;
-    const scaleByTitle = TITLE_HARD_CAP / TITLE_DEFAULT_MAX;
-    const scaleByFit = available / baseHeight;
-    const scale = Math.min(scaleByBody, scaleByTitle, scaleByFit, 1.8);
-    CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX * scale;
-    CURRENT_BODY_MAX = BODY_DEFAULT_MAX * scale;
-    CURRENT_SECTION_GAP = SECTION_GAP * Math.min(scale, 1.5); // gap rośnie ale wolniej
-  } else {
-    CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
-    CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
-    CURRENT_SECTION_GAP = SECTION_GAP;
+
+  // Policz wysokość przy default sizes i policz scale żeby content = available.
+  const baseHeight = estimateSheetHeight(
+    doc, sheet, decoded, TITLE_DEFAULT_MAX, BODY_DEFAULT_MAX, SECTION_GAP
+  );
+
+  // Scale = available / baseHeight. Clamp do rozsądnego zakresu.
+  // Górne limity: tytuł/body hard cap. Dolne: MIN/DEFAULT (nie mniej niż 60%).
+  const MIN_SCALE = 0.6;
+  const MAX_SCALE_BY_BODY = BODY_HARD_CAP / BODY_DEFAULT_MAX;
+  const MAX_SCALE_BY_TITLE = TITLE_HARD_CAP / TITLE_DEFAULT_MAX;
+  const MAX_SCALE = Math.min(MAX_SCALE_BY_BODY, MAX_SCALE_BY_TITLE, 1.8);
+
+  let scale = 1;
+  if (baseHeight > 0) {
+    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, available / baseHeight));
   }
 
+  CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX * scale;
+  CURRENT_BODY_MAX = BODY_DEFAULT_MAX * scale;
+  // Gap: rośnie do 1.5× max, maleje proporcjonalnie w dół ale nie mniej niż 2mm
+  CURRENT_SECTION_GAP = Math.max(2, SECTION_GAP * Math.min(scale, 1.5));
+
+  // Render sekcji — bez page-breaka! (max 1 strona na arkusz)
   const sections = sheet.sections ?? [];
   for (const section of sections) {
     const needed = measureSection(doc, section, decoded);
     if (needed === 0) continue; // conditional-skipped
 
-    const avail = PAGE_H - MARGIN_BOTTOM - y;
-
-    if (needed > avail && y > contentStartY + 1) {
-      doc.addPage([PAGE_W, PAGE_H], "portrait");
-      y = MARGIN_TOP;
-      y = renderHeader(doc, sheet, decoded, y, /* continued */ true);
-      if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
-    }
-
     y = renderSection(doc, section, decoded, y);
     y += CURRENT_SECTION_GAP;
   }
 
-  // Reset do defaultów po arkuszu (żeby kolejny arkusz startował czysto)
+  // Reset do defaultów po arkuszu
   CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
   CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
   CURRENT_SECTION_GAP = SECTION_GAP;
+  void contentStartY; // reserved for future use
 }
 
 // ─── Arkusz rozcięciowy S1 (preset — nie z DB) ───────────────────────────
