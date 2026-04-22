@@ -819,38 +819,54 @@ export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst:
   let y = topMargin;
 
   const orderNum = decoded.orderNumber || "---";
-  const seriesSub = `${decoded.series.code}·${decoded.series.name}`;
+  const headerTemplate = `SOFA ${decoded.series.collection || decoded.series.name} [${decoded.series.code}]`;
 
   for (let i = 0; i < sections.length; i++) {
     const sec = sections[i];
 
-    // Duży numer zamówienia — prawy górny róg sekcji
+    // Main header — taki sam styl jak główne etykiety V2 (duży order# + template LEFT)
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(23);
+    let oSize = ORDER_NUMBER_FONT;
+    doc.setFontSize(oSize);
+    const maxOrderW = CONTENT_W * 0.55;
+    while (doc.getTextWidth(orderNum) > maxOrderW && oSize > 15) {
+      oSize -= 1;
+      doc.setFontSize(oSize);
+    }
+    const orderWidth = doc.getTextWidth(orderNum);
     doc.setTextColor(0, 0, 0);
-    doc.text(`${orderNum}`, PAGE_W - MARGIN_X, y + 7.5, {
+    doc.text(orderNum, PAGE_W - MARGIN_X, y + oSize * 0.32, {
       align: "right",
       baseline: "alphabetic",
     });
 
-    // Seria — małe, po lewej, tego samego baseline co #
-    doc.setFontSize(8);
-    doc.text(seriesSub, MARGIN_X, y + 6.5, { baseline: "alphabetic" });
+    // Template LEFT — fit w pozostałej szerokości
+    const tSize = fitFontSize(doc, headerTemplate, CONTENT_W - orderWidth - 3, {
+      max: HEADER_FONT_MAX,
+      min: HEADER_FONT_MIN,
+      bold: true,
+    });
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(tSize);
+    doc.text(headerTemplate, MARGIN_X, y + oSize * 0.32, { baseline: "alphabetic" });
 
-    // Title — poniżej
-    doc.setFontSize(11);
-    doc.text(`▸ ${sec.title}`, MARGIN_X, y + 13);
+    const headerBottom = y + oSize * 0.45 + 1;
 
-    // Content lines
+    // Section title — jak w V2 etykietach (▸ TITLE, 16pt bold)
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(SECTION_TITLE_FONT + 4);
+    doc.text(`▸ ${sec.title}`, MARGIN_X, headerBottom + 6);
+
+    // Content lines — 11pt body
     doc.setFont("Roboto", "normal");
-    doc.setFontSize(9);
-    let contentY = y + 18;
+    doc.setFontSize(11);
+    let contentY = headerBottom + 12;
     for (const line of sec.lines) {
       const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
       for (const w of wrapped) {
         if (contentY > y + sectionH - 1) break;
         doc.text(`  ${w}`, MARGIN_X, contentY);
-        contentY += 4;
+        contentY += 5;
       }
       if (contentY > y + sectionH - 1) break;
     }
