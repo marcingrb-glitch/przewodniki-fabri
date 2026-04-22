@@ -248,13 +248,22 @@ function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
 // ─── Section renderers ───────────────────────────────────────────────────
 function interpolateTitle(title: string, decoded: DecodedSKU): string {
   if (!title || !title.includes("{")) return title;
-  return title
-    .replace("{width}", decoded.width ? `${decoded.width} cm` : "")
-    .replace("{series.code}", decoded.series.code || "")
-    .replace("{series.name}", decoded.series.name || "")
-    .replace("{series.collection}", decoded.series.collection || "")
-    .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "")
-    .trim();
+  return title.replace(/\{([^}]+)\}/g, (_, key) => {
+    // Zmienne z sufiksem jednostki
+    if (key === "width") return decoded.width ? `${decoded.width} cm` : "";
+    // Predefiniowane (kompat)
+    if (key === "series.code") return decoded.series.code || "";
+    if (key === "series.name") return decoded.series.name || "";
+    if (key === "series.collection") return decoded.series.collection || "";
+    if (key === "orientation") return decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "";
+    // Fallback — każde inne pole rozwiązywane przez resolver
+    try {
+      const val = resolveDecodedField(key, decoded);
+      return val && val !== "-" ? val : "";
+    } catch {
+      return "";
+    }
+  }).replace(/\s+/g, " ").trim();
 }
 
 function renderSectionTitle(doc: jsPDF, title: string, decoded: DecodedSKU, y: number): number {
@@ -429,6 +438,9 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   if (decoded.pufaLegs) {
     lines.push(`Pufa:      ${decoded.pufaLegs.code} · ${decoded.pufaLegs.height} cm · ${decoded.pufaLegs.count} szt.`);
   }
+  if (decoded.fotelLegs) {
+    lines.push(`Fotel:     ${decoded.fotelLegs.code} · ${decoded.fotelLegs.height} cm · ${decoded.fotelLegs.count} szt.`);
+  }
 
   if (lines.length === 0) return cursorY + 1;
 
@@ -500,6 +512,7 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     if (decoded.legHeights?.sofa_seat) n++;
     if (decoded.legHeights?.sofa_chest) n++;
     if (decoded.pufaLegs) n++;
+    if (decoded.fotelLegs) n++;
     return 6 + h + n * BODY_LINE_H + 1;
   }
 
