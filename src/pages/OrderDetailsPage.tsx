@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Download, Eye, FileText, Tag, Package, Loader2, Maximize2, Save, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
+import { PDFDocument } from "pdf-lib";
 import { DecodedSKU } from "@/types";
 import { getOrderById } from "@/utils/supabaseQueries";
 import { getVariantImageSignedUrl } from "@/utils/variantImageUpload";
@@ -429,16 +430,36 @@ const OrderDetailsPage = () => {
             downloadBlob(guideBlob, `przewodnik_magazyn_${orderNumber}.pdf`);
             toast.success("✅ Pobrano przewodnik magazyn");
           }} />
-          <ActionBtn icon={Tag} label="Pobierz wszystkie etykiety" loadKey="all-labels" onClick={async () => {
-            const blobs: { name: string; blob: Blob }[] = [];
-            blobs.push({ name: "sofa_etykiety.pdf", blob: await generateSofaLabelsPDF(decoded) });
-            if (hasPufa) blobs.push({ name: "pufa_etykiety.pdf", blob: await generatePufaLabelsPDF(decoded) });
-            if (hasFotel) blobs.push({ name: "fotel_etykiety.pdf", blob: await generateFotelLabelsPDF(decoded) });
-            const zip = new JSZip();
-            blobs.forEach(b => zip.file(b.name, b.blob));
-            const zipBlob = await zip.generateAsync({ type: "blob" });
-            downloadBlob(zipBlob, `etykiety_${orderNumber}.zip`);
-            toast.success("✅ Pobrano wszystkie etykiety");
+          <ActionBtn icon={Tag} label="Pobierz wszystkie etykiety (1 PDF)" loadKey="all-labels" onClick={async () => {
+            // Łączymy wszystkie V2 etykiety (sofa+pufa+fotel) w JEDEN PDF —
+            // 1 klik drukarka = cały zestaw.
+            const blobs: Blob[] = [];
+            const sofaResult = await generateSofaLabelsV2PDF(decoded);
+            if (sofaResult.large) blobs.push(sofaResult.large);
+            if (hasPufa) {
+              const pufaResult = await generatePufaLabelsV2PDF(decoded);
+              if (pufaResult.large) blobs.push(pufaResult.large);
+            }
+            if (hasFotel) {
+              const fotelResult = await generateFotelLabelsV2PDF(decoded);
+              if (fotelResult.large) blobs.push(fotelResult.large);
+            }
+            if (blobs.length === 0) {
+              toast.error("Brak etykiet do pobrania");
+              return;
+            }
+            // Merge przez pdf-lib
+            const merged = await PDFDocument.create();
+            for (const blob of blobs) {
+              const bytes = new Uint8Array(await blob.arrayBuffer());
+              const src = await PDFDocument.load(bytes);
+              const pages = await merged.copyPages(src, src.getPageIndices());
+              pages.forEach((p) => merged.addPage(p));
+            }
+            const mergedBytes = await merged.save();
+            const mergedBlob = new Blob([new Uint8Array(mergedBytes)], { type: "application/pdf" });
+            downloadBlob(mergedBlob, `etykiety_${orderNumber}.pdf`);
+            toast.success("✅ Pobrano wszystkie etykiety w 1 PDF");
           }} />
           <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
             const zip = new JSZip();
