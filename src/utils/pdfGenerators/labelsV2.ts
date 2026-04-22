@@ -366,12 +366,25 @@ function renderTable(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
 }
 
 // Jeśli wartość wygląda jak wymiary "NxNxN" / "N x N x N" — wyciągnij pierwszy wymiar.
-// Bo dla pufy etykieta pokazuje np. "17 x 63 x 1" a do produkcji trzeba tylko wysokość "17".
+// Dla pufy etykieta pokazuje np. "17 x 63 x 1" a do produkcji trzeba tylko wysokość "17".
 function firstDimIfDim(val: string): string {
   if (!val) return val;
   if (/\d+(\.\d+)?\s*[x×]\s*\d+/i.test(val)) {
     const m = val.match(/^\s*(\d+(?:\.\d+)?)/);
     if (m) return m[1];
+  }
+  return val;
+}
+
+// Wyciągnij najmniejszy wymiar — np. "17 x 63 x 1" → "1" (grubość półwałka).
+function smallestDimIfDim(val: string): string {
+  if (!val) return val;
+  if (/\d+(\.\d+)?\s*[x×]\s*\d+/i.test(val)) {
+    const nums = Array.from(val.matchAll(/(\d+(?:\.\d+)?)/g)).map((m) => parseFloat(m[1]));
+    if (nums.length > 0) {
+      const min = Math.min(...nums);
+      return Number.isInteger(min) ? String(min) : min.toString();
+    }
   }
   return val;
 }
@@ -395,9 +408,10 @@ function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   const rightRaw = fields.right ? resolveDecodedField(fields.right, decoded) : "";
   const centerRaw = fields.center ? resolveDecodedField(fields.center, decoded) : "";
 
-  // Dla wymiarów bierzemy tylko pierwszą liczbę (tylko dla wartości wyglądających na wymiary)
-  const leftVal = firstDimIfDim(leftRaw);
-  const rightVal = firstDimIfDim(rightRaw);
+  // Center (środek): pierwszy wymiar (wysokość pianki głównej) lub nazwa jeśli tekst.
+  // Sides (boki): najmniejszy wymiar (grubość półwałka) lub nazwa półwałka jeśli tekst.
+  const leftVal = smallestDimIfDim(leftRaw);
+  const rightVal = smallestDimIfDim(rightRaw);
   const centerVal = firstDimIfDim(centerRaw);
 
   // Labele (top/bottom — opisy) — większa czcionka niż standardowy body
