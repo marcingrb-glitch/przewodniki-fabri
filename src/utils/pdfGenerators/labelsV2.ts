@@ -26,8 +26,8 @@ const MARGIN_BOTTOM = 5;
 const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
 // Font sizes — AUTO-FIT: każda linia skaluje się od MAX do MIN
-const HEADER_FONT_MAX = 22;   // linia 2 headera — "SOFA Viena [S1]", cała szerokość
-const HEADER_FONT_MIN = 12;
+const HEADER_FONT_MAX = 22;   // header_template LEFT — "SOFA Viena [S1]"
+const HEADER_FONT_MIN = 9;    // shrink niżej jeśli template długi (np. pufa)
 const ORDER_NUMBER_FONT = 32; // duży # zamówienia — prawy górny róg każdego arkusza
 const META_FONT = 11;
 const SECTION_GAP = 5; // odstęp między sekcjami (dynamicznie może się zwiększyć)
