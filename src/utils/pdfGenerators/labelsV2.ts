@@ -25,14 +25,42 @@ const MARGIN_TOP = 5;
 const MARGIN_BOTTOM = 5;
 const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
-// Font sizes — zwiększone dla max czytelności (etykiety 100×150mm)
+// Font sizes — AUTO-FIT: każda linia skaluje się od MAX do MIN
 const HEADER_FONT = 14;
 const ORDER_NUMBER_FONT = 32; // duży # zamówienia — prawy górny róg każdego arkusza
 const META_FONT = 11;
-const SECTION_TITLE_FONT = 14;
-const BODY_FONT = 12;
-const LINE_H = 6; // line height dla BODY_FONT
-const SECTION_GAP = 4; // odstęp między sekcjami
+const SECTION_GAP = 5; // odstęp między sekcjami
+
+// Auto-fit ranges
+const TITLE_MAX = 20;
+const TITLE_MIN = 12;
+const BODY_MAX = 16;
+const BODY_MIN = 10;
+const LINE_HEIGHT_RATIO = 0.6; // line height = fontSize * ratio (mm ≈ pt * 0.35 → 0.6 daje oddech)
+
+// Kompat: niektóre miejsca używają stałych
+const SECTION_TITLE_FONT = TITLE_MIN;
+const BODY_FONT = BODY_MIN;
+const LINE_H = BODY_MIN * LINE_HEIGHT_RATIO;
+
+/**
+ * Auto-fit rozmiar fontu dla tekstu: zaczyna od max i zmniejsza o 0.5pt aż zmieści się w maxWidth.
+ */
+function fitFontSize(
+  doc: jsPDF,
+  text: string,
+  maxWidth: number,
+  opts: { max: number; min: number; bold?: boolean } = { max: BODY_MAX, min: BODY_MIN }
+): number {
+  doc.setFont("Roboto", opts.bold ? "bold" : "normal");
+  let size = opts.max;
+  doc.setFontSize(size);
+  while (doc.getTextWidth(text) > maxWidth && size > opts.min) {
+    size -= 0.5;
+    doc.setFontSize(size);
+  }
+  return size;
+}
 
 // ─── Section shapes (from JSONB) ─────────────────────────────────────────
 export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box" | "legs_list";
@@ -224,18 +252,17 @@ function interpolateTitle(title: string, decoded: DecodedSKU): string {
 
 function renderSectionTitle(doc: jsPDF, title: string, decoded: DecodedSKU, y: number): number {
   const rendered = interpolateTitle(title, decoded);
+  const text = `▸ ${rendered}`;
+  const size = fitFontSize(doc, text, CONTENT_W, { max: TITLE_MAX, min: TITLE_MIN, bold: true });
   doc.setFont("Roboto", "bold");
-  doc.setFontSize(SECTION_TITLE_FONT);
-  doc.text(`▸ ${rendered}`, MARGIN_X, y + SECTION_TITLE_FONT * 0.35, { baseline: "alphabetic" });
-  return y + SECTION_TITLE_FONT * 0.55 + 0.5;
+  doc.setFontSize(size);
+  doc.text(text, MARGIN_X, y + size * 0.35, { baseline: "alphabetic" });
+  return y + size * LINE_HEIGHT_RATIO + 1;
 }
 
 function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   let cursorY = y;
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
-
-  doc.setFont("Roboto", "normal");
-  doc.setFontSize(BODY_FONT);
 
   const rows = section.display_fields ?? [];
   for (const row of rows) {
@@ -248,12 +275,13 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
       .filter(Boolean) as string[];
     if (parts.length === 0) continue;
 
-    const line = parts.join("  ");
-    const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
-    for (const w of wrapped) {
-      doc.text(`  ${w}`, MARGIN_X, cursorY + LINE_H * 0.7);
-      cursorY += LINE_H;
-    }
+    const line = `  ${parts.join("  ")}`;
+    const size = fitFontSize(doc, line, CONTENT_W, { max: BODY_MAX, min: BODY_MIN });
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(size);
+    const lineH = size * LINE_HEIGHT_RATIO;
+    doc.text(line, MARGIN_X, cursorY + lineH * 0.75);
+    cursorY += lineH;
   }
   return cursorY + 1;
 }
@@ -261,9 +289,6 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
 function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   let cursorY = y;
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
-
-  doc.setFont("Roboto", "normal");
-  doc.setFontSize(BODY_FONT);
 
   // Each field can return multi-line content (e.g. foams — już z labelami w każdej linii).
   // Dla wartości 1-liniowych dodajemy prefix "Label: value" (np. "Środkowy pasek: TAK").
@@ -283,12 +308,13 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   }
 
   for (const b of bullets) {
-    const wrapped = doc.splitTextToSize(b, CONTENT_W - 6);
-    for (let i = 0; i < wrapped.length; i++) {
-      const prefix = i === 0 ? "  • " : "    ";
-      doc.text(prefix + wrapped[i], MARGIN_X, cursorY + LINE_H * 0.7);
-      cursorY += LINE_H;
-    }
+    const line = `  • ${b}`;
+    const size = fitFontSize(doc, line, CONTENT_W, { max: BODY_MAX, min: BODY_MIN });
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(size);
+    const lineH = size * LINE_HEIGHT_RATIO;
+    doc.text(line, MARGIN_X, cursorY + lineH * 0.75);
+    cursorY += lineH;
   }
   return cursorY + 1;
 }
@@ -371,9 +397,6 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   let cursorY = y + 6;
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
-  doc.setFont("Roboto", "normal");
-  doc.setFontSize(BODY_FONT);
-
   const lines: string[] = [];
   const legSeat = decoded.legHeights?.sofa_seat;
   if (legSeat) lines.push(`Siedzisko: ${legSeat.leg} · ${legSeat.height} cm · ${legSeat.count} szt.`);
@@ -384,11 +407,13 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   }
 
   for (const line of lines) {
-    const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
-    for (const w of wrapped) {
-      doc.text(`  ${w}`, MARGIN_X, cursorY + LINE_H * 0.7);
-      cursorY += LINE_H;
-    }
+    const t = `  ${line}`;
+    const size = fitFontSize(doc, t, CONTENT_W, { max: BODY_MAX, min: BODY_MIN });
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(size);
+    const lineH = size * LINE_HEIGHT_RATIO;
+    doc.text(t, MARGIN_X, cursorY + lineH * 0.75);
+    cursorY += lineH;
   }
   return cursorY + 1;
 }
@@ -429,12 +454,15 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     return 0;
   }
 
-  const TITLE_H = SECTION_TITLE_FONT * 0.55 + 0.5;
+  // Worst-case measure: przyjmujemy że każda linia renderuje się przy max rozmiarze
+  // (auto-fit może zmniejszyć, więc realna wysokość ≤ oszacowanej → bezpieczne).
+  const TITLE_H = TITLE_MAX * LINE_HEIGHT_RATIO + 1;
+  const BODY_LINE_H = BODY_MAX * LINE_HEIGHT_RATIO;
   let h = section.title ? TITLE_H : 0;
 
   if (section.style === "diagram_box") {
     const boxSize = section.box_size_mm ?? 50;
-    return h + 6 + boxSize + 10; // top margin + box + bottom label margin
+    return h + 6 + boxSize + 10;
   }
 
   if (section.style === "legs_list") {
@@ -442,48 +470,36 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     if (decoded.legHeights?.sofa_seat) n++;
     if (decoded.legHeights?.sofa_chest) n++;
     if (decoded.pufaLegs) n++;
-    // 6mm cut-line padding + title + N lines + 1mm tail
-    return 6 + h + n * LINE_H + 1;
+    return 6 + h + n * BODY_LINE_H + 1;
   }
-
-  doc.setFont("Roboto", "normal");
-  doc.setFontSize(BODY_FONT);
 
   const rows = section.display_fields ?? [];
 
   if (section.style === "bullet_list") {
-    const bullets: string[] = [];
+    let count = 0;
     for (const row of rows) {
       for (const f of row) {
         const val = resolveDecodedField(f, decoded);
         if (val === "-" || val === "") continue;
-        for (const line of val.split("\n")) {
-          if (line.trim()) bullets.push(line.trim());
-        }
+        const lines = val.split("\n").filter((l) => l.trim());
+        count += lines.length;
       }
     }
-    for (const b of bullets) {
-      const wrapped = doc.splitTextToSize(b, CONTENT_W - 6);
-      h += wrapped.length * LINE_H;
-    }
-    return h + 1;
+    return h + count * BODY_LINE_H + 1;
   }
 
-  // plain / table (table currently aliased to plain)
+  // plain / table
+  let count = 0;
   for (const row of rows) {
     const parts = row
       .map((f) => {
         const val = resolveDecodedField(f, decoded);
-        if (val === "-" || val === "") return null;
-        return formatFieldWithLabel(f, val);
+        return val === "-" || val === "" ? null : val;
       })
-      .filter(Boolean) as string[];
-    if (parts.length === 0) continue;
-    const line = parts.join("  ");
-    const wrapped = doc.splitTextToSize(line, CONTENT_W - 3);
-    h += wrapped.length * LINE_H;
+      .filter(Boolean);
+    if (parts.length > 0) count++;
   }
-  return h + 1;
+  return h + count * BODY_LINE_H + 1;
 }
 
 // ─── Single-sheet render ─────────────────────────────────────────────────
