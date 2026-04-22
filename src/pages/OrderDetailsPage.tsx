@@ -461,6 +461,25 @@ const OrderDetailsPage = () => {
             downloadBlob(mergedBlob, `etykiety_${orderNumber}.pdf`);
             toast.success("✅ Pobrano wszystkie etykiety w 1 PDF");
           }} />
+          <ActionBtn icon={Download} label="Pobierz wszystkie przewodniki (1 PDF)" loadKey="all-guides" onClick={async () => {
+            // Łączymy magazyn + produkcja sofy/pufy/fotela w jeden PDF
+            const blobs: Blob[] = [];
+            blobs.push(await generateWarehouseGuidePDF(decoded));
+            blobs.push(await generateProductionGuidePDF(decoded, variantImageUrl || undefined));
+            if (hasPufa) blobs.push(await generatePufaProductionGuidePDF(decoded));
+            if (hasFotel) blobs.push(await generateFotelProductionGuidePDF(decoded));
+            const merged = await PDFDocument.create();
+            for (const blob of blobs) {
+              const bytes = new Uint8Array(await blob.arrayBuffer());
+              const src = await PDFDocument.load(bytes);
+              const pages = await merged.copyPages(src, src.getPageIndices());
+              pages.forEach((p) => merged.addPage(p));
+            }
+            const mergedBytes = await merged.save();
+            const mergedBlob = new Blob([new Uint8Array(mergedBytes)], { type: "application/pdf" });
+            downloadBlob(mergedBlob, `przewodniki_${orderNumber}.pdf`);
+            toast.success("✅ Pobrano wszystkie przewodniki w 1 PDF");
+          }} />
           <ActionBtn icon={Package} label="Pobierz wszystko (ZIP)" loadKey="all-zip" onClick={async () => {
             const zip = new JSZip();
             zip.file("przewodnik_magazyn.pdf", await generateWarehouseGuidePDF(decoded));
