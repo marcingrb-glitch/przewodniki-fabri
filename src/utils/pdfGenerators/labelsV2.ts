@@ -45,6 +45,8 @@ const LINE_HEIGHT_RATIO = 0.6; // line height = fontSize × ratio
 let CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
 let CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
 let CURRENT_SECTION_GAP = SECTION_GAP;
+// Header template aktualnego arkusza — używany przez legs_list do re-print na cut-off
+let CURRENT_HEADER_TEMPLATE: string | null = null;
 
 // Kompat dla starych callerów
 const SECTION_TITLE_FONT = TITLE_MIN;
@@ -412,10 +414,11 @@ function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   return boxY + boxSize + 10;
 }
 
-// Legs list — komplet nóżek (siedzisko + skrzynia + pufa) z linią odcięcia
-// przed sekcją. Dane z decoded.legHeights + decoded.pufaLegs (ignoruje display_fields).
+// Legs list — komplet nóżek (siedzisko + skrzynia + pufa + fotel) z linią odcięcia
+// przed sekcją. Po odcięciu pasek ma własny mini-header (template + order#) żeby
+// było wiadomo do którego zamówienia należy.
 function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
-  // Prominent cut-line divider (distinct from section's thin gray divider).
+  // Prominent cut-line divider
   doc.setLineDashPattern([1.2, 1], 0);
   doc.setDrawColor(80);
   doc.setLineWidth(0.25);
@@ -428,6 +431,42 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   doc.setLineDashPattern([], 0);
 
   let cursorY = y + 6;
+
+  // Mini-header pod cut line — skopiowana tożsamość zamówienia (template + order#)
+  // Żeby po fizycznym odcięciu paska z NOGI nadal było wiadomo do czego należy.
+  const template = CURRENT_HEADER_TEMPLATE || "{series.collection} [{series.code}]";
+  const headerText = template
+    .replace("{sheet_name}", section.title || "")
+    .replace("{series.code}", decoded.series.code || "")
+    .replace("{series.name}", decoded.series.name || "")
+    .replace("{series.collection}", decoded.series.collection || "")
+    .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "")
+    .trim();
+  const orderText = decoded.orderNumber ? `${decoded.orderNumber}` : "";
+
+  // RIGHT: order# (bold, większy)
+  const MINI_ORDER_SIZE = 18;
+  const MINI_TEMPLATE_SIZE = 11;
+  let orderWidth = 0;
+  if (orderText) {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(MINI_ORDER_SIZE);
+    orderWidth = doc.getTextWidth(orderText);
+    doc.text(orderText, PAGE_W - MARGIN_X, cursorY + MINI_ORDER_SIZE * 0.32, {
+      align: "right",
+      baseline: "alphabetic",
+    });
+  }
+  // LEFT: template (mniejszy, ten sam baseline)
+  if (headerText) {
+    const availableLeft = CONTENT_W - orderWidth - 3;
+    const tSize = fitFontSize(doc, headerText, availableLeft, { max: MINI_TEMPLATE_SIZE, min: 8, bold: true });
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(tSize);
+    doc.text(headerText, MARGIN_X, cursorY + MINI_ORDER_SIZE * 0.32, { baseline: "alphabetic" });
+  }
+  cursorY += MINI_ORDER_SIZE * 0.45 + 2;
+
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   const lines: string[] = [];
@@ -513,7 +552,8 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     if (decoded.legHeights?.sofa_chest) n++;
     if (decoded.pufaLegs) n++;
     if (decoded.fotelLegs) n++;
-    return 6 + h + n * BODY_LINE_H + 1;
+    // 6mm cut-line + 10mm mini-header (order# + template) + title + N lines + tail
+    return 6 + 10 + h + n * BODY_LINE_H + 1;
   }
 
   const rows = section.display_fields ?? [];
@@ -605,8 +645,8 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
 
   CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX * scale;
   CURRENT_BODY_MAX = BODY_DEFAULT_MAX * scale;
-  // Gap: rośnie do 1.5× max, maleje proporcjonalnie w dół ale nie mniej niż 2mm
   CURRENT_SECTION_GAP = Math.max(2, SECTION_GAP * Math.min(scale, 1.5));
+  CURRENT_HEADER_TEMPLATE = sheet.header_template;
 
   // Render sekcji — bez page-breaka! (max 1 strona na arkusz)
   const sections = sheet.sections ?? [];
@@ -622,6 +662,7 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
   CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
   CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
   CURRENT_SECTION_GAP = SECTION_GAP;
+  CURRENT_HEADER_TEMPLATE = null;
   void contentStartY; // reserved for future use
 }
 
