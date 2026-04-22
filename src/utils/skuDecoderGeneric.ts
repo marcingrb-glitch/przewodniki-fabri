@@ -743,9 +743,12 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   }
 
   // ---- Build result ----
+  // Width: z SKU (W190/W200) lub default z seat.properties.width lub 190 (globalny default dla sofy)
+  const seatPropsWidth = (seatProduct?.properties as any)?.width as number | undefined;
+  const resolvedWidth = parsed.width || (seatPropsWidth ? String(seatPropsWidth) : "190");
   return {
     series: seriesData,
-    width: parsed.width || undefined,
+    width: resolvedWidth,
     orientation: parsed.orientation || undefined,
     fabric: {
       code: parsed.fabric.code,
