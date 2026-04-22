@@ -318,6 +318,18 @@ export async function generateWarehouseGuidePDF(decoded: DecodedSKU): Promise<Bl
       y += sectionSpacing;
     }
 
+    // Orphan-prevention: jeśli section title + header + 1 row nie mieści się,
+    // skacz na nową stronę PRZED narysowaniem tytułu (żeby nie został sam na dole).
+    const firstTable = section.tables[0];
+    const firstTableMinHeight = firstTable
+      ? TABLE_HEADER_HEIGHT + TABLE_ROW_HEIGHT
+      : 0;
+    const titleBlockHeight = gs.font_size_header * 0.55 + 3 + firstTableMinHeight + 2;
+    if (y + titleBlockHeight > pageHeight - marginBottom) {
+      doc.addPage();
+      y = marginTop;
+    }
+
     doc.setFont("Roboto", "bold");
     doc.setFontSize(gs.font_size_header);
     doc.setTextColor(0, 0, 0);
