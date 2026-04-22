@@ -236,10 +236,10 @@ function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
   doc.setFontSize(META_FONT);
   doc.text(widthPart, MARGIN_X, y + META_FONT * 0.35, { baseline: "alphabetic" });
 
-  // Delikatny separator pod meta row (jak między sekcjami, nie gruby czarny)
+  // Wyraźny separator pod meta row (jak między sekcjami)
   const divY = y + META_FONT * 0.55 + 1;
-  doc.setDrawColor(180);
-  doc.setLineWidth(0.2);
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
   doc.line(MARGIN_X, divY, PAGE_W - MARGIN_X, divY);
 
   return divY + 2;
@@ -454,10 +454,10 @@ function renderSection(doc: jsPDF, section: Section, decoded: DecodedSKU, y: num
     return y;
   }
 
-  // legs_list rysuje własną linię odcięcia — pomijamy standardowy szary dzielnik
+  // legs_list rysuje własną linię odcięcia — pomijamy standardowy separator
   if (section.style !== "legs_list") {
-    doc.setDrawColor(180);
-    doc.setLineWidth(0.2);
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
     doc.line(MARGIN_X, y - 0.5, PAGE_W - MARGIN_X, y - 0.5);
   }
 
