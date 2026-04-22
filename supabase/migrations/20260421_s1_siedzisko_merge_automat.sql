@@ -18,7 +18,8 @@ BEGIN
         jsonb_build_array('seat.code', 'seat.type'),
         jsonb_build_array('seat.frame'),
         jsonb_build_array('seat.springType'),
-        jsonb_build_array('automat.code_name', 'automat.lockBolts')
+        jsonb_build_array('automat.code_name'),
+        jsonb_build_array('automat.lockBolts')
       )
     ),
     jsonb_build_object(
