@@ -210,16 +210,28 @@ function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
 }
 
 // ─── Section renderers ───────────────────────────────────────────────────
-function renderSectionTitle(doc: jsPDF, title: string, y: number): number {
+function interpolateTitle(title: string, decoded: DecodedSKU): string {
+  if (!title || !title.includes("{")) return title;
+  return title
+    .replace("{width}", decoded.width ? `${decoded.width} cm` : "")
+    .replace("{series.code}", decoded.series.code || "")
+    .replace("{series.name}", decoded.series.name || "")
+    .replace("{series.collection}", decoded.series.collection || "")
+    .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "")
+    .trim();
+}
+
+function renderSectionTitle(doc: jsPDF, title: string, decoded: DecodedSKU, y: number): number {
+  const rendered = interpolateTitle(title, decoded);
   doc.setFont("Roboto", "bold");
   doc.setFontSize(SECTION_TITLE_FONT);
-  doc.text(`▸ ${title}`, MARGIN_X, y + SECTION_TITLE_FONT * 0.35, { baseline: "alphabetic" });
+  doc.text(`▸ ${rendered}`, MARGIN_X, y + SECTION_TITLE_FONT * 0.35, { baseline: "alphabetic" });
   return y + SECTION_TITLE_FONT * 0.55 + 0.5;
 }
 
 function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   let cursorY = y;
-  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(BODY_FONT);
@@ -247,7 +259,7 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
 
 function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   let cursorY = y;
-  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(BODY_FONT);
@@ -287,7 +299,7 @@ function renderTable(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
 
 function renderDiagramBox(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   let cursorY = y;
-  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   const boxSize = section.box_size_mm ?? 50;
   const boxX = MARGIN_X + (CONTENT_W - boxSize) / 2;
@@ -356,7 +368,7 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   doc.setLineDashPattern([], 0);
 
   let cursorY = y + 6;
-  if (section.title) cursorY = renderSectionTitle(doc, section.title, cursorY);
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   doc.setFont("Roboto", "normal");
   doc.setFontSize(BODY_FONT);
