@@ -438,47 +438,29 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
 
   let cursorY = y + 6;
 
-  // Mini-header pod cut line — skopiowana tożsamość zamówienia (template + order#)
-  // Żeby po fizycznym odcięciu paska z NOGI nadal było wiadomo do czego należy.
-  const template = CURRENT_HEADER_TEMPLATE || "{series.collection} [{series.code}]";
-  const headerText = template
-    .replace("{sheet_name}", section.title || "")
-    .replace("{series.code}", decoded.series.code || "")
-    .replace("{series.name}", decoded.series.name || "")
-    .replace("{series.collection}", decoded.series.collection || "")
-    .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "")
-    .trim();
+  // Mini-header pod cut line — tylko numer zamówienia (bez template, bo nogi są
+  // uniwersalne dla sofa/pufa/fotel). Pod spodem gruba kreska oddzielająca.
   const orderText = decoded.orderNumber ? `${decoded.orderNumber}` : "";
-
-  // Ten sam rozmiar co główny header u góry arkusza (pasek po odcięciu ma własną, pełną tożsamość)
   let orderSize = ORDER_NUMBER_FONT;
-  let orderWidth = 0;
   if (orderText) {
     doc.setFont("Roboto", "bold");
     doc.setFontSize(orderSize);
-    const maxWidth = CONTENT_W * 0.55;
-    while (doc.getTextWidth(orderText) > maxWidth && orderSize > 15) {
+    while (doc.getTextWidth(orderText) > CONTENT_W - 1 && orderSize > 15) {
       orderSize -= 1;
       doc.setFontSize(orderSize);
     }
-    orderWidth = doc.getTextWidth(orderText);
+    doc.setTextColor(0, 0, 0);
     doc.text(orderText, PAGE_W - MARGIN_X, cursorY + orderSize * 0.32, {
       align: "right",
       baseline: "alphabetic",
     });
+    cursorY += orderSize * 0.45 + 1;
   }
-  if (headerText) {
-    const availableLeft = CONTENT_W - orderWidth - 3;
-    const tSize = fitFontSize(doc, headerText, availableLeft, {
-      max: HEADER_FONT_MAX,
-      min: HEADER_FONT_MIN,
-      bold: true,
-    });
-    doc.setFont("Roboto", "bold");
-    doc.setFontSize(tSize);
-    doc.text(headerText, MARGIN_X, cursorY + orderSize * 0.32, { baseline: "alphabetic" });
-  }
-  cursorY += orderSize * 0.45 + 2;
+  // Gruba kreska pod numerem
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN_X, cursorY, PAGE_W - MARGIN_X, cursorY);
+  cursorY += 2;
 
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
