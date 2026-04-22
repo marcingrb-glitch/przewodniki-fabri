@@ -10,6 +10,7 @@ import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import {
   generateSofaLabelsV2PDF,
   generatePufaLabelsV2PDF,
+  generateFotelLabelsV2PDF,
 } from "@/utils/pdfGenerators/labelsV2";
 import { downloadBlob } from "@/utils/pdfHelpers";
 import * as pdfjsLib from "pdfjs-dist";
@@ -20,18 +21,19 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 // Presety — wygodne SKU do testowania (edytuj wedle potrzeb)
-const PRESETS: { label: string; sku: string; orderNumber: string; kind: "sofa" | "pufa" }[] = [
-  { label: "S1 sofa + pufa", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF", orderNumber: "1234", kind: "sofa" },
+const PRESETS: { label: string; sku: string; orderNumber: string; kind: "sofa" | "pufa" | "fotel" }[] = [
+  { label: "S1 sofa + pufa + fotel", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF-FT", orderNumber: "1234", kind: "sofa" },
   { label: "S1 narożnik L", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-CH-L", orderNumber: "2001", kind: "sofa" },
   { label: "S2 Elma", sku: "S2-T3D-SD02N-B8C-OP62A-SK15-AT1-N4-P1-J1-W1", orderNumber: "3001", kind: "sofa" },
   { label: "Pufa PF", sku: "PF-S1-T3D-SD02N-N5A", orderNumber: "4001", kind: "pufa" },
+  { label: "Fotel FT", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-FT", orderNumber: "5001", kind: "fotel" },
 ];
 
 export default function LabelsLab() {
   const [params, setParams] = useSearchParams();
   const [sku, setSku] = useState(params.get("sku") || PRESETS[0].sku);
   const [orderNumber, setOrderNumber] = useState(params.get("order") || PRESETS[0].orderNumber);
-  const [kind, setKind] = useState<"sofa" | "pufa">((params.get("kind") as "sofa" | "pufa") || "sofa");
+  const [kind, setKind] = useState<"sofa" | "pufa" | "fotel">((params.get("kind") as "sofa" | "pufa" | "fotel") || "sofa");
 
   const [blob, setBlob] = useState<Blob | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,9 +56,10 @@ export default function LabelsLab() {
         const decoded = await decodeSKU(parsed);
         decoded.orderNumber = orderNumber;
         decoded.rawSKU = sku;
-        const result = kind === "pufa"
-          ? await generatePufaLabelsV2PDF(decoded)
-          : await generateSofaLabelsV2PDF(decoded);
+        const result =
+          kind === "pufa" ? await generatePufaLabelsV2PDF(decoded) :
+          kind === "fotel" ? await generateFotelLabelsV2PDF(decoded) :
+          await generateSofaLabelsV2PDF(decoded);
         if (cancelled) return;
         setBlob(result.large || result.small || null);
       } catch (e) {
@@ -160,10 +163,11 @@ export default function LabelsLab() {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={kind}
-                onChange={(e) => { setKind(e.target.value as "sofa" | "pufa"); syncParams(); }}
+                onChange={(e) => { setKind(e.target.value as "sofa" | "pufa" | "fotel"); syncParams(); }}
               >
                 <option value="sofa">sofa / narożnik</option>
                 <option value="pufa">pufa</option>
+                <option value="fotel">fotel</option>
               </select>
             </div>
             <div className="col-span-1 flex items-end">

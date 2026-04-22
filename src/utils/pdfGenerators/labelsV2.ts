@@ -895,3 +895,7 @@ export async function generateSofaLabelsV2PDF(decoded: DecodedSKU): Promise<Labe
 export async function generatePufaLabelsV2PDF(decoded: DecodedSKU): Promise<LabelsV2Result> {
   return generateLabelsV2PDF(decoded, "pufa");
 }
+
+export async function generateFotelLabelsV2PDF(decoded: DecodedSKU): Promise<LabelsV2Result> {
+  return generateLabelsV2PDF(decoded, "fotel");
+}
