@@ -26,15 +26,16 @@ const MARGIN_BOTTOM = 5;
 const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
 // Font sizes — AUTO-FIT: każda linia skaluje się od MAX do MIN
-const HEADER_FONT = 14;
+const HEADER_FONT_MAX = 22;   // linia 2 headera — "SOFA Viena [S1]", cała szerokość
+const HEADER_FONT_MIN = 12;
 const ORDER_NUMBER_FONT = 32; // duży # zamówienia — prawy górny róg każdego arkusza
 const META_FONT = 11;
 const SECTION_GAP = 5; // odstęp między sekcjami (dynamicznie może się zwiększyć)
 
 // Auto-fit: bazowe i twarde krańce
-const TITLE_DEFAULT_MAX = 20;
-const TITLE_HARD_CAP = 32; // max przy scale up
-const TITLE_MIN = 12;
+const TITLE_DEFAULT_MAX = 16;
+const TITLE_HARD_CAP = 24; // max przy scale up (tytuły mniej prominent niż poprzednio)
+const TITLE_MIN = 11;
 const BODY_DEFAULT_MAX = 16;
 const BODY_HARD_CAP = 26; // max przy scale up
 const BODY_MIN = 10;
@@ -180,8 +181,9 @@ function renderHeader(
   y: number,
   continued = false
 ): number {
-  // Jeden wiersz: LEFT = rozwinięty header_template, RIGHT = duży #orderNumber.
-  // Baseline wyrównany do większej czcionki (order#), żeby nic się nie nachodziło.
+  // Linia 1: duży order# (right-aligned, cała szerokość dla siebie).
+  // Linia 2: rozwinięty header_template (np. "SOFA Viena [S1]"), większy font
+  //          bo zajmuje całą szerokość.
   const template = sheet.header_template || "{sheet_name}        {series.code} · {series.name}";
   let rendered = template
     .replace("{sheet_name}", sheet.sheet_name)
@@ -191,40 +193,39 @@ function renderHeader(
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
   if (continued) rendered += " (cd.)";
 
-  // RIGHT: order# z auto-fitem
+  let cursorY = y;
+
+  // Linia 1: order# right
   let orderSize = ORDER_NUMBER_FONT;
-  let orderWidth = 0;
   if (decoded.orderNumber) {
     doc.setFont("Roboto", "bold");
     doc.setFontSize(orderSize);
     const text = `${decoded.orderNumber}`;
-    // Zostaw miejsce na tekst LEFT — max ~65% szerokości dla order#
-    const maxWidth = CONTENT_W * 0.55;
-    while (doc.getTextWidth(text) > maxWidth && orderSize > 15) {
+    while (doc.getTextWidth(text) > CONTENT_W - 1 && orderSize > 15) {
       orderSize -= 1;
       doc.setFontSize(orderSize);
     }
-    orderWidth = doc.getTextWidth(text);
     doc.setTextColor(0, 0, 0);
-    doc.text(text, PAGE_W - MARGIN_X, y + orderSize * 0.32, {
+    doc.text(text, PAGE_W - MARGIN_X, cursorY + orderSize * 0.32, {
       align: "right",
       baseline: "alphabetic",
     });
+    cursorY += orderSize * LINE_HEIGHT_RATIO;
   }
 
-  // LEFT: header_template (skala zależna od wolnej szerokości)
+  // Linia 2: header_template na całą szerokość, auto-fit
+  const headerSize = fitFontSize(doc, rendered, CONTENT_W - 1, {
+    max: HEADER_FONT_MAX,
+    min: HEADER_FONT_MIN,
+    bold: true,
+  });
   doc.setFont("Roboto", "bold");
-  let headerSize = HEADER_FONT;
   doc.setFontSize(headerSize);
-  const availableLeft = CONTENT_W - orderWidth - 3;
-  while (doc.getTextWidth(rendered) > availableLeft && headerSize > 7) {
-    headerSize -= 0.5;
-    doc.setFontSize(headerSize);
-  }
-  doc.text(rendered, MARGIN_X, y + orderSize * 0.32, { baseline: "alphabetic" });
+  doc.setTextColor(0, 0, 0);
+  doc.text(rendered, MARGIN_X, cursorY + headerSize * 0.32, { baseline: "alphabetic" });
+  cursorY += headerSize * LINE_HEIGHT_RATIO + 1;
 
-  // Header zajmuje wysokość = big order + padding
-  return y + orderSize * 0.45 + 1;
+  return cursorY;
 }
 
 function renderMetaRow(doc: jsPDF, decoded: DecodedSKU, y: number): number {
@@ -830,7 +831,7 @@ export async function generateLabelsV2PDF(
   if (isFirst) {
     // Nothing rendered — placeholder page
     doc.setFont("Roboto", "bold");
-    doc.setFontSize(HEADER_FONT);
+    doc.setFontSize(14);
     doc.text("Brak szablonów etykiet V2", MARGIN_X, MARGIN_TOP + 6);
     doc.setFont("Roboto", "normal");
     doc.setFontSize(META_FONT);
