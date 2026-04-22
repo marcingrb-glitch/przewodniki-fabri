@@ -272,6 +272,8 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
   if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   const rows = section.display_fields ?? [];
+  // Zbierz wszystkie linie, policz min rozmiar — wszystkie linie w sekcji dostają wspólny font
+  const lines: string[] = [];
   for (const row of rows) {
     const parts = row
       .map((f) => {
@@ -281,12 +283,20 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
       })
       .filter(Boolean) as string[];
     if (parts.length === 0) continue;
+    lines.push(`  ${parts.join("  ")}`);
+  }
 
-    const line = `  ${parts.join("  ")}`;
-    const size = fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN });
-    doc.setFont("Roboto", "normal");
-    doc.setFontSize(size);
-    const lineH = size * LINE_HEIGHT_RATIO;
+  if (lines.length === 0) return cursorY + 1;
+
+  let size = CURRENT_BODY_MAX;
+  for (const line of lines) {
+    size = Math.min(size, fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN }));
+  }
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(size);
+  const lineH = size * LINE_HEIGHT_RATIO;
+  for (const line of lines) {
     doc.text(line, MARGIN_X, cursorY + lineH * 0.75);
     cursorY += lineH;
   }
@@ -314,13 +324,20 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
     }
   }
 
+  if (bullets.length === 0) return cursorY + 1;
+
+  // Wspólny rozmiar — najmniejszy wymagany przez jakikolwiek bullet
+  let size = CURRENT_BODY_MAX;
   for (const b of bullets) {
     const line = `  • ${b}`;
-    const size = fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN });
-    doc.setFont("Roboto", "normal");
-    doc.setFontSize(size);
-    const lineH = size * LINE_HEIGHT_RATIO;
-    doc.text(line, MARGIN_X, cursorY + lineH * 0.75);
+    size = Math.min(size, fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN }));
+  }
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(size);
+  const lineH = size * LINE_HEIGHT_RATIO;
+  for (const b of bullets) {
+    doc.text(`  • ${b}`, MARGIN_X, cursorY + lineH * 0.75);
     cursorY += lineH;
   }
   return cursorY + 1;
@@ -413,13 +430,19 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
     lines.push(`Pufa:      ${decoded.pufaLegs.code} · ${decoded.pufaLegs.height} cm · ${decoded.pufaLegs.count} szt.`);
   }
 
+  if (lines.length === 0) return cursorY + 1;
+
+  let size = CURRENT_BODY_MAX;
   for (const line of lines) {
     const t = `  ${line}`;
-    const size = fitFontSize(doc, t, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN });
-    doc.setFont("Roboto", "normal");
-    doc.setFontSize(size);
-    const lineH = size * LINE_HEIGHT_RATIO;
-    doc.text(t, MARGIN_X, cursorY + lineH * 0.75);
+    size = Math.min(size, fitFontSize(doc, t, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN }));
+  }
+
+  doc.setFont("Roboto", "normal");
+  doc.setFontSize(size);
+  const lineH = size * LINE_HEIGHT_RATIO;
+  for (const line of lines) {
+    doc.text(`  ${line}`, MARGIN_X, cursorY + lineH * 0.75);
     cursorY += lineH;
   }
   return cursorY + 1;
