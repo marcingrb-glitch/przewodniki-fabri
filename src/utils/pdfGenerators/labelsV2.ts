@@ -25,13 +25,14 @@ const MARGIN_TOP = 5;
 const MARGIN_BOTTOM = 5;
 const CONTENT_W = PAGE_W - 2 * MARGIN_X;
 
-// Font sizes
-const HEADER_FONT = 11;
-const ORDER_NUMBER_FONT = 29; // duży # zamówienia — prawy górny róg każdego arkusza
-const META_FONT = 9;
-const SECTION_TITLE_FONT = 10;
-const BODY_FONT = 9;
-const LINE_H = 4.5; // approximate line height at 9pt
+// Font sizes — zwiększone dla max czytelności (etykiety 100×150mm)
+const HEADER_FONT = 14;
+const ORDER_NUMBER_FONT = 32; // duży # zamówienia — prawy górny róg każdego arkusza
+const META_FONT = 11;
+const SECTION_TITLE_FONT = 14;
+const BODY_FONT = 12;
+const LINE_H = 6; // line height dla BODY_FONT
+const SECTION_GAP = 4; // odstęp między sekcjami
 
 // ─── Section shapes (from JSONB) ─────────────────────────────────────────
 export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box" | "legs_list";
@@ -512,7 +513,7 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
     }
 
     y = renderSection(doc, section, decoded, y);
-    y += 2; // gap between sections
+    y += SECTION_GAP;
   }
 }
 
