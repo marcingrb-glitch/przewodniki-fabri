@@ -25,6 +25,7 @@ const HEADER_VARIABLES: { key: string; description: string; resolver: (s: Series
   { key: "{series.name}", description: "Pełna nazwa serii", resolver: (s) => s.name },
   { key: "{series.collection}", description: "Kolekcja (properties.collection)", resolver: (s) => (s.properties?.collection as string) || "—" },
   { key: "{orientation}", description: "Orientacja narożnika (L/P) — tylko dla chaise", resolver: () => "L / P" },
+  { key: "{width}", description: "Szerokość w cm (np. '190 cm') — z parsowania SKU. Działa też w section.title", resolver: () => "np. 190 cm" },
 ];
 
 // Grupowanie komponentów — lepiej widoczne w UI
