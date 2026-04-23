@@ -135,6 +135,16 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
       const lines = formatFoamsByRole(decoded.chaise?.backrestFoams, "back");
       return lines.length > 0 ? lines.join("\n") : "-";
     }
+
+    case "fotel.seat.code": return decoded.fotel?.seat?.code || "-";
+    case "fotel.seat.frame": return decoded.fotel?.seat?.frame || "-";
+    case "fotel.seat.frameModification": return decoded.fotel?.seat?.frameModification || "-";
+    case "fotel.seat.springType": return decoded.fotel?.seat?.springType || "-";
+    case "fotel.seat.foams_summary":
+    case "fotel.seat.foamsList": {
+      const lines = formatFoamsDetailed(decoded.fotel?.seat?.foams);
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
     case "seat.foamsList_base": {
       const lines = formatFoamsByRole(decoded.seat?.foams, "base");
       return lines.length > 0 ? lines.join("\n") : "-";

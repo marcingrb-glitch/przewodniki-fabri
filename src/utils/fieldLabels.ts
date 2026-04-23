@@ -68,6 +68,13 @@ export const SHORT_FIELD_LABELS: Record<string, string> = {
   "fotelLegs.height": "H",
   "fotelLegs.count": "Ilość",
 
+  // Fotel seat (korpus)
+  "fotel.seat.code": "Kod",
+  "fotel.seat.frame": "Stelaż",
+  "fotel.seat.frameModification": "Modyfikacja stelaża",
+  "fotel.seat.springType": "Sprężyna",
+  "fotel.seat.foamsList": "Pianki",
+
   // Pufa seat
   "pufaSeat.frontBack": "Przód/Tył",
   "pufaSeat.sides": "Boki",

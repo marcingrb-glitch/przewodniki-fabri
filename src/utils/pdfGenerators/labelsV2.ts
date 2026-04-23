@@ -908,6 +908,120 @@ interface CutSection {
   lines: string[];
 }
 
+// Arkusz BOCZKI dla fotela — 2× BOCZEK z frame +"-FT". Reuses V1 side templates
+// ale renderuje z headerem FOTEL + suffiksem frame. Bez SKRZYNI (fotel nie ma).
+export async function renderFotelCutSheet(doc: jsPDF, decoded: DecodedSKU, isFirst: boolean): Promise<boolean> {
+  const seriesCode = decoded.series.code;
+  if (!seriesCode) return false;
+
+  const templates = await fetchV1Templates("sofa", seriesCode, ["side"]);
+  if (templates.length === 0) return false;
+
+  // Suffix frame w fotel kontekście — side.frame + "-FT" w decoded (lokalnie, nie mutujemy oryginału)
+  const suffix = decoded.fotel?.seat?.sideFrameSuffix || "-FT";
+  const decodedForFotel: DecodedSKU = {
+    ...decoded,
+    side: { ...decoded.side, frame: `${decoded.side.frame || ""}${suffix}` },
+  };
+
+  const sideTpls = templates.filter((t) => t.component === "side");
+  const sideLines = sideTpls.flatMap((t) => buildContentLines(t, decodedForFotel));
+  if (sideLines.length === 0) return false;
+
+  const sections: CutSection[] = [
+    { title: "BOCZEK", lines: sideLines },
+    { title: "BOCZEK", lines: sideLines },
+  ];
+
+  if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
+
+  // Layout: 2 sections × 71mm + 1 gap × 2mm + topMargin 6mm = 150mm ✅
+  const sectionH = 71;
+  const gapH = 2;
+  const topMargin = 6;
+  let y = topMargin;
+
+  const orderNum = decoded.orderNumber || "---";
+  const headerTemplate = `FOTEL ${decoded.series.collection || decoded.series.name} [${decoded.series.code}]`;
+
+  for (let i = 0; i < sections.length; i++) {
+    const sec = sections[i];
+    doc.setFont("Roboto", "bold");
+    let oSize = ORDER_NUMBER_FONT;
+    doc.setFontSize(oSize);
+    const maxOrderW = CONTENT_W * 0.55;
+    while (doc.getTextWidth(orderNum) > maxOrderW && oSize > 15) {
+      oSize -= 1;
+      doc.setFontSize(oSize);
+    }
+    const orderWidth = doc.getTextWidth(orderNum);
+    doc.setTextColor(0, 0, 0);
+    doc.text(orderNum, PAGE_W - MARGIN_X, y + oSize * 0.32, { align: "right", baseline: "alphabetic" });
+
+    const tSize = fitFontSize(doc, headerTemplate, CONTENT_W - orderWidth - 3, {
+      max: HEADER_FONT_MAX, min: HEADER_FONT_MIN, bold: true,
+    });
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(tSize);
+    doc.text(headerTemplate, MARGIN_X, y + oSize * 0.32, { baseline: "alphabetic" });
+
+    const headerBottom = y + oSize * 0.45 + 1;
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN_X, headerBottom, PAGE_W - MARGIN_X, headerBottom);
+
+    const sectionBottom = y + sectionH;
+    const contentAvail = sectionBottom - headerBottom - 2;
+    const baseLines = sec.lines.length;
+    const baseH = TITLE_DEFAULT_MAX * LINE_HEIGHT_RATIO + 1 + baseLines * (BODY_DEFAULT_MAX * LINE_HEIGHT_RATIO);
+    const scale = baseH > 0
+      ? Math.max(0.7, Math.min(1.8, BODY_HARD_CAP / BODY_DEFAULT_MAX, TITLE_HARD_CAP / TITLE_DEFAULT_MAX, contentAvail / baseH))
+      : 1;
+    const titleSize = TITLE_DEFAULT_MAX * scale;
+    const bodySize = BODY_DEFAULT_MAX * scale;
+
+    const titleText = `▸ ${sec.title}`;
+    const tfSize = fitFontSize(doc, titleText, CONTENT_W, { max: titleSize, min: TITLE_MIN, bold: true });
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(tfSize);
+    let contentY = headerBottom + tfSize * LINE_HEIGHT_RATIO;
+    doc.text(titleText, MARGIN_X, contentY);
+    contentY += 2;
+
+    if (sec.lines.length > 0) {
+      let minBodySize = bodySize;
+      for (const line of sec.lines) {
+        const t = `  ${line}`;
+        minBodySize = Math.min(minBodySize, fitFontSize(doc, t, CONTENT_W, { max: bodySize, min: BODY_MIN }));
+      }
+      doc.setFont("Roboto", "normal");
+      doc.setFontSize(minBodySize);
+      const lineH = minBodySize * LINE_HEIGHT_RATIO;
+      for (const line of sec.lines) {
+        if (contentY + lineH > sectionBottom) break;
+        doc.text(`  ${line}`, MARGIN_X, contentY + lineH * 0.75);
+        contentY += lineH;
+      }
+    }
+
+    if (i < sections.length - 1) {
+      doc.setLineDashPattern([1.2, 1], 0);
+      doc.setDrawColor(80);
+      doc.setLineWidth(0.25);
+      const guideY = y + sectionH + gapH / 2;
+      doc.line(MARGIN_X - 2, guideY, PAGE_W - MARGIN_X + 2, guideY);
+      doc.setFontSize(6);
+      doc.setTextColor(120);
+      doc.text("✂", 1.5, guideY + 1.5);
+      doc.setTextColor(0);
+      doc.setLineDashPattern([], 0);
+    }
+
+    y += sectionH + gapH;
+  }
+  return true;
+}
+
 export async function renderCutSheetS1(doc: jsPDF, decoded: DecodedSKU, isFirst: boolean): Promise<boolean> {
   // Fetch V1 templates for side/chest (nogi przeniesione do OPARCIE jako legs_list)
   const templates = await fetchV1Templates("sofa", "S1", ["side", "chest"]);
@@ -1111,6 +1225,12 @@ export async function generateLabelsV2PDF(
   const isSofaS1 = productType === "sofa" && decoded.series.code === "S1";
   if (isSofaS1) {
     const rendered = await renderCutSheetS1(doc, decoded, isFirst);
+    if (rendered) isFirst = false;
+  }
+
+  // Fotel — arkusz z 2× BOCZEK cut (po arkuszu głównym Fotel korpus + PIANKI)
+  if (productType === "fotel") {
+    const rendered = await renderFotelCutSheet(doc, decoded, isFirst);
     if (rendered) isFirst = false;
   }
 
