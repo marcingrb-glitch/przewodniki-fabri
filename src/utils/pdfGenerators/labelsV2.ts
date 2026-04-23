@@ -1228,11 +1228,8 @@ export async function generateLabelsV2PDF(
     if (rendered) isFirst = false;
   }
 
-  // Fotel — arkusz z 2× BOCZEK cut (po arkuszu głównym Fotel korpus + PIANKI)
-  if (productType === "fotel") {
-    const rendered = await renderFotelCutSheet(doc, decoded, isFirst);
-    if (rendered) isFirst = false;
-  }
+  // Fotel — BOCZEKi teraz są sekcjami w label_templates_v2 (cut_with_header).
+  // Wszystko renderuje renderSheet na jednym arkuszu.
 
   let large: Blob | null;
   if (isFirst) {

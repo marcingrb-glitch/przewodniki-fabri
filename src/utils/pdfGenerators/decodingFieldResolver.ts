@@ -47,6 +47,12 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "side.finish_name": return decoded.side.finishName;
     case "side.code_finish": return `${decoded.side.code}${decoded.side.finish} (${decoded.side.finishName})`;
     case "side.frame": return decoded.side.frame || "-";
+    case "side.frame_fotel": {
+      const base = decoded.side?.frame || "";
+      if (!base) return "-";
+      const suffix = decoded.fotel?.seat?.sideFrameSuffix || "-FT";
+      return `${base}${suffix}`;
+    }
     case "side.foam": return "-";
 
     case "chest.name": return decoded.chest.name || "-";
