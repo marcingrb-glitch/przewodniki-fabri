@@ -607,7 +607,11 @@ function renderCutWithHeader(doc: jsPDF, section: Section, decoded: DecodedSKU, 
     .replace("{series.collection}", decoded.series.collection || "")
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
 
-  let orderSize = ORDER_NUMBER_FONT;
+  // Mini-header skaluje sie razem z reszta sheeta (CURRENT_TITLE_MAX).
+  // Dzieki temu przy duzej liczbie sekcji (np. fotel: Korpus+PIANKI+2xBOCZEK)
+  // order# kurczy sie proporcjonalnie i arkusz miesci sie na 1 stronie.
+  const cutScale = CURRENT_TITLE_MAX / TITLE_DEFAULT_MAX;
+  let orderSize = ORDER_NUMBER_FONT * cutScale;
   let orderWidth = 0;
   if (decoded.orderNumber) {
     doc.setFont("Roboto", "bold");
@@ -627,7 +631,7 @@ function renderCutWithHeader(doc: jsPDF, section: Section, decoded: DecodedSKU, 
   }
   const availableLeft = CONTENT_W - orderWidth - 3;
   const headerSize = fitFontSize(doc, rendered, availableLeft, {
-    max: HEADER_FONT_MAX,
+    max: HEADER_FONT_MAX * cutScale,
     min: HEADER_FONT_MIN,
     bold: true,
   });
@@ -709,8 +713,10 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     const rowCount = (section.display_fields ?? []).reduce(
       (sum, row) => sum + row.length, 0
     );
-    // 6mm cut-line + ~16mm full header + title + N lines + tail
-    return 6 + 16 + h + rowCount * BODY_LINE_H + 2;
+    // 6mm cut-line + scaled mini-header + title + N lines + tail
+    const sr = CURRENT_TITLE_MAX / TITLE_DEFAULT_MAX;
+    const orderH = ORDER_NUMBER_FONT * sr * 0.45 + 1;
+    return 6 + orderH + 2 + h + rowCount * BODY_LINE_H + 2;
   }
 
   if (section.style === "bullet_list_grouped") {

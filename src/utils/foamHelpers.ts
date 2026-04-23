@@ -32,15 +32,17 @@ export function formatFoamsDetailed(foams?: ProductFoamItem[]): string[] {
   return foams.map(f => {
     const name = f.name?.trim() ?? "";
     const qtySuffix = (f.quantity ?? 1) > 1 ? ` | ${f.quantity} szt.` : "";
+    const isFront = (f.role || "").toLowerCase() === "front";
+    const rolePrefix = isFront ? "Front: " : "";
 
     // Pre-fabricated component (nazwa kończy się kodem SKU) → bez wymiarów
     if (name && PREFABRICATED_SUFFIX.test(name)) {
-      return `${name}${qtySuffix}`;
+      return `${rolePrefix}${name}${qtySuffix}`;
     }
 
     const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
     const prefix = name ? `${name}: ` : "";
-    return `${prefix}${dims}${qtySuffix}`;
+    return `${rolePrefix}${prefix}${dims}${qtySuffix}`;
   });
 }
 
