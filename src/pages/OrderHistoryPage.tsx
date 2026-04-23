@@ -15,7 +15,7 @@ import { getOrders, deleteOrder } from "@/utils/supabaseQueries";
 import { parseSKUGeneric, fetchSkuAliases } from "@/utils/skuParserGeneric";
 import { decodeSKU } from "@/utils/skuDecoderGeneric";
 import { generateWarehouseGuidePDF } from "@/utils/pdfGenerators/warehouseGuide";
-import { generateSofaLabelsPDF, generatePufaLabelsPDF, generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
+import { generateSofaLabelsV2PDF, generatePufaLabelsV2PDF, generateFotelLabelsV2PDF } from "@/utils/pdfGenerators/labelsV2";
 import { generateProductionGuidePDF } from "@/utils/pdfGenerators/productionGuide";
 import { uploadAndSaveOrderFile } from "@/utils/storage";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -134,13 +134,22 @@ const OrderHistoryPage = () => {
       // Guide (single PDF with sofa + pufa + fotel)
       uploads.push(generateWarehouseGuidePDF(decoded).then((b) => uploadAndSave(b, `przewodnik_magazyn_${orderNumber}.pdf`, "guide")));
 
-      // Labels
-      uploads.push(generateSofaLabelsPDF(decoded).then((b) => uploadAndSave(b, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels")));
+      // Labels (V2: large sheet + optional small chest fallback for S2/N2 sofa)
+      uploads.push(generateSofaLabelsV2PDF(decoded).then(async (r) => {
+        if (r.large) await uploadAndSave(r.large, `sofa_etykiety_${orderNumber}.pdf`, "sofa_labels");
+        if (r.small) await uploadAndSave(r.small, `sofa_etykiety_skrzynia_${orderNumber}.pdf`, "sofa_labels_chest");
+      }));
       if (decoded.pufaSKU) {
-        uploads.push(generatePufaLabelsPDF(decoded).then((b) => uploadAndSave(b, `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels")));
+        uploads.push(generatePufaLabelsV2PDF(decoded).then(async (r) => {
+          if (r.large) await uploadAndSave(r.large, `pufa_etykiety_${orderNumber}.pdf`, "pufa_labels");
+          if (r.small) await uploadAndSave(r.small, `pufa_etykiety_skrzynia_${orderNumber}.pdf`, "pufa_labels_chest");
+        }));
       }
       if (decoded.fotelSKU) {
-        uploads.push(generateFotelLabelsPDF(decoded).then((b) => uploadAndSave(b, `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels")));
+        uploads.push(generateFotelLabelsV2PDF(decoded).then(async (r) => {
+          if (r.large) await uploadAndSave(r.large, `fotel_etykiety_${orderNumber}.pdf`, "fotel_labels");
+          if (r.small) await uploadAndSave(r.small, `fotel_etykiety_skrzynia_${orderNumber}.pdf`, "fotel_labels_chest");
+        }));
       }
 
       // Production guide
