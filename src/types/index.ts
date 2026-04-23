@@ -80,6 +80,16 @@ export interface DecodedSKU {
   pufaSeat?: { frontBack: string; sides: string; foam: string; box: string; foams?: ProductFoamItem[] };
   pufaLegs?: { code: string; height: number; count: number };
   fotelLegs?: { code: string; height: number; count: number };
+  fotel?: {
+    seat?: {
+      code: string;
+      frame: string;
+      frameModification?: string;
+      springType?: string;
+      foams?: ProductFoamItem[];
+      sideFrameSuffix?: string;
+    };
+  };
   pufaSKU?: string;
   fotelSKU?: string;
   orderNumber?: string;

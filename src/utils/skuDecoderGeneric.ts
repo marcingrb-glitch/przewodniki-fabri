@@ -752,6 +752,66 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     };
   }
 
+  // ---- FOTEL SEAT (seat_fotel category, per series) ----
+  // Fotel ma własny korpus — stelaż, sprężynę, piankę bazy, oklejkę.
+  // Front (półwałek) dziedziczy z sofa-seat runtime — foam z role='front'.
+  let fotelDecoded: DecodedSKU["fotel"] = undefined;
+  if (hasFotel && seriesId) {
+    const { data: fotelProdRow } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("category", "seat_fotel")
+      .eq("series_id", seriesId)
+      .maybeSingle();
+
+    const fotelProduct = fotelProdRow as unknown as ProductRow | null;
+    if (fotelProduct) {
+      const { data: fotelFoamsRes } = await supabase
+        .from("product_specs")
+        .select("position_number, name, material, height, width, length, quantity, notes, foam_section, foam_role")
+        .eq("product_id", fotelProduct.id)
+        .eq("spec_type", "foam")
+        .order("position_number");
+
+      const fotelOwnFoams: ProductFoamItem[] = (fotelFoamsRes || []).map((f) => ({
+        position: f.position_number ?? 0,
+        name: f.name ?? "",
+        height: f.height ?? null,
+        width: f.width ?? null,
+        length: f.length ?? null,
+        material: f.material ?? "",
+        quantity: f.quantity ?? 1,
+        notes: f.notes ?? null,
+        role: f.foam_role ?? null,
+      }));
+
+      // Front dziedziczony z sofa-seat (role='front')
+      const sofaFrontFoams: ProductFoamItem[] = (seatFoams || []).filter(
+        (f) => (f.role || "").toLowerCase() === "front"
+      );
+
+      // Kolejność: baza → front (z sofy) → oklejka (back)
+      const base = fotelOwnFoams.filter((f) => (f.role || "").toLowerCase() === "base");
+      const wrap = fotelOwnFoams.filter((f) => (f.role || "").toLowerCase() === "back");
+      const other = fotelOwnFoams.filter((f) => {
+        const r = (f.role || "").toLowerCase();
+        return r !== "base" && r !== "back";
+      });
+      const mergedFoams = [...base, ...sofaFrontFoams, ...wrap, ...other];
+
+      fotelDecoded = {
+        seat: {
+          code: fotelProduct.code,
+          frame: prop(fotelProduct, "frame", fotelProduct.code),
+          frameModification: prop(fotelProduct, "frame_modification", undefined) as string | undefined,
+          springType: prop(fotelProduct, "spring_type", undefined) as string | undefined,
+          foams: mergedFoams.length > 0 ? mergedFoams : undefined,
+          sideFrameSuffix: prop(fotelProduct, "side_frame_suffix", undefined) as string | undefined,
+        },
+      };
+    }
+  }
+
   // ---- Pufa / Fotel SKU generation ----
   let pufaSKU: string | undefined;
   if (hasPufa && parsed.legs) {
@@ -856,6 +916,7 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     pufaSeat: pufaSeatDecoded,
     pufaLegs: pufaLegsDecoded,
     fotelLegs: fotelLegsDecoded,
+    fotel: fotelDecoded,
     pufaSKU,
     fotelSKU,
     specialNotes: specialNotes.length > 0 ? specialNotes : undefined,
