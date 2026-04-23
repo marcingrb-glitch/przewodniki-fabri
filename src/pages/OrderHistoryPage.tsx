@@ -575,21 +575,19 @@ const OrderHistoryPage = () => {
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/order/${order.id}`)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                disabled={regeneratingId === order.id}
-                                onClick={() => handleRegenerate(order)}
-                              >
-                                {regeneratingId === order.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <RotateCw className="h-4 w-4" />
-                                )}
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={regeneratingId === order.id}
+                              onClick={() => handleRegenerate(order)}
+                            >
+                              {regeneratingId === order.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCw className="h-4 w-4" />
+                              )}
+                            </Button>
                             {(isAdmin || order.created_by === user?.id) && (
                               <Button
                                 variant="ghost"
