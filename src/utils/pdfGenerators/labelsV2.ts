@@ -54,6 +54,21 @@ const SECTION_TITLE_FONT = TITLE_MIN;
 const BODY_FONT = BODY_MIN;
 const LINE_H = BODY_MIN * LINE_HEIGHT_RATIO;
 
+// Lekkie pogrubienie content (czytelność na drukarce). fill+stroke z cienkim outline
+// daje efekt semibold bez konieczności osobnego fontu medium.
+const SEMIBOLD_STROKE = 0.08;
+
+function drawSemibold(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  opts?: { align?: "left" | "center" | "right"; baseline?: "top" | "middle" | "bottom" | "alphabetic" }
+) {
+  doc.setLineWidth(SEMIBOLD_STROKE);
+  doc.text(text, x, y, { ...(opts || {}), renderingMode: "fillThenStroke" } as any);
+}
+
 /**
  * Auto-fit rozmiar fontu dla tekstu: zaczyna od max i zmniejsza o 0.5pt aż zmieści się w maxWidth.
  */
@@ -302,7 +317,7 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
   doc.setFontSize(size);
   const lineH = size * LINE_HEIGHT_RATIO;
   for (const line of lines) {
-    doc.text(line, MARGIN_X, cursorY + lineH * 0.75);
+    drawSemibold(doc, line, MARGIN_X, cursorY + lineH * 0.75);
     cursorY += lineH;
   }
   return cursorY + 1;
@@ -342,7 +357,7 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
   doc.setFontSize(size);
   const lineH = size * LINE_HEIGHT_RATIO;
   for (const b of bullets) {
-    doc.text(`  • ${b}`, MARGIN_X, cursorY + lineH * 0.75);
+    drawSemibold(doc, `  • ${b}`, MARGIN_X, cursorY + lineH * 0.75);
     cursorY += lineH;
   }
   return cursorY + 1;
@@ -386,7 +401,7 @@ function renderBulletListGrouped(doc: jsPDF, section: Section, decoded: DecodedS
     doc.setFont("Roboto", "normal");
     doc.setFontSize(size);
     for (const b of g.bullets) {
-      doc.text(`  • ${b}`, MARGIN_X, cursorY + lineH * 0.75);
+      drawSemibold(doc, `  • ${b}`, MARGIN_X, cursorY + lineH * 0.75);
       cursorY += lineH;
     }
     cursorY += 1;
@@ -562,7 +577,7 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   doc.setFontSize(size);
   const lineH = size * LINE_HEIGHT_RATIO;
   for (const line of lines) {
-    doc.text(`  ${line}`, MARGIN_X, cursorY + lineH * 0.75);
+    drawSemibold(doc, `  ${line}`, MARGIN_X, cursorY + lineH * 0.75);
     cursorY += lineH;
   }
   return cursorY + 1;
