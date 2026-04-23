@@ -45,6 +45,8 @@ const LINE_HEIGHT_RATIO = 0.6; // line height = fontSize × ratio
 let CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
 let CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
 let CURRENT_SECTION_GAP = SECTION_GAP;
+// Scale applied to top renderHeader order# (i mini-headery cut_with_header)
+let CURRENT_HEADER_SCALE = 1;
 // Header template aktualnego arkusza — używany przez legs_list / cut_with_header do re-print na cut-off
 let CURRENT_HEADER_TEMPLATE: string | null = null;
 let CURRENT_SHEET_NAME: string | null = null;
@@ -191,8 +193,8 @@ function renderHeader(
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
   if (continued) rendered += " (cd.)";
 
-  // RIGHT: order# — max ~55% szerokości
-  let orderSize = ORDER_NUMBER_FONT;
+  // RIGHT: order# — max ~55% szerokości (skaluje sie z CURRENT_HEADER_SCALE)
+  let orderSize = ORDER_NUMBER_FONT * CURRENT_HEADER_SCALE;
   let orderWidth = 0;
   if (decoded.orderNumber) {
     doc.setFont("Roboto", "bold");
@@ -211,10 +213,10 @@ function renderHeader(
     });
   }
 
-  // LEFT: header_template w pozostałej szerokości, auto-fit
+  // LEFT: header_template w pozostałej szerokości, auto-fit (scaled max)
   const availableLeft = CONTENT_W - orderWidth - 3;
   const headerSize = fitFontSize(doc, rendered, availableLeft, {
-    max: HEADER_FONT_MAX,
+    max: HEADER_FONT_MAX * CURRENT_HEADER_SCALE,
     min: HEADER_FONT_MIN,
     bold: true,
   });
@@ -607,10 +609,8 @@ function renderCutWithHeader(doc: jsPDF, section: Section, decoded: DecodedSKU, 
     .replace("{series.collection}", decoded.series.collection || "")
     .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
 
-  // Mini-header skaluje sie razem z reszta sheeta (CURRENT_TITLE_MAX).
-  // Dzieki temu przy duzej liczbie sekcji (np. fotel: Korpus+PIANKI+2xBOCZEK)
-  // order# kurczy sie proporcjonalnie i arkusz miesci sie na 1 stronie.
-  const cutScale = CURRENT_TITLE_MAX / TITLE_DEFAULT_MAX;
+  // Mini-header skaluje sie razem z CURRENT_HEADER_SCALE (spojnie z top headerem).
+  const cutScale = CURRENT_HEADER_SCALE;
   let orderSize = ORDER_NUMBER_FONT * cutScale;
   let orderWidth = 0;
   if (decoded.orderNumber) {
@@ -713,9 +713,8 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     const rowCount = (section.display_fields ?? []).reduce(
       (sum, row) => sum + row.length, 0
     );
-    // 6mm cut-line + scaled mini-header + title + N lines + tail
-    const sr = CURRENT_TITLE_MAX / TITLE_DEFAULT_MAX;
-    const orderH = ORDER_NUMBER_FONT * sr * 0.45 + 1;
+    // 6mm cut-line + scaled mini-header (CURRENT_HEADER_SCALE) + title + N lines + tail
+    const orderH = ORDER_NUMBER_FONT * CURRENT_HEADER_SCALE * 0.45 + 1;
     return 6 + orderH + 2 + h + rowCount * BODY_LINE_H + 2;
   }
 
@@ -790,34 +789,48 @@ function estimateSheetHeight(
 export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: DecodedSKU, isFirst: boolean) {
   if (!isFirst) doc.addPage([PAGE_W, PAGE_H], "portrait");
 
-  let y = MARGIN_TOP;
-  y = renderHeader(doc, sheet, decoded, y);
-  if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
-  const contentStartY = y;
-  const available = PAGE_H - MARGIN_BOTTOM - contentStartY;
-
-  // Policz wysokość przy default sizes i policz scale żeby content = available.
-  const baseHeight = estimateSheetHeight(
-    doc, sheet, decoded, TITLE_DEFAULT_MAX, BODY_DEFAULT_MAX, SECTION_GAP
-  );
-
-  // Scale = available / baseHeight. Clamp do rozsądnego zakresu.
-  // Górne limity: tytuł/body hard cap. Dolne: MIN/DEFAULT (nie mniej niż 60%).
+  // --- Pre-scale: top header tez sie skaluje razem z sekcjami ---
+  // Najpierw szacujemy wysokosc przy default (bez renderowania) + header przy default,
+  // wyliczamy scale, dopiero potem rysujemy header przy scaled rozmiarze.
   const MIN_SCALE = 0.6;
   const MAX_SCALE_BY_BODY = BODY_HARD_CAP / BODY_DEFAULT_MAX;
   const MAX_SCALE_BY_TITLE = TITLE_HARD_CAP / TITLE_DEFAULT_MAX;
   const MAX_SCALE = Math.min(MAX_SCALE_BY_BODY, MAX_SCALE_BY_TITLE, 1.8);
 
+  // Header przy scale=1 zajmuje ORDER_NUMBER_FONT * 0.45 + 1 mm wysokosci
+  const HEADER_H_AT_1 = ORDER_NUMBER_FONT * 0.45 + 1;
+  // Meta row (jesli pokazywany) ~META_FONT * 0.55 + 3
+  const METAROW_H = sheet.show_meta_row && decoded.width
+    ? META_FONT * 0.55 + 3
+    : 0;
+
+  // Estimate sekcje przy default (CURRENT_HEADER_SCALE = 1 tymczasowo zeby measureSection
+  // dla cut_with_header obliczyl orderH przy default)
+  CURRENT_HEADER_SCALE = 1;
+  const baseSectionsH = estimateSheetHeight(
+    doc, sheet, decoded, TITLE_DEFAULT_MAX, BODY_DEFAULT_MAX, SECTION_GAP
+  );
+
+  // Calkowita dostepna wysokosc (od gory do dolu, minus marginesy)
+  const fullAvailable = PAGE_H - MARGIN_TOP - MARGIN_BOTTOM;
+  const totalDefault = HEADER_H_AT_1 + METAROW_H + baseSectionsH;
+
   let scale = 1;
-  if (baseHeight > 0) {
-    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, available / baseHeight));
+  if (totalDefault > 0) {
+    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, fullAvailable / totalDefault));
   }
 
   CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX * scale;
   CURRENT_BODY_MAX = BODY_DEFAULT_MAX * scale;
   CURRENT_SECTION_GAP = Math.max(2, SECTION_GAP * Math.min(scale, 1.5));
+  CURRENT_HEADER_SCALE = scale;
   CURRENT_HEADER_TEMPLATE = sheet.header_template;
   CURRENT_SHEET_NAME = sheet.sheet_name;
+
+  let y = MARGIN_TOP;
+  y = renderHeader(doc, sheet, decoded, y);
+  if (sheet.show_meta_row) y = renderMetaRow(doc, decoded, y);
+  const contentStartY = y;
 
   // Render sekcji — bez page-breaka! (max 1 strona na arkusz)
   const sections = sheet.sections ?? [];
@@ -833,6 +846,7 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
   CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
   CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
   CURRENT_SECTION_GAP = SECTION_GAP;
+  CURRENT_HEADER_SCALE = 1;
   CURRENT_HEADER_TEMPLATE = null;
   void contentStartY; // reserved for future use
 }
