@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 
 import { downloadBlob } from "@/utils/pdfHelpers";
 import { generateWarehouseGuidePDF } from "@/utils/pdfGenerators/warehouseGuide";
+import { generateFotelLabelsPDF } from "@/utils/pdfGenerators/labels";
 import { generateSofaLabelsV2PDF, generatePufaLabelsV2PDF, generateFotelLabelsV2PDF, type LabelsV2Result } from "@/utils/pdfGenerators/labelsV2";
 
 type LabelsPairResult = LabelsV2Result;
@@ -416,6 +417,7 @@ const OrderDetailsPage = () => {
             </Accordion>
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="fotel-labels-preview" onClick={async () => previewPair(await generateFotelLabelsV2PDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
+              <ActionBtn icon={Eye} label="Podgląd etykiet V1" loadKey="fotel-labels-v1-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety V1 Fotela", `fotel_etykiety_v1_${orderNumber}.pdf`)} />
               <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadPair(await generateFotelLabelsV2PDF(decoded), `fotel_etykiety_${orderNumber}`, "v2")} />
               <ActionBtn icon={Eye} label="Przewodnik Produkcja fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelProductionGuidePDF(decoded), "Przewodnik Produkcja fotela", `przewodnik_produkcja_fotel_${orderNumber}.pdf`)} />
               <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelProductionGuidePDF(decoded), `przewodnik_produkcja_fotel_${orderNumber}.pdf`, "production_fotel")} />
