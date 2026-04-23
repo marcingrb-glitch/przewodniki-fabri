@@ -1,5 +1,5 @@
 import { DecodedSKU } from "@/types";
-import { formatFoamsDetailed } from "@/utils/foamHelpers";
+import { formatFoamsDetailed, formatFoamsByRole } from "@/utils/foamHelpers";
 
 /**
  * Resolve a field path to a display value from a DecodedSKU object.
@@ -16,6 +16,7 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
       return [decoded.seat.code, decoded.seat.modelName, decoded.seat.type]
         .filter(Boolean).join(" - ") || "-";
     case "seat.code": return decoded.seat.code;
+    case "seat.modelName": return decoded.seat.modelName || "-";
     case "seat.finish_name": return decoded.seat.finishName;
     case "seat.code_finish": return `${decoded.seat.code} (${decoded.seat.finishName})`;
     case "seat.type": return decoded.seat.type || "-";
@@ -51,6 +52,7 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     case "chest.name": return decoded.chest.name || "-";
     case "chest_automat.label": return `${decoded.chest.code} + ${decoded.automat.code}`;
     case "automat.code_name": return `${decoded.automat.code} - ${decoded.automat.name}`;
+    case "automat.name_code": return `${decoded.automat.name} | ${decoded.automat.code}`;
     case "automat.lockBolts": return decoded.automat.lockBolts || "-";
 
     case "legs.code_color": return decoded.legs ? `${decoded.legs.code}${decoded.legs.color || ""}` : "-";
@@ -99,6 +101,70 @@ export function resolveDecodedField(field: string, decoded: DecodedSKU): string 
     }
     case "chaise.backrestFoams_summary": {
       const lines = formatFoamsDetailed(decoded.chaise?.backrestFoams);
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.seatFoams_base": {
+      const lines = formatFoamsByRole(decoded.chaise?.seatFoams, "base");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.seatFoams_front": {
+      const lines = formatFoamsByRole(decoded.chaise?.seatFoams, "front");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.seatFoams_side": {
+      const lines = formatFoamsByRole(decoded.chaise?.seatFoams, "side");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.seatFoams_back": {
+      const lines = formatFoamsByRole(decoded.chaise?.seatFoams, "back");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.backrestFoams_base": {
+      const lines = formatFoamsByRole(decoded.chaise?.backrestFoams, "base");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.backrestFoams_front": {
+      const lines = formatFoamsByRole(decoded.chaise?.backrestFoams, "front");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.backrestFoams_side": {
+      const lines = formatFoamsByRole(decoded.chaise?.backrestFoams, "side");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "chaise.backrestFoams_back": {
+      const lines = formatFoamsByRole(decoded.chaise?.backrestFoams, "back");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "seat.foamsList_base": {
+      const lines = formatFoamsByRole(decoded.seat?.foams, "base");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "seat.foamsList_front": {
+      const lines = formatFoamsByRole(decoded.seat?.foams, "front");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "seat.foamsList_side": {
+      const lines = formatFoamsByRole(decoded.seat?.foams, "side");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "seat.foamsList_back": {
+      const lines = formatFoamsByRole(decoded.seat?.foams, "back");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "backrest.foamsList_base": {
+      const lines = formatFoamsByRole(decoded.backrest?.foams, "base");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "backrest.foamsList_front": {
+      const lines = formatFoamsByRole(decoded.backrest?.foams, "front");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "backrest.foamsList_side": {
+      const lines = formatFoamsByRole(decoded.backrest?.foams, "side");
+      return lines.length > 0 ? lines.join("\n") : "-";
+    }
+    case "backrest.foamsList_back": {
+      const lines = formatFoamsByRole(decoded.backrest?.foams, "back");
       return lines.length > 0 ? lines.join("\n") : "-";
     }
 

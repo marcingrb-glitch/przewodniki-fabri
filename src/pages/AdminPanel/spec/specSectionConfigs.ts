@@ -29,7 +29,7 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
     propertyKeys: [
       "seat_type", "frame", "front", "center_strip",
       "model_name", "frame_modification", "spring_type",
-      "foam_set",
+      "foam_set", "copies_from",
     ],
     columns: [
       { key: "code", label: "Kod" },
@@ -66,7 +66,7 @@ export const SPEC_SECTION_CONFIGS: Record<string, SpecSectionConfig> = {
     title: "Oparcia",
     labelSingular: "Oparcie",
     propertyKeys: [
-      "frame", "height_cm", "top", "spring_type", "model_name",
+      "frame", "height_cm", "top", "spring_type", "model_name", "copies_from",
     ],
     columns: [
       { key: "code", label: "Kod" },

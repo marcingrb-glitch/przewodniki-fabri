@@ -130,10 +130,20 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
     const { error } = await supabase.from("product_specs").insert(inserts);
     if (error) {
       toast.error("Błąd kopiowania pianek");
-    } else {
-      toast.success(`Skopiowano ${inserts.length} pianek z ${baseCode}. Możesz teraz edytować.`);
-      queryClient.invalidateQueries({ queryKey });
+      return;
     }
+    // Zdejmij copies_from (wlasne pianki = zerwanie dziedziczenia na etykietach)
+    const { data: prod } = await supabase
+      .from("products").select("properties").eq("id", productId).single();
+    const props = { ...(prod?.properties as any ?? {}) };
+    delete props.copies_from;
+    await supabase.from("products")
+      .update({ properties: props, updated_at: new Date().toISOString() })
+      .eq("id", productId);
+
+    toast.success(`Skopiowano ${inserts.length} pianek z ${baseCode}. Możesz teraz edytować.`);
+    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ["spec-products", category, seriesProductId] });
   };
 
   const handleRevertToFallback = async () => {
@@ -144,10 +154,20 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
       .eq("spec_type", "foam");
     if (error) {
       toast.error("Błąd usuwania pianek");
-    } else {
-      toast.success("Przywrócono dziedziczenie pianek");
-      queryClient.invalidateQueries({ queryKey });
+      return;
     }
+    // Ustaw copies_from = baseCode (zeby decoder tez dziedziczyl)
+    if (baseCode) {
+      const { data: prod } = await supabase
+        .from("products").select("properties").eq("id", productId).single();
+      const props = { ...(prod?.properties as any ?? {}), copies_from: baseCode };
+      await supabase.from("products")
+        .update({ properties: props, updated_at: new Date().toISOString() })
+        .eq("id", productId);
+    }
+    toast.success("Przywrócono dziedziczenie pianek");
+    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ["spec-products", category, seriesProductId] });
   };
 
   if (displayFoams.length === 0 && !isFallback) {
@@ -180,6 +200,7 @@ export default function FoamSubTable({ productId, productCode, category, seriesP
             <option value="base">base</option>
             <option value="front">front</option>
             <option value="side">boczna</option>
+            <option value="back">tylna</option>
           </select>
         )}
       </TableCell>

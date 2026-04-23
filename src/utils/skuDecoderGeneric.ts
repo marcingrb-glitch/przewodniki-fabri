@@ -227,6 +227,7 @@ function mapFoam(f: any): ProductFoamItem {
     material: f.material ?? "",
     quantity: f.quantity ?? 1,
     notes: f.notes,
+    role: f.foam_role ?? null,
   };
 }
 
@@ -239,6 +240,32 @@ function prop(product: ProductRow | null, key: string, fallback: any = ""): any 
   const props = product.properties;
   if (!props || typeof props !== "object") return fallback;
   return (props as any)[key] ?? fallback;
+}
+
+// Resolve product whose foams should be used. If `copies_from` is set on properties,
+// look up the source product in the same series + same width + same category.
+// Returns the original product's id when no inheritance is configured.
+async function resolveFoamSourceId(
+  product: ProductRow | null,
+  seriesId: string | null,
+): Promise<string | null> {
+  if (!product?.id) return null;
+  const copiesFrom = prop(product, "copies_from", null);
+  if (!copiesFrom || !seriesId) return product.id;
+
+  const targetWidth = (product.properties as any)?.width ?? null;
+  const { data } = await supabase
+    .from("products")
+    .select("id, properties")
+    .eq("series_id", seriesId)
+    .eq("code", copiesFrom)
+    .eq("category", product.category as string)
+    .eq("active", true);
+
+  const match = (data ?? []).find(
+    (p: any) => (p.properties?.width ?? null) === targetWidth,
+  );
+  return match?.id ?? product.id;
 }
 
 function productColors(product: ProductRow | null): Record<string, string> {
@@ -325,29 +352,42 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
           return { data: null };
         })()
       : Promise.resolve({ data: null }),
-    // chest (global, width-aware)
-    parsed.chest
-      ? (async () => {
-          const { data: all } = await supabase.from("products").select(PRODUCT_SELECT)
-            .eq("code", parsed.chest).eq("category", "chest");
-          if (!all || all.length === 0) return { data: null };
-          if (all.length === 1) return { data: all[0] };
-          // Multiple chests with same code — pick by width
-          if (targetWidth) {
-            const byWidth = all.find((c: any) => {
-              const cw = (c.properties as any)?.width;
-              return cw != null && Number(cw) === targetWidth;
-            });
-            if (byWidth) return { data: byWidth };
-          }
-          // Fallback: pick one without width or first
-          const noWidth = all.find((c: any) => {
-            const cw = (c.properties as any)?.width;
-            return cw == null;
-          });
-          return { data: noWidth ?? all[0] };
-        })()
-      : Promise.resolve({ data: null }),
+    // chest (global, width-aware).
+    // Gdy brak w SKU: sprawdz allowed_chest relations — jesli seria ma tylko 1 unikalny kod
+    // skrzyni (np. N2 / S2 → zawsze SK23), uzyj go auto. S1 ma kilka kodow → wymaga SKU.
+    (async () => {
+      let chestCode: string | null = parsed.chest || null;
+      if (!chestCode && seriesId) {
+        const { data: allowed } = await supabase
+          .from("product_relations")
+          .select("products:target_product_id(code)")
+          .eq("series_id", seriesId)
+          .eq("relation_type", "allowed_chest");
+        const codes = Array.from(new Set(
+          (allowed ?? []).map((r: any) => r.products?.code).filter(Boolean)
+        ));
+        if (codes.length === 1) chestCode = codes[0] as string;
+      }
+      if (!chestCode) return { data: null };
+      const { data: all } = await supabase.from("products").select(PRODUCT_SELECT)
+        .eq("code", chestCode).eq("category", "chest");
+      if (!all || all.length === 0) return { data: null };
+      if (all.length === 1) return { data: all[0] };
+      // Multiple chests with same code — pick by width
+      if (targetWidth) {
+        const byWidth = all.find((c: any) => {
+          const cw = (c.properties as any)?.width;
+          return cw != null && Number(cw) === targetWidth;
+        });
+        if (byWidth) return { data: byWidth };
+      }
+      // Fallback: pick one without width or first
+      const noWidth = all.find((c: any) => {
+        const cw = (c.properties as any)?.width;
+        return cw == null;
+      });
+      return { data: noWidth ?? all[0] };
+    })(),
     // automat (global)
     parsed.automat
       ? supabase.from("products").select(PRODUCT_SELECT)
@@ -463,24 +503,30 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
     : null;
 
   // ---- Foams: seat + backrest + chaise (parallel) ----
+  // Resolve copies_from inheritance: D-variants pull foams from their base product.
+  const [seatFoamSourceId, backrestFoamSourceId] = await Promise.all([
+    resolveFoamSourceId(seatProduct, seriesId),
+    resolveFoamSourceId(backrestProduct, seriesId),
+  ]);
+
   const [seatFoamsRes, backrestFoamsRes, chaiseFoamsRes] = await Promise.all([
-    seatProduct?.id
+    seatFoamSourceId
       ? supabase.from("product_specs")
-          .select("position_number, name, material, height, width, length, quantity, notes, foam_section")
-          .eq("product_id", seatProduct.id)
+          .select("position_number, name, material, height, width, length, quantity, notes, foam_section, foam_role")
+          .eq("product_id", seatFoamSourceId)
           .eq("spec_type", "foam")
           .order("position_number")
       : Promise.resolve({ data: null }),
-    backrestProduct?.id
+    backrestFoamSourceId
       ? supabase.from("product_specs")
-          .select("position_number, name, material, height, width, length, quantity, notes, foam_section")
-          .eq("product_id", backrestProduct.id)
+          .select("position_number, name, material, height, width, length, quantity, notes, foam_section, foam_role")
+          .eq("product_id", backrestFoamSourceId)
           .eq("spec_type", "foam")
           .order("position_number")
       : Promise.resolve({ data: null }),
     chaiseProduct?.id
       ? supabase.from("product_specs")
-          .select("position_number, name, material, height, width, length, quantity, notes, foam_section")
+          .select("position_number, name, material, height, width, length, quantity, notes, foam_section, foam_role")
           .eq("product_id", chaiseProduct.id)
           .eq("spec_type", "foam")
           .order("position_number")

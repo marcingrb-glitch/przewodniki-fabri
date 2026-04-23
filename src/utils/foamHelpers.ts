@@ -44,3 +44,15 @@ export function formatFoamsDetailed(foams?: ProductFoamItem[]): string[] {
     return `${prefix}${dims}${mat}${qtySuffix}`;
   });
 }
+
+/**
+ * Filtruj pianki wg `role` (base / front / side). Zwraca sformatowane linie.
+ */
+export function formatFoamsByRole(
+  foams: ProductFoamItem[] | undefined,
+  role: "base" | "front" | "side" | "back",
+): string[] {
+  if (!foams) return [];
+  const filtered = foams.filter(f => (f.role ?? "base") === role);
+  return formatFoamsDetailed(filtered);
+}

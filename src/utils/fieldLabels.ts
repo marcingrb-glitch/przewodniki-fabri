@@ -6,6 +6,7 @@
 export const SHORT_FIELD_LABELS: Record<string, string> = {
   // Seat
   "seat.code": "Siedzisko",
+  "seat.modelName": "Model",
   "seat.type": "Typ",
   "seat.frame": "Stelaż",
   "seat.foamsList": "Pianki",

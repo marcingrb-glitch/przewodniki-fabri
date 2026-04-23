@@ -43,6 +43,7 @@ export interface ProductFoamItem {
   material: string;
   quantity: number;
   notes: string | null;
+  role?: "base" | "front" | "side" | string | null;
 }
 
 export interface DecodedSKU {

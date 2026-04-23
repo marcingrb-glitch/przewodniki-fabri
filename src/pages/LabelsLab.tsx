@@ -23,8 +23,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 // Presety — wygodne SKU do testowania (edytuj wedle potrzeb)
 const PRESETS: { label: string; sku: string; orderNumber: string; kind: "sofa" | "pufa" | "fotel" }[] = [
   { label: "S1 sofa + pufa + fotel", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-PF-FT", orderNumber: "1234", kind: "sofa" },
-  { label: "S1 narożnik L", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-CH-L", orderNumber: "2001", kind: "sofa" },
-  { label: "S2 Elma", sku: "S2-T3D-SD02N-B8C-OP62A-SK15-AT1-N4-P1-J1-W1", orderNumber: "3001", kind: "sofa" },
+  { label: "N2 narożnik L", sku: "N2-T12A-190L-SD1-B3-OP68A-AT1-P3A-J3-W1", orderNumber: "2001", kind: "sofa" },
+  { label: "S2 Elma", sku: "S2-T12A-SD1-B3-OP68A-AT1-P3A-J3-W1", orderNumber: "3001", kind: "sofa" },
   { label: "Pufa PF", sku: "PF-S1-T3D-SD02N-N5A", orderNumber: "4001", kind: "pufa" },
   { label: "Fotel FT", sku: "S1-T3D-SD02NA-B8C-OP62A-SK15-AT1-N5A-P1-J1-W1-FT", orderNumber: "5001", kind: "fotel" },
 ];

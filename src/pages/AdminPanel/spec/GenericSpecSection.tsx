@@ -317,6 +317,30 @@ export default function GenericSpecSection({ seriesProductId, category, config }
         </div>
         {/* Sub-info line */}
         <div className="text-sm text-muted-foreground space-y-0.5 mt-1">
+          {["seat", "backrest", "chaise"].includes(category) && (
+            <div className="flex items-center gap-2">
+              <span>Kopia modelu:</span>
+              <select
+                value={product.copies_from ?? ""}
+                onChange={(e) => handleCopyFrom(product, e.target.value || null)}
+                className="h-7 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">— brak (własne dane) —</option>
+                {products
+                  .filter((p: any) => p.id !== product.id)
+                  .map((p: any) => (
+                    <option key={p.id} value={p.code}>
+                      {p.code}{p.model_name ? ` — ${p.model_name}` : ""}
+                    </option>
+                  ))}
+              </select>
+              {product.copies_from && (
+                <span className="text-xs text-blue-600 font-medium">
+                  ← dziedziczy z {product.copies_from}
+                </span>
+              )}
+            </div>
+          )}
           {category === "seat" && (
             <div className="flex gap-4 flex-wrap">
               <span>Model: <InlineEditCell value={product.model_name} onSave={(v) => updateField(product.id, "model_name", v)} /></span>
@@ -325,38 +349,14 @@ export default function GenericSpecSection({ seriesProductId, category, config }
             </div>
           )}
           {category === "chaise" && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span>Kopia modelu:</span>
-                <select
-                  value={product.copies_from ?? ""}
-                  onChange={(e) => handleCopyFrom(product, e.target.value || null)}
-                  className="h-7 rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value="">— brak (własne dane) —</option>
-                  {products
-                    .filter((p: any) => p.id !== product.id)
-                    .map((p: any) => (
-                      <option key={p.id} value={p.code}>
-                        {p.model_name || p.code}
-                      </option>
-                    ))}
-                </select>
-                {product.copies_from && (
-                  <span className="text-xs text-blue-600 font-medium">
-                    ← dane identyczne jak {products.find((p: any) => p.code === product.copies_from)?.model_name ?? product.copies_from}
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-4 flex-wrap">
-                <span>Model: <strong>{product.model_name ?? "—"}</strong></span>
-                <span>Sprężyna: <strong>{product.spring_type ?? "—"}</strong></span>
-                <span>Stelaż siedziska: {product.frame ?? "—"}</span>
-                <span>Stelaż oparcia: {product.backrest_frame ?? "—"}</span>
-                {product.frame_modification && (
-                  <span className="text-orange-600 font-medium">Modyfikacja: {product.frame_modification}</span>
-                )}
-              </div>
+            <div className="flex gap-4 flex-wrap">
+              <span>Model: <strong>{product.model_name ?? "—"}</strong></span>
+              <span>Sprężyna: <strong>{product.spring_type ?? "—"}</strong></span>
+              <span>Stelaż siedziska: {product.frame ?? "—"}</span>
+              <span>Stelaż oparcia: {product.backrest_frame ?? "—"}</span>
+              {product.frame_modification && (
+                <span className="text-orange-600 font-medium">Modyfikacja: {product.frame_modification}</span>
+              )}
             </div>
           )}
           {product.allowed_finishes && (
@@ -421,8 +421,8 @@ export default function GenericSpecSection({ seriesProductId, category, config }
             productCode={product.code}
             category={category}
             seriesProductId={seriesProductId}
-            readOnly={category === "chaise" && !!product.copies_from}
-            readOnlyReason={product.copies_from ? `kopia z ${products.find((p: any) => p.code === product.copies_from)?.model_name ?? product.copies_from}` : undefined}
+            readOnly={!!product.copies_from}
+            readOnlyReason={product.copies_from ? `dziedziczy pianki z ${product.copies_from}` : undefined}
           />
         )}
 

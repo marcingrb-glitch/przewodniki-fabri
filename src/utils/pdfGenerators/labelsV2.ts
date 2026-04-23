@@ -45,8 +45,9 @@ const LINE_HEIGHT_RATIO = 0.6; // line height = fontSize × ratio
 let CURRENT_TITLE_MAX = TITLE_DEFAULT_MAX;
 let CURRENT_BODY_MAX = BODY_DEFAULT_MAX;
 let CURRENT_SECTION_GAP = SECTION_GAP;
-// Header template aktualnego arkusza — używany przez legs_list do re-print na cut-off
+// Header template aktualnego arkusza — używany przez legs_list / cut_with_header do re-print na cut-off
 let CURRENT_HEADER_TEMPLATE: string | null = null;
+let CURRENT_SHEET_NAME: string | null = null;
 
 // Kompat dla starych callerów
 const SECTION_TITLE_FONT = TITLE_MIN;
@@ -73,7 +74,7 @@ function fitFontSize(
 }
 
 // ─── Section shapes (from JSONB) ─────────────────────────────────────────
-export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box" | "legs_list";
+export type SectionStyle = "plain" | "bullet_list" | "table" | "diagram_box" | "legs_list" | "cut_with_header" | "bullet_list_grouped";
 
 export interface Section {
   title?: string;
@@ -89,6 +90,8 @@ export interface Section {
   };
   box_size_mm?: number;
   condition_field?: string;
+  // bullet_list_grouped: grupy pod-sekcji (label + field). Puste grupy pomijane.
+  groups?: { label: string; field: string }[];
 }
 
 export interface LabelTemplateV2 {
@@ -238,6 +241,12 @@ function interpolateTitle(title: string, decoded: DecodedSKU): string {
       // Jeśli już zawiera "cm" to nie dublujemy
       return /cm/i.test(h) ? h : `${h} cm`;
     }
+    // Surowe wartości (bez "cm") — do użycia gdy jednostka jest napisana raz w template
+    if (key === "width_raw") return decoded.width || "";
+    if (key === "backrest.height_raw") {
+      const h = decoded.backrest?.height;
+      return h ? String(h).replace(/\s*cm\s*$/i, "").trim() : "";
+    }
     // Predefiniowane (kompat)
     if (key === "series.code") return decoded.series.code || "";
     if (key === "series.name") return decoded.series.name || "";
@@ -300,11 +309,7 @@ function renderPlain(doc: jsPDF, section: Section, decoded: DecodedSKU, y: numbe
 }
 
 function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
-  let cursorY = y;
-  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
-
-  // Each field can return multi-line content (e.g. foams — już z labelami w każdej linii).
-  // Dla wartości 1-liniowych dodajemy prefix "Label: value" (np. "Środkowy pasek: TAK").
+  // Najpierw zbieramy bullets — jesli pusto, nie rysujemy tytulu.
   const rows = section.display_fields ?? [];
   const bullets: string[] = [];
   for (const row of rows) {
@@ -312,7 +317,8 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
       const val = resolveDecodedField(f, decoded);
       if (val === "-" || val === "") continue;
       const lines = val.split("\n").map((l) => l.trim()).filter(Boolean);
-      if (lines.length === 1) {
+      const isFoamList = /\.foams(List|_summary|_base|_front|_side|_back|List_base|List_front|List_side|List_back)$/.test(f);
+      if (lines.length === 1 && !isFoamList) {
         bullets.push(formatFieldWithLabel(f, lines[0]));
       } else {
         for (const line of lines) bullets.push(line);
@@ -320,7 +326,10 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
     }
   }
 
-  if (bullets.length === 0) return cursorY + 1;
+  if (bullets.length === 0) return y; // no title, no content — skip całą sekcje
+
+  let cursorY = y;
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
 
   // Wspólny rozmiar — najmniejszy wymagany przez jakikolwiek bullet
   let size = CURRENT_BODY_MAX;
@@ -337,6 +346,52 @@ function renderBulletList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: 
     cursorY += lineH;
   }
   return cursorY + 1;
+}
+
+function renderBulletListGrouped(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  // Jeden glowny tytul + pod-grupy (label + bullets per rola). Puste grupy pomijane, brak kresek.
+  const groups = section.groups ?? [];
+
+  // Policz bullets per grupe zeby pominac puste
+  const populatedGroups: { label: string; bullets: string[] }[] = [];
+  for (const g of groups) {
+    const val = resolveDecodedField(g.field, decoded);
+    if (val === "-" || val === "") continue;
+    const bullets = val.split("\n").map(l => l.trim()).filter(Boolean);
+    if (bullets.length > 0) populatedGroups.push({ label: g.label, bullets });
+  }
+
+  if (populatedGroups.length === 0) return y;
+
+  let cursorY = y;
+  if (section.title) cursorY = renderSectionTitle(doc, section.title, decoded, cursorY);
+
+  // Wspolny rozmiar dla wszystkich bullets (auto-fit)
+  const allLines = populatedGroups.flatMap(g => g.bullets.map(b => `  • ${b}`));
+  let size = CURRENT_BODY_MAX;
+  for (const line of allLines) {
+    size = Math.min(size, fitFontSize(doc, line, CONTENT_W, { max: CURRENT_BODY_MAX, min: BODY_MIN }));
+  }
+  const lineH = size * LINE_HEIGHT_RATIO;
+  // Sub-label rozmiar troche wiekszy niz bullet, bold
+  const subLabelSize = Math.min(size + 2, CURRENT_TITLE_MAX * 0.75);
+
+  for (const g of populatedGroups) {
+    // Pod-naglowek bez kreski
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(subLabelSize);
+    doc.text(g.label, MARGIN_X, cursorY + subLabelSize * LINE_HEIGHT_RATIO * 0.75);
+    cursorY += subLabelSize * LINE_HEIGHT_RATIO;
+
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(size);
+    for (const b of g.bullets) {
+      doc.text(`  • ${b}`, MARGIN_X, cursorY + lineH * 0.75);
+      cursorY += lineH;
+    }
+    cursorY += 1;
+  }
+  return cursorY;
 }
 
 function renderTable(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
@@ -513,26 +568,91 @@ function renderLegsList(doc: jsPDF, section: Section, decoded: DecodedSKU, y: nu
   return cursorY + 1;
 }
 
+function renderCutWithHeader(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
+  // Cut-line (jak legs_list)
+  doc.setLineDashPattern([1.2, 1], 0);
+  doc.setDrawColor(80);
+  doc.setLineWidth(0.25);
+  const guideY = y + 2;
+  doc.line(MARGIN_X - 2, guideY, PAGE_W - MARGIN_X + 2, guideY);
+  doc.setFontSize(6);
+  doc.setTextColor(120);
+  doc.text("\u2702", 1.5, guideY + 1.5);
+  doc.setTextColor(0);
+  doc.setLineDashPattern([], 0);
+
+  let cursorY = y + 6;
+
+  // Pełny nagłówek: LEFT = header_template rozwinięty, RIGHT = duży #order
+  const template = CURRENT_HEADER_TEMPLATE || "{series.code} · {series.name}";
+  const rendered = template
+    .replace("{sheet_name}", CURRENT_SHEET_NAME ?? "")
+    .replace("{series.code}", decoded.series.code || "")
+    .replace("{series.name}", decoded.series.name || "")
+    .replace("{series.collection}", decoded.series.collection || "")
+    .replace("{orientation}", decoded.orientation === "L" ? "L" : decoded.orientation === "P" ? "P" : "");
+
+  let orderSize = ORDER_NUMBER_FONT;
+  let orderWidth = 0;
+  if (decoded.orderNumber) {
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(orderSize);
+    const text = `${decoded.orderNumber}`;
+    const maxWidth = CONTENT_W * 0.55;
+    while (doc.getTextWidth(text) > maxWidth && orderSize > 15) {
+      orderSize -= 1;
+      doc.setFontSize(orderSize);
+    }
+    orderWidth = doc.getTextWidth(text);
+    doc.setTextColor(0, 0, 0);
+    doc.text(text, PAGE_W - MARGIN_X, cursorY + orderSize * 0.32, {
+      align: "right",
+      baseline: "alphabetic",
+    });
+  }
+  const availableLeft = CONTENT_W - orderWidth - 3;
+  const headerSize = fitFontSize(doc, rendered, availableLeft, {
+    max: HEADER_FONT_MAX,
+    min: HEADER_FONT_MIN,
+    bold: true,
+  });
+  doc.setFont("Roboto", "bold");
+  doc.setFontSize(headerSize);
+  doc.text(rendered, MARGIN_X, cursorY + orderSize * 0.32, { baseline: "alphabetic" });
+  cursorY += orderSize * 0.45 + 1;
+
+  // Gruba kreska
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN_X, cursorY, PAGE_W - MARGIN_X, cursorY);
+  cursorY += 2;
+
+  // Standardowa zawartosc plain
+  return renderPlain(doc, section, decoded, cursorY);
+}
+
 function renderSection(doc: jsPDF, section: Section, decoded: DecodedSKU, y: number): number {
   // Per-section condition: skip if false
   if (section.condition_field && !checkDecodedCondition(decoded, section.condition_field)) {
     return y;
   }
 
-  // legs_list rysuje własną linię odcięcia — pomijamy standardowy separator
-  if (section.style !== "legs_list") {
+  // legs_list / cut_with_header rysują własną linię odcięcia — pomijamy standardowy separator
+  if (section.style !== "legs_list" && section.style !== "cut_with_header") {
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(MARGIN_X, y - 0.5, PAGE_W - MARGIN_X, y - 0.5);
   }
 
   switch (section.style) {
-    case "plain":       return renderPlain(doc, section, decoded, y);
-    case "bullet_list": return renderBulletList(doc, section, decoded, y);
-    case "table":       return renderTable(doc, section, decoded, y);
-    case "diagram_box": return renderDiagramBox(doc, section, decoded, y);
-    case "legs_list":   return renderLegsList(doc, section, decoded, y);
-    default:            return renderPlain(doc, section, decoded, y);
+    case "plain":               return renderPlain(doc, section, decoded, y);
+    case "bullet_list":         return renderBulletList(doc, section, decoded, y);
+    case "bullet_list_grouped": return renderBulletListGrouped(doc, section, decoded, y);
+    case "table":               return renderTable(doc, section, decoded, y);
+    case "diagram_box":         return renderDiagramBox(doc, section, decoded, y);
+    case "legs_list":           return renderLegsList(doc, section, decoded, y);
+    case "cut_with_header":     return renderCutWithHeader(doc, section, decoded, y);
+    default:                    return renderPlain(doc, section, decoded, y);
   }
 }
 
@@ -568,6 +688,21 @@ function measureSection(doc: jsPDF, section: Section, decoded: DecodedSKU): numb
     if (decoded.fotelLegs) n++;
     // 6mm cut-line + ~16mm mini-header (order# + template — duży jak main) + title + N lines + tail
     return 6 + 16 + h + n * BODY_LINE_H + 1;
+  }
+
+  if (section.style === "cut_with_header") {
+    const rowCount = (section.display_fields ?? []).reduce(
+      (sum, row) => sum + row.length, 0
+    );
+    // 6mm cut-line + ~16mm full header + title + N lines + tail
+    return 6 + 16 + h + rowCount * BODY_LINE_H + 2;
+  }
+
+  if (section.style === "bullet_list_grouped") {
+    // Worst-case: kazda grupa = sub-label + ~3 linie bullets
+    const groups = section.groups ?? [];
+    const subLabelH = Math.min(CURRENT_BODY_MAX + 2, CURRENT_TITLE_MAX * 0.75) * LINE_HEIGHT_RATIO;
+    return h + groups.length * (subLabelH + 3 * BODY_LINE_H + 1);
   }
 
   const rows = section.display_fields ?? [];
@@ -661,6 +796,7 @@ export function renderSheet(doc: jsPDF, sheet: LabelTemplateV2, decoded: Decoded
   CURRENT_BODY_MAX = BODY_DEFAULT_MAX * scale;
   CURRENT_SECTION_GAP = Math.max(2, SECTION_GAP * Math.min(scale, 1.5));
   CURRENT_HEADER_TEMPLATE = sheet.header_template;
+  CURRENT_SHEET_NAME = sheet.sheet_name;
 
   // Render sekcji — bez page-breaka! (max 1 strona na arkusz)
   const sections = sheet.sections ?? [];
