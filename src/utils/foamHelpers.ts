@@ -39,9 +39,8 @@ export function formatFoamsDetailed(foams?: ProductFoamItem[]): string[] {
     }
 
     const dims = [f.height, f.width, f.length].filter(v => v != null).join("×");
-    const mat = f.material ? ` ${f.material}` : "";
     const prefix = name ? `${name}: ` : "";
-    return `${prefix}${dims}${mat}${qtySuffix}`;
+    return `${prefix}${dims}${qtySuffix}`;
   });
 }
 
