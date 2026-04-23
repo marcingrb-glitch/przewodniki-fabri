@@ -756,13 +756,18 @@ export async function decodeSKU(parsed: ParsedSKU): Promise<DecodedSKU> {
   // Fotel ma własny korpus — stelaż, sprężynę, piankę bazy, oklejkę.
   // Front (półwałek) dziedziczy z sofa-seat runtime — foam z role='front'.
   let fotelDecoded: DecodedSKU["fotel"] = undefined;
+  // DEBUG: diagnoza pustego fotel label — usunąć po naprawie
+  console.log("[fotel] hasFotel=", hasFotel, "seriesId=", seriesId, "extras=", parsed.extras);
   if (hasFotel && seriesId) {
-    const { data: fotelProdRow } = await supabase
+    const { data: fotelProdRow, error: fotelErr } = await supabase
       .from("products")
       .select(PRODUCT_SELECT)
       .eq("category", "seat_fotel")
       .eq("series_id", seriesId)
       .maybeSingle();
+
+    // DEBUG
+    console.log("[fotel] product lookup →", { row: fotelProdRow, error: fotelErr });
 
     const fotelProduct = fotelProdRow as unknown as ProductRow | null;
     if (fotelProduct) {
