@@ -120,7 +120,9 @@ function drawProductionHeader(
   doc.setFont("Roboto", "bold");
   const orientationLabel = decoded.orientation === "L" ? " (Lewy)" : decoded.orientation === "P" ? " (Prawy)" : "";
   const widthLabel = decoded.width ? ` (szer. siedz. ${decoded.width}cm)` : "";
-  const seriesText = `${decoded.series.code} — ${decoded.series.collection || decoded.series.name}${widthLabel}${orientationLabel}`;
+  const seriesText = prefix === "FOTEL"
+    ? `${decoded.series.code}-FT [${decoded.series.collection || decoded.series.name}]`
+    : `${decoded.series.code} — ${decoded.series.collection || decoded.series.name}${widthLabel}${orientationLabel}`;
   doc.text(seriesText, marginLeft, y);
 
   // SKU on the same line, right-aligned
