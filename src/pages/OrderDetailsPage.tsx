@@ -174,6 +174,11 @@ const OrderDetailsPage = () => {
 
   const hasPufa = !!decoded.pufaSKU;
   const hasFotel = !!decoded.fotelSKU;
+  const fotelCount = decoded.extras.filter((e) => e.code === "FT").length;
+  const fotelDecodedFor = (idx: number): DecodedSKU =>
+    fotelCount > 1
+      ? { ...decoded, orderNumber: `${decoded.orderNumber || ""}_${idx + 1}` }
+      : decoded;
   const pufaSeat = decoded.pufaSeat;
 
   const ActionBtn = ({ icon: Icon, label, loadKey, onClick }: { icon: typeof Eye; label: string; loadKey: string; onClick: () => Promise<void> | void }) => (
@@ -418,7 +423,13 @@ const OrderDetailsPage = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn icon={Eye} label="Podgląd etykiet" loadKey="fotel-labels-preview" onClick={async () => previewPair(await generateFotelLabelsV2PDF(decoded), "Etykiety Fotela", `fotel_etykiety_${orderNumber}.pdf`)} />
               <ActionBtn icon={Eye} label="Podgląd etykiet V1" loadKey="fotel-labels-v1-preview" onClick={async () => preview(await generateFotelLabelsPDF(decoded), "Etykiety V1 Fotela", `fotel_etykiety_v1_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => downloadPair(await generateFotelLabelsV2PDF(decoded), `fotel_etykiety_${orderNumber}`, "v2")} />
+              <ActionBtn icon={Tag} label="Pobierz etykiety" loadKey="fotel-labels-dl" onClick={async () => {
+                for (let i = 0; i < fotelCount; i++) {
+                  const result = await generateFotelLabelsV2PDF(fotelDecodedFor(i));
+                  const suffix = fotelCount > 1 ? `_${i + 1}` : "";
+                  await downloadPair(result, `fotel_etykiety_${orderNumber}${suffix}`, "v2");
+                }
+              }} />
               <ActionBtn icon={Eye} label="Przewodnik Produkcja fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelProductionGuidePDF(decoded), "Przewodnik Produkcja fotela", `przewodnik_produkcja_fotel_${orderNumber}.pdf`)} />
               <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelProductionGuidePDF(decoded), `przewodnik_produkcja_fotel_${orderNumber}.pdf`, "production_fotel")} />
             </div>
@@ -447,9 +458,8 @@ const OrderDetailsPage = () => {
               const pufaResult = await generatePufaLabelsV2PDF(decoded);
               if (pufaResult.large) blobs.push(pufaResult.large);
             }
-            const fotelCount = decoded.extras.filter((e) => e.code === "FT").length;
             for (let i = 0; i < fotelCount; i++) {
-              const fotelResult = await generateFotelLabelsV2PDF(decoded);
+              const fotelResult = await generateFotelLabelsV2PDF(fotelDecodedFor(i));
               if (fotelResult.large) blobs.push(fotelResult.large);
             }
             if (blobs.length === 0) {
@@ -499,9 +509,12 @@ const OrderDetailsPage = () => {
               zip.file("przewodnik_produkcja_pufa.pdf", await generatePufaProductionGuidePDF(decoded));
             }
             if (hasFotel) {
-              const fotelLabels = await generateFotelLabelsV2PDF(decoded);
-              if (fotelLabels.large) zip.file("fotel_etykiety.pdf", fotelLabels.large);
-              if (fotelLabels.small) zip.file("fotel_etykiety_skrzynia.pdf", fotelLabels.small);
+              for (let i = 0; i < fotelCount; i++) {
+                const fotelLabels = await generateFotelLabelsV2PDF(fotelDecodedFor(i));
+                const suffix = fotelCount > 1 ? `_${i + 1}` : "";
+                if (fotelLabels.large) zip.file(`fotel_etykiety${suffix}.pdf`, fotelLabels.large);
+                if (fotelLabels.small) zip.file(`fotel_etykiety_skrzynia${suffix}.pdf`, fotelLabels.small);
+              }
               zip.file("przewodnik_produkcja_fotel.pdf", await generateFotelProductionGuidePDF(decoded));
             }
             const zipBlob = await zip.generateAsync({ type: "blob" });
