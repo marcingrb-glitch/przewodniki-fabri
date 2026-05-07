@@ -216,9 +216,14 @@ export async function parseSKUGeneric(
       break;
     }
 
-    // Fallback: extras
-    if (!matched && ["PF", "PFO", "FT"].includes(part)) {
-      result.extras.push(part);
+    // Fallback: extras (gdyby DB rule jeszcze nie dotarło / cache)
+    if (!matched) {
+      const m = part.match(/^(\d+X)?(PF|PFO|FT)$/);
+      if (m) {
+        const code = m[2];
+        const qty = code === "FT" && m[1] ? parseInt(m[1].replace("X", ""), 10) || 1 : 1;
+        for (let i = 0; i < qty; i++) result.extras.push(code);
+      }
     }
   }
 
@@ -318,9 +323,13 @@ function applyToResult(
       };
       break;
 
-    case "extra":
-      result.extras.push(rawPart);
+    case "extra": {
+      const code = captures.code || rawPart;
+      const qtyRaw = captures.quantity || "";
+      const qty = code === "FT" && qtyRaw ? parseInt(qtyRaw.replace("X", ""), 10) || 1 : 1;
+      for (let i = 0; i < qty; i++) result.extras.push(code);
       break;
+    }
 
     case "width":
       result.width = captures.width || "";

@@ -447,7 +447,8 @@ const OrderDetailsPage = () => {
               const pufaResult = await generatePufaLabelsV2PDF(decoded);
               if (pufaResult.large) blobs.push(pufaResult.large);
             }
-            if (hasFotel) {
+            const fotelCount = decoded.extras.filter((e) => e.code === "FT").length;
+            for (let i = 0; i < fotelCount; i++) {
               const fotelResult = await generateFotelLabelsV2PDF(decoded);
               if (fotelResult.large) blobs.push(fotelResult.large);
             }
