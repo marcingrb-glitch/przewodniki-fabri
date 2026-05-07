@@ -431,7 +431,13 @@ const OrderDetailsPage = () => {
                 }
               }} />
               <ActionBtn icon={Eye} label="Przewodnik Produkcja fotela" loadKey="fotel-decode-preview" onClick={async () => preview(await generateFotelProductionGuidePDF(decoded), "Przewodnik Produkcja fotela", `przewodnik_produkcja_fotel_${orderNumber}.pdf`)} />
-              <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => downloadAndSave(await generateFotelProductionGuidePDF(decoded), `przewodnik_produkcja_fotel_${orderNumber}.pdf`, "production_fotel")} />
+              <ActionBtn icon={Download} label="Pobierz Przew. Produkcja fotela" loadKey="fotel-decode-dl" onClick={async () => {
+                for (let i = 0; i < fotelCount; i++) {
+                  const blob = await generateFotelProductionGuidePDF(fotelDecodedFor(i));
+                  const suffix = fotelCount > 1 ? `_${i + 1}` : "";
+                  await downloadAndSave(blob, `przewodnik_produkcja_fotel_${orderNumber}${suffix}.pdf`, `production_fotel${suffix}`);
+                }
+              }} />
             </div>
           </CardContent>
         </Card>
@@ -488,7 +494,9 @@ const OrderDetailsPage = () => {
             if (hasPufa || hasFotel) {
               const extras: Blob[] = [];
               if (hasPufa) extras.push(await generatePufaProductionGuidePDF(decoded));
-              if (hasFotel) extras.push(await generateFotelProductionGuidePDF(decoded));
+              for (let i = 0; i < fotelCount; i++) {
+                extras.push(await generateFotelProductionGuidePDF(fotelDecodedFor(i)));
+              }
               const combined = extras.length === 1 ? extras[0] : await mergePdfBlobs(extras);
               const name = hasPufa && hasFotel ? "pufa_fotel" : hasPufa ? "pufa" : "fotel";
               downloadBlob(combined, `przewodnik_produkcja_${name}_${orderNumber}.pdf`);
@@ -514,8 +522,8 @@ const OrderDetailsPage = () => {
                 const suffix = fotelCount > 1 ? `_${i + 1}` : "";
                 if (fotelLabels.large) zip.file(`fotel_etykiety${suffix}.pdf`, fotelLabels.large);
                 if (fotelLabels.small) zip.file(`fotel_etykiety_skrzynia${suffix}.pdf`, fotelLabels.small);
+                zip.file(`przewodnik_produkcja_fotel${suffix}.pdf`, await generateFotelProductionGuidePDF(fotelDecodedFor(i)));
               }
-              zip.file("przewodnik_produkcja_fotel.pdf", await generateFotelProductionGuidePDF(decoded));
             }
             const zipBlob = await zip.generateAsync({ type: "blob" });
             downloadBlob(zipBlob, `zamowienie_${orderNumber}.zip`);
